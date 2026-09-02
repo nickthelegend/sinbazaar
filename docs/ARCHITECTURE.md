@@ -371,7 +371,7 @@ Say these out loud rather than let a judge discover them.
   person's client. No permission change takes it back.
 - **Outside a real TEE, the validator operator can read ER state.** That is exactly the situation on the
   local stack, where `TEE_PROVIDER_ENDPOINT` points at a query-filtering service on `localhost:6699`,
-  which answers reads a TEE refuses. The refusal is only exercised against
+  which enforces the same member list but is not attested. Attestation is exercised against
   `https://devnet-tee.magicblock.app` — where `scripts/prove-privacy.ts` has been run, and where both
   refusals passed: an unauthenticated rollup read, and a stranger holding a valid TEE token. Output and
   explorer links are in the README's [Proven on devnet](../README.md#proven-on-devnet). What that does

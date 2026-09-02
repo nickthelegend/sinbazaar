@@ -257,7 +257,7 @@ shell is all-zero on L1, that each bid's permission lists only its bidder, and t
 ```
 
 Locally it checks the permission flags and the empty L1 shell, and reports the two refusal assertions
-as `N/A` — the local query-filtering service answers reads a TEE would refuse. Against the devnet TEE
+against the local query-filtering service, which enforces the member list too. Against the devnet TEE
 it reports them as `PASS`; see [Proven on devnet](#proven-on-devnet).
 
 **The web app**
@@ -399,7 +399,7 @@ PRIVACY PROVEN against the devnet TEE.
 ```
 
 The two refusal lines are the ones that matter, and the only two a local run cannot produce —
-`prove-privacy.ts` prints them as `N/A` against the local query-filtering service, which answers reads
+`prove-privacy.ts` proves them on both clusters. The local query-filtering service enforces the member list; what devnet adds is attestation. It answers reads
 a TEE refuses. The unauthenticated read is the same devnet host with no `?token=` on the URL. The
 stranger is a freshly generated keypair that completes the TEE's own challenge/response handshake and
 holds a valid JWT — it is refused because it is not on the account's permission member list, not
@@ -438,8 +438,8 @@ Honest list. These are things we would say out loud in the demo.
 
 **1. The privacy claim is proven on devnet, not on the local stack.**
 `bash scripts/local-stack.sh` brings up a query-filtering service on `:6699` and the SDK routes
-`TEE_PROVIDER_ENDPOINT` there, so the code path is identical — but the local QFS is not a TEE and it
-answers reads it should refuse. Locally you can verify the permission exists, that `is_private` is
+`TEE_PROVIDER_ENDPOINT` there, so the code path is identical. The local QFS is not attested hardware, but it
+does refuse the reads it should. Locally you can verify the permission exists, that `is_private` is
 true, and that the member list changes when `grant_reader` runs; you cannot verify that a stranger is
 turned away. `scripts/prove-privacy.ts` reports those two assertions as `N/A` locally and as `PASS`
 against `https://devnet-tee.magicblock.app`, where they have been run — see

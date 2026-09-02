@@ -123,8 +123,10 @@ real signed transactions) unless the row says devnet.
 
 ## B. Privacy — the claim the project rests on
 
-Only rows marked **devnet** can prove refusal; the local QFS answers reads a TEE
-would refuse, so locally they are marked N/A rather than PASS.
+Both refusals are provable on a local cluster: the query-filtering service enforces
+the permission member list, and `prove-privacy.ts` now asserts on what the endpoint
+actually did rather than assuming by cluster. What **devnet** adds is attestation —
+proof the operator could not have removed the filter — not the refusal itself.
 
 | # | Item | Correct means | Status |
 |---|---|---|---|
@@ -181,7 +183,7 @@ requires a clean console and no failed network requests.**
 | D6 | `scripts/smoke.ts` | Full loop end to end, exits 0 | ✅ PASS |
 | D7 | `scripts/seed.ts` | 5 markets in the described states; green twice in a row | ✅ PASS |
 | D8 | `scripts/demo.ts` | Narrates every beat of DEMO.md against a live cluster, exits 0 | ✅ PASS |
-| D9 | `scripts/prove-privacy.ts` — local | All non-refusal checks pass; refusals marked N/A | ✅ PASS |
+| D9 | `scripts/prove-privacy.ts` — local | All 10 checks pass, both refusals included, plus a control read of the unfiltered validator | ✅ PASS |
 | D10 | `scripts/prove-privacy.ts` — **devnet** | Every check PASS including both refusals | ✅ PASS *(devnet)* |
 | D11 | `scripts/deploy-devnet.sh` | Deploys and writes `.env.devnet` | ⚠️ guard only |
 | D12 | Devnet deployment | Program executable at its address on devnet | ✅ PASS *(devnet)* |

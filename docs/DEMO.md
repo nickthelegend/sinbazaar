@@ -273,7 +273,7 @@ video ends. Do not imply otherwise — show the 0:50 leak's tombstone, which is 
 bids to settle and needs no randomness.
 
 **Privacy caveat:** shoot the incognito shot against `https://devnet-tee.magicblock.app`. The local
-query-filtering service exercises the same client code path but is not a TEE and does not enforce the
+query-filtering service exercises the same client code path and does enforce the member list, but is not attested hardware, so it cannot prove an operator could not remove the
 read boundary. If you shoot locally, say so.
 
 If there is room in the cut — or in the submission text — this is the shot that settles it:

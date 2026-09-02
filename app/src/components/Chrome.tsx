@@ -21,6 +21,7 @@ const NAV = [
   { href: "/confess", label: "Confess" },
   { href: "/rooms", label: "Rooms" },
   { href: "/graveyard", label: "Graveyard" },
+  { href: "/challenge", label: "Challenge" },
 ];
 
 export function FictionBanner() {

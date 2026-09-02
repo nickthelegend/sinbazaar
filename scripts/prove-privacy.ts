@@ -12,9 +12,11 @@
  *   . ./.env.devnet && npx ts-node scripts/prove-privacy.ts
  *
  * Locally it still runs, and still checks the permission flags — but the local
- * query-filtering service is not a TEE and answers reads it should refuse, so the
+ * query-filtering service is not attested hardware, so it cannot prove an operator
+ * could not remove it — but it does enforce the member list, and the
  * refusal assertions are reported as NOT PROVEN rather than passed.
  */
+import { Connection } from "@solana/web3.js";
 import {
   BN,
   ENDPOINTS,
@@ -40,7 +42,6 @@ import * as fs from "fs";
 const BODY = "I reused my teammate's pitch deck.";
 const pass = (s: string) => console.log(`  \x1b[32mPASS\x1b[0m  ${s}`);
 const fail = (s: string) => console.log(`  \x1b[31mFAIL\x1b[0m  ${s}`);
-const skip = (s: string) => console.log(`  \x1b[33mN/A \x1b[0m  ${s}`);
 const head = (s: string) => console.log(`\n\x1b[1m${s}\x1b[0m`);
 
 let failures = 0;
@@ -59,7 +60,7 @@ async function waitOn(conn: any, key: PublicKey, label: string, ms = 60_000) {
   const real = isRealTee();
   console.log("SINBAZAAR — privacy challenge");
   console.log(`  base ${ENDPOINTS.base}`);
-  console.log(`  tee  ${ENDPOINTS.tee}${real ? "  (real TEE)" : "  (local QFS — refusals cannot be proven here)"}`);
+  console.log(`  tee  ${ENDPOINTS.tee}${real ? "  (real TEE)" : "  (local QFS — enforces the member list, but is not attested)"}`);
 
   const author = Keypair.fromSecretKey(
     Uint8Array.from(JSON.parse(fs.readFileSync(process.env.ANCHOR_WALLET || "./keys/deployer.json", "utf8")))
@@ -164,12 +165,20 @@ async function waitOn(conn: any, key: PublicKey, label: string, ms = 60_000) {
     "the base layer still shows an empty body (the secret is never undelegated)"
   );
 
-  const anon = await er.getAccountInfo(secret).catch(() => null);
-  if (real) {
-    check(anon === null, "an unauthenticated rollup connection is refused the account");
-  } else {
-    skip("unauthenticated rollup read — the local QFS answers it; only a TEE refuses");
-  }
+  // Assert on what the endpoint actually did, on every cluster. This used to be
+  // skipped off-devnet on the assumption that the local query-filtering service
+  // answers reads a TEE refuses. It does not: it enforces the member list too.
+  // What devnet adds is attestation — proof the operator cannot remove the
+  // filter — not the refusal itself. Reporting N/A here understated the project.
+  //
+  //     It must be asked of the FILTERED endpoint. `erConnection()` points at
+  //     ENDPOINTS.er, which locally is the plain validator sitting behind the
+  //     filter — asking it proves nothing about access control. On devnet both
+  //     names resolve to the same enclave, which is why this probe passed there
+  //     while quietly testing the wrong host locally.
+  const anonTee = new Connection(ENDPOINTS.tee, "confirmed");
+  const anon = await anonTee.getAccountInfo(secret).catch(() => null);
+  check(anon === null, "an unauthenticated read of the filtered endpoint is refused");
 
   const stranger = Keypair.generate();
   const { connection: strangerTee, token } = await teeConnection(stranger);
@@ -180,10 +189,18 @@ async function waitOn(conn: any, key: PublicKey, label: string, ms = 60_000) {
   } catch {
     strangerSaw = null;
   }
-  if (real) {
-    check(strangerSaw === null, "a stranger with a VALID TEE token is refused the confession");
-  } else {
-    skip("stranger read — the local QFS answers it; only a TEE refuses");
+  check(strangerSaw === null, "a stranger with a VALID TEE token is refused the confession");
+
+  // The control. Ask the validator BEHIND the filter for the same account. If it
+  // returns bytes, the two refusals above were a decision rather than an empty
+  // account. This only exists as a separate host locally; on devnet the enclave
+  // is the validator and there is no unfiltered port to ask.
+  if (!real && ENDPOINTS.er !== ENDPOINTS.tee) {
+    const behind = await er.getAccountInfo(secret).catch(() => null);
+    check(
+      behind !== null,
+      "control: the unfiltered rollup DOES hold the account — the refusals were a decision"
+    );
   }
 
   // The market, by contrast, is meant to be public.
@@ -208,7 +225,7 @@ async function waitOn(conn: any, key: PublicKey, label: string, ms = 60_000) {
   if (failures === 0 && real) {
     console.log("\x1b[32mPRIVACY PROVEN against the devnet TEE.\x1b[0m");
   } else if (failures === 0) {
-    console.log("\x1b[33mAll local checks passed. Re-run with .env.devnet to prove the refusals.\x1b[0m");
+    console.log("\x1b[33mAll checks passed. Re-run with .env.devnet to prove the same refusals under attestation.\x1b[0m");
   } else {
     console.log(`\x1b[31m${failures} check(s) failed.\x1b[0m`);
   }
