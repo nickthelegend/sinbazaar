@@ -194,18 +194,26 @@ export default function Landing() {
             )}
           </p>
 
-          <h1 className="lp-h1">
+          {/*
+            Each word rides in from behind its own mask, which means the visual
+            gaps between them are a CSS column-gap and not space characters.
+            `textContent` therefore reads "Somebodyhassomething", and that is
+            what a screen reader announces and what a copy-paste produces. The
+            standard fix for split-text: the real sentence lives on aria-label
+            and the decorative pieces are hidden from the accessibility tree.
+          */}
+          <h1 className="lp-h1" aria-label="Somebody has something to lose tonight.">
             {["Somebody", "has", "something"].map((w) => (
-              <span className="word-mask" key={w}>
+              <span className="word-mask" key={w} aria-hidden="true">
                 <span data-hero="word">{w}</span>
               </span>
             ))}
-            <span className="word-mask">
+            <span className="word-mask" aria-hidden="true">
               <span data-hero="word" className="flare">
                 to lose
               </span>
             </span>
-            <span className="word-mask">
+            <span className="word-mask" aria-hidden="true">
               <span data-hero="word">tonight.</span>
             </span>
           </h1>
