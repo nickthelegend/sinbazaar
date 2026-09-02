@@ -24,14 +24,22 @@ const NAV = [
   { href: "/challenge", label: "Challenge" },
 ];
 
+/**
+ * The fiction banner.
+ *
+ * A single floating pill rather than a bar, so it sits inside the same glass
+ * language as the nav instead of cutting a hard line across the aurora. It is a
+ * standing disclaimer, so it does not move and does not repeat.
+ */
 export function FictionBanner() {
   return (
-    <div className="fiction-banner" role="note">
-      <span className="fiction-dot" aria-hidden="true" />
-      FICTION MODE · STARTUP VILLAGE SINS ONLY
-      <span className="fiction-tail">
-        every confession here is satire about demos, decks and cofounders
-      </span>
+    <div className="fiction-banner">
+      <p className="fiction-strip" role="note">
+        Fiction mode, startup village sins only.
+        <span className="fiction-tail">
+          Every confession here is satire about demos, decks and cofounders.
+        </span>
+      </p>
     </div>
   );
 }

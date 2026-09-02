@@ -245,11 +245,23 @@ export default function MarketPage() {
         </Link>
       </div>
 
-      <section className="page-head">
+      <section className="page-head market-head">
         <div className="kicker">{room.label}</div>
-        <h1>
-          <span className="hash">{fullHash(market.commitment).slice(0, 24) || "unsealed"}</span>
-        </h1>
+        {/* The headline is the stake, not the digest. A commitment set in 76px
+            display type is unreadable as a value and, on an unsealed market,
+            fills the viewport with two dozen zeros. The hash belongs in mono,
+            at a size where it can actually be compared. */}
+        <h1>{room.rule[0]}</h1>
+        <div className="hash-line" style={{ marginTop: 18, maxWidth: "34rem" }}>
+          <span className="hash-prefix">sha256</span>
+          <code className="hash">
+            {/* An unsealed market's commitment is 32 zero bytes. Printing 64
+                zeros is noise, so say what it means instead. */}
+            {market.commitment.every((b) => b === 0)
+              ? "not sealed yet"
+              : fullHash(market.commitment)}
+          </code>
+        </div>
         <div className="card-mid" style={{ marginTop: 12 }}>
           <Countdown expiresAt={market.expiresAt} />
           <StatusPill status={market.status} />

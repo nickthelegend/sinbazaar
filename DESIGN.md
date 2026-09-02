@@ -1,172 +1,140 @@
 # Design System: SINBAZAAR
 
-Single source of truth for this interface. Written from the built product, not
-ahead of it. Any later change inherits these rules rather than drifting back to
-defaults. Product truth lives in [PRODUCT.md](PRODUCT.md); implementation is one
-stylesheet, `app/src/app/globals.css`.
+Single source of truth for this interface. Written from the built product. Any
+later change inherits these rules rather than drifting back to defaults. Product
+truth lives in [PRODUCT.md](PRODUCT.md); the implementation is one stylesheet,
+`app/src/app/globals.css`, plus `app/src/components/Aurora.tsx`.
 
-**Design read:** a redesign-overhaul of a live on-chain privacy product, for
-hackathon judges and crypto-native operators, in a restrained editorial document
-language, built on native CSS with dual-mode tokens.
+**Design read:** an on-chain secrets market for crypto-native users and hackathon
+judges, rendered as a cinematic dark product surface whose entire personality is
+a living warm aurora. Native CSS, no component library.
 
-**Dials:** Variance 4 (Predictable-to-Offset), Motion 3 (Static Restrained),
-Density 5 (Daily App Balanced). This is an operational product with real money
-and running clocks. Restraint beats variance, motion is state feedback rather
-than choreography, and density sits above a gallery and well below a cockpit.
+**Dials:** Variance 6, Motion 6, Density 5.
 
 ---
 
 ## 1. Visual theme and atmosphere
 
-Quiet, warm-neutral, document-like. The interface behaves like a well-set
-records page: generous air around a small amount of type, one accent spent only
-where it carries meaning, and surfaces that sit flat rather than floating.
+Near-black ground. Behind everything, several large soft-focus diagonal
+light-blades glow crimson at their cores and blend through coral into amber at
+the tips, drifting and breathing on staggered pure-CSS loops, under real
+`feTurbulence` film grain and a vignette.
 
-The tension in this product comes from its content, a confession with a clock on
-it, so the chrome stays out of the way. Nothing shouts. The only thing that ever
-moves on its own is a countdown inside its final minute, and that motion is the
-page telling the truth about state.
+Two rules carry the whole look and are absolute:
+
+1. **Strictly warm.** Crimson, coral, amber. No purple, indigo, violet, cyan or
+   green anywhere. The aurora is the only chroma in the composition.
+2. **Everything else is neutral.** `#ffffff`, `#9c9c9d`, `#07080a`.
+
+**Page theme lock.** This is a single-theme dark product. The brief pins the
+near-black canvas as the personality, so no light rendition is served and
+`color-scheme` is forced rather than following the OS.
 
 Two things are load-bearing rather than decorative and must survive any future
 change:
 
 * **The redaction bar.** Where a confession exists but may not be shown, the page
-  draws its withheld shape. It is a direct rendering of `Outcome::reveals_text()`.
-* **The classification band.** A released body carries a band saying it was
-  authorised; a withheld one carries the band that refuses it. Side by side in the
-  graveyard, the two explain the whole product with no caption.
+  draws its withheld shape. It renders `Outcome::reveals_text()`.
+* **The classification band.** A released body carries a crimson band saying it
+  was authorised; a withheld one carries a neutral band that refuses it.
 
-## 2. Color palette and roles
+## 2. Colour palette and roles
 
-Semantic names only. Never hard-code a hex outside the token block. Dark is a
-full re-declaration of the same names, so hierarchy parity is structural.
-Every pair below was measured in the live page, not estimated.
+| Token | Value | Role |
+|---|---|---|
+| `--ground` | `#07080a` | Page ground. |
+| `--raise` | `#0d0f12` | Lifted neutral. |
+| `--glass` | `rgba(20,22,26,.66)` | Every panel, card and the nav. Backdrop-blurred. |
+| `--sunk` | `#050607` | Inputs, code blocks, evidence containers. |
+| `--white` | `#ffffff` | Primary type. |
+| `--muted` | `#9c9c9d` | Secondary type. |
+| `--dim` | `#838487` | Tertiary. Set by measurement: `#6d6e70` failed AA at 3.7:1. |
+| `--crimson` | `#ff2f3a` | Aurora core. Released, leaked, failed, urgent. |
+| `--coral` | `#ff6b4a` | Aurora mid. Rollup, sole reader, focus ring. |
+| `--amber` | `#ffb347` | Aurora tip. Open, live, forgiven, active step. |
+| `--key` / `--key-ink` | `#e6e6e6` / `#2f3031` | The keycap. |
 
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `--canvas` | `#fbfbf9` | `#121211` | Page ground. Warm bone, warm off-black. |
-| `--surface` | `#fdfdfc` | `#191918` | Cards, panels. |
-| `--surface-2` | `#f4f3f0` | `#201f1d` | Sunk fields, active rows, badges. |
-| `--surface-sunk` | `#efeeea` | `#0e0e0d` | Evidence containers, code blocks. |
-| `--text` | `#1b1b19` | `#eceae5` | Primary. |
-| `--text-2` | `#6d6c66` | `#a2a099` | Secondary prose. |
-| `--text-3` | `#6f6d66` | `#8a887f` | Muted labels. Set by measurement, not by eye. |
-| `--line` | `rgba(24,23,20,.09)` | `rgba(255,253,247,.10)` | Hairlines. |
-| `--accent` | `#b0392f` | `#e0776b` | The one accent. Lifted in dark so it pops equally. |
+State is tinted **from the aurora**, never from a second colour family. There is
+no green "success" and no blue "info" in this system; open reads amber, released
+reads crimson, and withheld reads neutral.
 
-Semantic classification colors, each with its own wash so every badge clears AA
-in both modes: `--held` (withheld, settled), `--custody` (rollup, sole reader),
-`--cleared` (open, released, verified), `--pending` (expired, awaiting VRF).
+## 3. Typography
 
-**Constraints.** No pure `#ffffff` and no pure `#000000` in either mode; pure
-values kill depth. One accent, used identically everywhere. Color is spent only
-on classification and state, never on decoration: a market card's room, author,
-pots and hash are all neutral, and the only colored things on it are the badge
-saying which layer holds it and the badge saying what the verdict was.
+Two self-hosted variable faces, latin subset, 71KB. Nothing loads from a CDN:
+this runs against a validator on localhost with no internet.
 
-## 3. Typography rules
+* **Inter** for all UI. Hierarchy comes from size and weight: a 64px/600 headline
+  over an 18px/400 muted subtitle.
+* **Geist Mono** for digests, pubkeys, lamports, clocks, the install caption and
+  shortcut chips. Half this interface is a value compared character by character.
 
-Two self-hosted variable faces, latin subset, 78KB total. Nothing loads from a
-CDN, because a webfont that fails silently downgrades every headline and this
-runs against a validator on localhost with no internet.
-
-* **Schibsted Grotesk** for everything structural. A newspaper commission, so it
-  is built to set real sentences at small sizes and still has a voice at display.
-  Geist was tried first and rejected: a detector flagged it as one of the faces
-  every wave of generated interfaces converges on, and that is exactly the thing
-  this system exists to avoid.
-* **JetBrains Mono** for digests, pubkeys, lamports and clocks, with tabular
-  figures and a slashed zero. Half this interface is a value compared character
-  by character.
-
-Hierarchy comes from **weight and color, not raw scale.** Headings are 500
-weight with tight tracking (`-0.026em`); body is 400 at 15px/1.6. `h1` tops out
-at 42px. No all-caps stamping on every label, which was the previous system's
-mistake and read as shouting.
-
-Digests are never case-transformed. Uppercasing a hash under a heading rule makes
-the same value look like two different values.
+**One word of the headline** is set in a warm amber to crimson gradient via
+`background-clip: text` (`.flare`), so the type ties to the light behind it.
+Exactly one word, never a whole line.
 
 ## 4. Component stylings
 
-* **Radius system:** `4px` small, `8px` containers, `999px` badges. Three values,
-  one system, no strays.
-* **Cards:** 1px hairline, 8px radius, no drop shadow at rest. Hover lifts by
-  `translateY(-1px)` with a 4%-opacity shadow. Never a colored stripe down one
-  edge; that is the most recognisable generated-UI tell and this project had six
-  of them before they became classification bands.
-* **Buttons:** solid `--text` on `--canvas` for primary, hairline chip for
-  secondary, `scale(0.98)` on `:active`. No shadows, no pill-shaped primaries.
-* **Badges:** wash background plus matching ink, 999px, 11.5px. Semantic only.
-* **Inputs:** hairline, 4px radius, focus ring is a 3px `--surface-2` halo plus a
-  `--text-3` border, never a browser default outline.
-* **Lists:** no `border-top` plus `border-bottom` on every row. The step list and
-  the probe list use spacing and a state fill instead.
+* **Radius:** `6px` small, `10px` default, `14px` panels, `8px` keycaps, `999px`
+  pills. One system.
+* **Glass:** `--glass` fill, 1px hairline, `inset 0 1px 0` top highlight, and a
+  deep soft drop shadow. Used for the nav, every card and every panel.
+* **The keycap** is the one raised surface in an otherwise flat language:
+  `#e6e6e6` fill, `#2f3031` text, and a layered shadow stack of a 2px black ring,
+  a soft white outer glow, and inset top-white and bottom-dark highlights, so it
+  reads as a physical key. It presses down on `:active`.
+* **The nav floats.** A translucent pill near the top, not a full-bleed bar.
+* **Ghost pill:** transparent fill, thin ring, trailing arrow. Exactly one per
+  page, and it closes the page rather than floating in a void.
+* **Badges** are washed aurora tints with matching ink.
 
-## 5. Layout principles
+## 5. Motion
 
-Content column caps at `1120px`, prose at `60ch`. Section rhythm is set by
-`.shell` padding (56px top, 96px bottom) and a 40px page-head margin. The market
-feed is `auto-fill minmax(300px, 1fr)`; detail pages are a `1.4fr / 1fr` split
-that collapses to one column at 900px.
+* **The aurora** is the signature: three blades drifting (translate plus a small
+  rotate) and breathing (opacity plus scale) on staggered 15s, 18s and 22s loops.
+  Every `0%` keyframe is full bloom, so any still frame is the richest frame.
+* **Card entry:** 520ms rise, staggered 50ms, capped at the fifth item.
+* **Countdown:** inside the final 20 seconds the clock goes crimson and breathes.
+* **Keycap press:** 130ms, and the shadow stack collapses under the finger.
 
-**Eyebrows are rationed.** One `.kicker` per page, on the page head only. Never a
-section-number eyebrow, never `01 / INDEX`.
+Under `prefers-reduced-motion` everything stops, and the aurora holds its
+full-bloom frame rather than freezing mid-drift.
 
-## 6. Responsive rules
+## 6. Deliberate deviations from the detector
 
-* Header stays on one line at desktop, 62px tall. Below 1040px the wallet stall
-  drops to its own row rather than crushing the nav; a nav item clipped to a
-  single letter is worse than a wrapped header.
-* Two-column layouts collapse at 900px; `.shell` padding tightens at the same
-  breakpoint.
-* No horizontal overflow at any width. Verified at 375px and 1280px.
+The design detector reports three findings. All three are pinned by the brief
+and are kept knowingly rather than silently:
 
-## 7. Motion philosophy
+| Finding | Why it stands |
+|---|---|
+| `overused-font: Inter` | The brief pins "ONE Inter typeface for all UI". |
+| `overused-font: Geist Mono` | The brief pins GeistMono for the caption and shortcut chips. |
+| `gradient-text` | The brief pins one headline word in a warm gradient. It is one word, not a whole header, which is the permitted form. |
 
-Motion intensity 3. Every animation must be justifiable in one sentence.
+Nothing else is suppressed. Anything the detector flags that is **not** in this
+table is a real defect and gets fixed.
 
-* **Grid entry:** `rise` keyframe, 520ms, `cubic-bezier(0.16,1,0.3,1)`, staggered
-  45ms per item up to the fourth, then flat. Cards arrive, they do not perform.
-* **Countdown urgency:** inside the final 20 seconds the clock takes the accent
-  color and pulses at 1s. The card border takes the accent too. This is the only
-  sustained motion on the page, and the last seconds are the only moment in this
-  product that deserves one.
-* **Pot bar:** the fill grows into its new size over 420ms with a compositor-only
-  transform, so a bid landing reads as movement. Never animate the box size:
-  that forces layout on every frame.
-* **Hover:** 160-200ms on color, border and a 1px lift. Nothing else.
+## 7. What this system does not do
 
-Everything above is disabled under `prefers-reduced-motion: reduce`.
+* No purple, indigo, violet, cyan or green. Ever.
+* No second colour family for state.
+* No fake product UI built from divs. The lower half of the landing page is the
+  real live market feed, not a mockup of one.
+* No invented commercial claims. There is no "featured on" badge, because the
+  product has not been featured anywhere.
+* No em-dashes or en-dashes anywhere a user can see. Currently zero.
+* No scroll cues, no version labels in the hero, no section-number eyebrows.
 
-## 8. Anti-patterns (hard bans)
+## 8. Verification
 
-* **Em-dashes and en-dashes, anywhere visible.** Zero. The audit that opened this
-  redesign found 121 of them. Use a period, a comma, a colon, or parentheses.
-* **Middle-dot as a general separator.** Maximum one per line.
-* **Decorative status dots.** Only for real semantic state.
-* **Side-tab accent borders** on cards.
-* **Pure white or pure black** in either mode.
-* **Inter, Roboto, Open Sans, Geist** as the interface face.
-* **All-caps condensed stamping** on every label.
-* **Scroll cues, version labels in the hero, section-number eyebrows.**
-* **Gradients, glassmorphism, neon glows, heavy drop shadows.**
-* **Fake product UI built from divs**, hand-rolled decorative SVG, emoji as icons.
-* **Hairline borders on every row** of a long list.
-
-## 9. Verification
-
-Before shipping any change to this interface, all of these must hold, measured
-rather than assumed:
+Measured, not assumed:
 
 ```bash
-# zero em-dashes and en-dashes in anything the user can see
 grep -ro "—\|–" app/src --include="*.tsx" --include="*.css" | wc -l   # must be 0
+node ~/.claude/skills/impeccable/scripts/detect.mjs --json app/src     # only the 3 above
 ```
 
-* WCAG AA on every text and ground pair, **in both light and dark**, sampled from
-  the live DOM. Currently 0 failures in each.
-* No horizontal overflow at 375px or 1280px.
-* Header on one line at desktop, height 62px.
-* One radius system, one accent, one theme per page.
+* WCAG AA on every text and ground pair, sampled from the live DOM with **alpha
+  compositing**: a translucent wash must be flattened onto the ground before the
+  ratio is taken, or every glass surface reports a false 1.00.
+* No horizontal overflow at 375px or 1440px.
 * Zero console errors on every route.

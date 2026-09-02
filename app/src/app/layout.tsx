@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { EndpointFooter, FictionBanner, TopNav } from "@/components/Chrome";
+import { Aurora } from "@/components/Aurora";
 
 export const metadata: Metadata = {
   title: "SINBAZAAR",
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <Aurora />
         <Providers>
           <a className="skip-link" href="#content">
             Skip to content
