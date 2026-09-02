@@ -122,6 +122,45 @@ describe("SINBAZAAR — refusals", function () {
   // bidding guards
   // =====================================================================
 
+  it("A-commit. commit_market pushes live state to L1 without ending the market", async () => {
+    // The one instruction nothing else in this repo calls. It exists so a live
+    // market can be checkpointed to Solana mid-flight, and an instruction that
+    // is never exercised is an instruction nobody knows still works.
+    const [v] = await z.villagers(1, 3);
+    const m = await z.newMarket({ room: Room.GuiltMarket, durationSecs: 600 });
+    await z.bid(v, m.marketId, m.market, Side.Seal, 0.4 * LAMPORTS);
+
+    const onRollup = await z.marketState(m.market);
+    expect(onRollup.sealPot.toNumber(), "the rollup has the bid").to.equal(0.4 * LAMPORTS);
+
+    // Before the commit, the base layer still holds the pre-bid snapshot.
+    const before: any = await (z.authorProgramBase.account as any).market.fetch(m.market);
+    expect(before.sealPot.toNumber(), "L1 has not seen the bid yet").to.equal(0);
+
+    await z.erCall(
+      z.authorProgramEr.methods
+        .commitMarket(m.marketId)
+        .accountsPartial({ payer: z.authority.publicKey, market: m.market }),
+      z.authority
+    );
+
+    // The commit is asynchronous: the validator carries it to the base layer.
+    let after: any = null;
+    for (let i = 0; i < 30; i++) {
+      after = await (z.authorProgramBase.account as any).market.fetch(m.market);
+      if (after.sealPot.toNumber() === 0.4 * LAMPORTS) break;
+      await sleep(1000);
+    }
+    expect(after.sealPot.toNumber(), "L1 now carries the live pot").to.equal(0.4 * LAMPORTS);
+
+    // And critically: committing is not undelegating. The market keeps running.
+    const owner = (await z.baseConn.getAccountInfo(m.market))!.owner.toBase58();
+    expect(owner, "still delegated after a commit").to.equal(
+      "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+    );
+    expect(statusName((await z.marketState(m.market)).status), "still open").to.equal("open");
+  });
+
   it("A19. a bid larger than the purse is refused", async () => {
     const [poor] = await z.villagers(1, 1);
     const m = await z.newMarket({ room: Room.GuiltMarket, durationSecs: 600 });

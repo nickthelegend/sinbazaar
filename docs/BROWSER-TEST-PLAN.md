@@ -6,22 +6,27 @@ against.
 
 ## Result
 
-**103 of 103 items PASS.** Fourteen defects were found and fixed at the root; the
-plan was then re-run from the top. Nothing is marked PASS on inspection: every
-row was observed in the browser or in a command that ran.
+**135 of 135 items PASS.** Sixteen defects were found and fixed at the root, and
+the plan has been run end to end twice. Nothing is marked PASS on inspection:
+every row was observed in the browser or in a command that ran.
+
+The second run added section L, an explicit row for every one of the 32
+instructions in the deployed program, because "every on-chain interaction" is
+not the same claim as "the suite is green".
 
 | | |
 |---|---|
 | Browser items (A to J) | **96 PASS, 0 FAIL** |
+| On-chain instructions (L) | **32 PASS, 0 FAIL** |
 | Off-browser items (K) | **7 PASS, 0 FAIL** |
-| `npm test`, live cluster | **31 passing, 0 failing** |
+| `npm test`, live cluster | **32 passing, 0 failing** |
 | `scripts/prove-privacy.ts` | **11 PASS**, both refusals and the control |
 | Console errors, all six routes | **0** |
 | Failed network requests, cluster up | **0** |
 | Mocks, stubs, fakes, placeholders | **0** |
 | Design detector | 3, all pinned by the brief and recorded in DESIGN.md |
 
-### The fourteen defects
+### The sixteen defects
 
 1. **A3** The active nav link had a class and no `aria-current`, so a screen reader could not tell which page it was on.
 2. **E4** The rule box never highlighted the applicable branch, on any market, in any design. `RuleBox` renders `branch live`; the stylesheet targeted `.branch.active`.
@@ -37,6 +42,8 @@ row was observed in the browser or in a command that ran.
 12. **A12** All four pollers retried a dead cluster at a fixed rate forever. They now share one backoff hook: measured with the cluster stopped, gaps widen 10s, 20s, 41s.
 13. **J3** `.branch-arrow` sat at 4.2:1 once the live branch's amber wash was composited under it.
 14. **B2** The split headline's word gaps are a CSS `column-gap`, so its accessible name read "Somebodyhassomething". The real sentence now lives on `aria-label`.
+15. **L31** `commit_market` is a real instruction in the deployed program and **nothing in the repo called it**. It checkpoints a live market to Solana without ending it, and an instruction nobody exercises is one nobody knows still works. It now has a test that bids, confirms L1 still holds the pre-bid snapshot, commits, and asserts both that the base layer catches up **and** that the market is still delegated and still open.
+16. **B14** The landing page's counters were hardcoded. Within one commit of adding a test, the page was already stating a figure that was no longer true. Instructions and error codes are now read straight out of the IDL the app already loads, so they cannot drift.
 
 Defects 5, 11 and 12 are one mistake in three places, and it is the one this
 project keeps making: **presenting an absence as a value**. Zero markets, zero
@@ -232,3 +239,59 @@ Legend — **L1** base Solana · **ER** ephemeral rollup · **PER** private roll
 | K5 | Production build | Clean, no type errors | ✅ PASS |
 | K6 | No mocks or stubs | Zero mock/stub/fake/placeholder standing in for real logic | ✅ PASS |
 | K7 | Design detector | Only the three brief-pinned findings | ✅ PASS |
+
+## L. On-chain coverage: every instruction in the deployed program
+
+The goal asks for every on-chain interaction, so this is explicit rather than
+folded into "the suite is green". All 32 instructions in the IDL, and where each
+one is actually executed against a live cluster.
+
+| # | Instruction | Exercised by | Status |
+|---|---|---|---|
+| L1 | `initialize_village` | tests, scripts, app | ✅ PASS |
+| L2 | `create_market` | tests, scripts, app | ✅ PASS |
+| L3 | `create_secret_shell` | tests, scripts, app | ✅ PASS |
+| L4 | `delegate_market` | tests, scripts, app | ✅ PASS |
+| L5 | `delegate_secret` | tests, scripts, app | ✅ PASS |
+| L6 | `init_market_permission` | tests, scripts, app | ✅ PASS |
+| L7 | `init_secret_permission` | tests, scripts, app | ✅ PASS |
+| L8 | `seal_secret` | tests, scripts, app | ✅ PASS |
+| L9 | `deposit_purse` | tests, scripts, app | ✅ PASS |
+| L10 | `delegate_purse` | tests, scripts, app | ✅ PASS |
+| L11 | `place_bid` | tests, scripts, app | ✅ PASS |
+| L12 | `fund_bid` | tests, scripts, app | ✅ PASS |
+| L13 | `init_bid_permission` | tests, scripts, app | ✅ PASS |
+| L14 | `open_session` | tests, scripts, app | ✅ PASS |
+| L15 | `place_bid_with_session` | tests, app | ✅ PASS |
+| L16 | `revoke_session` | tests, app | ✅ PASS |
+| L17 | `expire_market` | tests, scripts, app | ✅ PASS |
+| L18 | `request_resolution_vrf` | tests, scripts, app | ✅ PASS |
+| L19 | `callback_resolve` | tests (delivered by the oracle, and forged-callback refused) | ✅ PASS |
+| L20 | `retry_vrf` | tests, scripts | ✅ PASS |
+| L21 | `resolve_rumor` | tests, scripts | ✅ PASS |
+| L22 | `settle_bid` | tests, scripts, app | ✅ PASS |
+| L23 | `close_bid` | tests, scripts, app | ✅ PASS |
+| L24 | `close_book` | tests, scripts, app | ✅ PASS |
+| L25 | `grant_reader` | tests, scripts, app | ✅ PASS |
+| L26 | `finalize_market` | tests, scripts, app | ✅ PASS |
+| L27 | `write_tombstone` | tests, scripts, app | ✅ PASS |
+| L28 | `claim_author` | tests | ✅ PASS |
+| L29 | `undelegate_purse` | tests | ✅ PASS |
+| L30 | `withdraw_purse` | tests | ✅ PASS |
+| L31 | `commit_market` | **tests (added this run)** | ✅ PASS (gap closed) |
+| L32 | `process_undelegation` | the delegation program, on every undelegation | ✅ PASS (indirect, see below) |
+
+**L31 was a real gap.** `commit_market` checkpoints a live market to Solana
+without ending it, and nothing in the repo called it. An instruction nobody
+exercises is one nobody knows still works. It now has a test that bids on a live
+market, confirms L1 still holds the pre-bid snapshot, commits, waits for the
+validator to carry it over, and then asserts two things: the base layer now
+carries the live pot, **and** the market is still owned by the delegation program
+and still open. Committing is not undelegating, and the test would catch it if
+that ever changed.
+
+**L32 is verified indirectly and is marked so deliberately.** `process_undelegation`
+is generated by the `#[delegate]` macro and is invoked by the delegation program,
+never by a client. It runs on every undelegation, and its success is exactly what
+the market-returns-to-base assertions in `finalize_market` and `undelegate_purse`
+are checking. There is no client-side call to write a test around.

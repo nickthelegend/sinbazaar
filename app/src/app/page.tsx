@@ -33,14 +33,26 @@ import { usePulse } from "@/hooks/usePulse";
 import { getAuthToken } from "@/lib/magicblock";
 import { secretPda } from "@/lib/pdas";
 import { CLUSTER, ER_RPC, PROGRAM_ID, TEE_RPC } from "@/lib/config";
+import { IDL } from "@/lib/anchor";
 import { shortHash, shortKey } from "@/lib/format";
 import { LIVE_ROOMS, ROOMS } from "@/lib/rooms";
 
-/* Real counts, read off the deployed IDL and the test suite rather than typed
-   in as marketing numbers. */
-const INSTRUCTION_COUNT = 32;
-const ERROR_COUNT = 34;
-const TEST_COUNT = 31;
+/*
+ * Real counts.
+ *
+ * Two of these are now read straight out of the IDL this app already loads to
+ * talk to the program, so they cannot drift: add an instruction or an error
+ * variant and the number on the page moves with it. They were hardcoded, and
+ * within one commit of adding a test the page was already stating a figure that
+ * was no longer true.
+ *
+ * The test count is the one that cannot be derived at runtime, because the
+ * suite does not run in the browser. It is asserted against in CI-style by
+ * `npm test` itself, and this file is the single place to update it.
+ */
+const INSTRUCTION_COUNT = (IDL as { instructions?: unknown[] }).instructions?.length ?? 0;
+const ERROR_COUNT = (IDL as { errors?: unknown[] }).errors?.length ?? 0;
+const TEST_COUNT = 32;
 
 /** The three layers a confession actually crosses, with the real instructions. */
 const LAYERS = [
