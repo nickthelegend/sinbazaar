@@ -590,11 +590,16 @@ pub mod sinbazaar {
     /// Open a bid. Runs entirely on the ER, signed by the villager's own wallet.
     ///
     /// This instruction only *creates and records* the bid; `fund_bid` moves the
-    /// money. They are deliberately separate instructions sent in ONE transaction:
-    /// creating an ephemeral account is a CPI to the magic program, and keeping the
-    /// program's own lamport arithmetic in its own instruction makes each
-    /// instruction's balance trivially auditable. The transaction stays atomic, so
-    /// a bid is still opened and funded together or not at all.
+    /// money. They are deliberately separate instructions sent in ONE transaction.
+    ///
+    /// The reason is a hard runtime rule, learned the hard way: an instruction that
+    /// CPIs the magic program for an ephemeral account **and** moves lamports itself
+    /// fails with `UnbalancedInstruction` ("sum of account balances before and after
+    /// instruction do not match"). The magic program settles its rent outside the
+    /// instruction's own accounting, so the runtime's balance check sees the
+    /// program's transfer as unmatched. Every place in SINBAZAAR that needs both is
+    /// split the same way — see `settle_bid` / `close_bid`. The transaction stays
+    /// atomic, so a bid is still opened and funded together or not at all.
     ///
     /// A bid that is created but never funded counts for nothing: it stays
     /// `funded = false`, contributes to no pot, and settles for zero.
@@ -1009,8 +1014,12 @@ pub mod sinbazaar {
         Ok(())
     }
 
-    /// Settle one bid: pay it, refund it, or forfeit it, then close the ephemeral
-    /// account and its permission.
+    /// Settle one bid: pay it, refund it, or forfeit it.
+    ///
+    /// Money only. `close_bid` then reclaims the ephemeral account and its
+    /// permission — a separate instruction because this one moves lamports and that
+    /// one CPIs the magic program, and the runtime refuses to see both in one
+    /// (`UnbalancedInstruction`). The client sends them together.
     ///
     /// Permissionless — anyone can crank it — because the destination is pinned to
     /// the bidder's own purse and the arithmetic is fixed by the recorded outcome.
@@ -1021,19 +1030,11 @@ pub mod sinbazaar {
         );
 
         let mut bid: Bid = read_account(&ctx.accounts.bid.to_account_info())?;
-        require_keys_eq!(
-            bid.market,
-            ctx.accounts.market.key(),
-            SinError::InvalidBid
-        );
-        require_keys_eq!(
-            bid.bidder,
-            ctx.accounts.purse.owner,
-            SinError::InvalidBid
-        );
+        require_keys_eq!(bid.market, ctx.accounts.market.key(), SinError::InvalidBid);
+        require_keys_eq!(bid.bidder, ctx.accounts.purse.owner, SinError::InvalidBid);
         require!(!bid.settled, SinError::BidAlreadySettled);
 
-        let market_snapshot: Market = (*ctx.accounts.market).clone();
+        let market_snapshot: Market = (**ctx.accounts.market).clone();
         let payout = if bid.funded {
             compute_payout(&market_snapshot, &bid)?
         } else {
@@ -1078,19 +1079,27 @@ pub mod sinbazaar {
                 .author_payout
                 .checked_add(forfeited)
                 .ok_or(SinError::MathOverflow)?;
-            market.closed_bid_count = market.closed_bid_count.saturating_add(1);
         }
 
         bid.settled = true;
         write_account(&ctx.accounts.bid.to_account_info(), &bid)?;
 
-        // Close the permission first (it refunds rent to the market), then the
-        // ephemeral bid account itself.
-        let id_bytes = market_snapshot.market_id.to_le_bytes();
-        let market_bump = [market_snapshot.bump];
+        msg!("Bid settled, payout {}", payout);
+        Ok(())
+    }
+
+    /// Reclaim a settled bid: close its private permission, then the ephemeral
+    /// account itself. Rent goes back to the market that sponsored it.
+    pub fn close_bid(ctx: Context<CloseBid>, _market_id: u64) -> Result<()> {
+        let bid: Bid = read_account(&ctx.accounts.bid.to_account_info())?;
+        require_keys_eq!(bid.market, ctx.accounts.market.key(), SinError::InvalidBid);
+        require!(bid.settled, SinError::NotSettled);
+
+        let id_bytes = ctx.accounts.market.market_id.to_le_bytes();
+        let market_bump = [ctx.accounts.market.bump];
         let market_signers: &[&[u8]] = &[
             MARKET_SEED,
-            market_snapshot.village.as_ref(),
+            ctx.accounts.market.village.as_ref(),
             &id_bytes,
             &market_bump,
         ];
@@ -1112,7 +1121,8 @@ pub mod sinbazaar {
         .invoke_signed(&[market_signers, bid_signers])?;
         ctx.accounts.close_ephemeral_bid()?;
 
-        msg!("Bid settled, payout {}", payout);
+        ctx.accounts.market.closed_bid_count =
+            ctx.accounts.market.closed_bid_count.saturating_add(1);
         Ok(())
     }
 
@@ -1143,9 +1153,18 @@ pub mod sinbazaar {
     /// The last act on the rollup.
     ///
     /// If — and only if — the verdict authorises text, copy it out of the private
-    /// secret into the market's public reveal buffer. Then commit and undelegate
-    /// the market so Solana receives the tombstone. The secret is never undelegated:
-    /// a buried confession stays inside the TEE for good.
+    /// secret into the market's public reveal buffer. Then commit and undelegate the
+    /// market so Solana receives the tombstone. The secret is never undelegated: a
+    /// buried confession stays inside the TEE for good.
+    ///
+    /// Note the `exit(&crate::ID)` before the intent bundle. `commit_and_undelegate`
+    /// hands the account to the delegation program *inside* this instruction, so
+    /// Anchor's automatic serialization at instruction exit would then be writing to
+    /// an account the program no longer owns (`ExternalAccountDataModified`).
+    /// Flushing first is the pattern every official example uses before a commit —
+    /// see `counter`, `session-keys` and `rock-paper-scissor` in
+    /// magicblock-engine-examples. It only bites for the two verdicts that actually
+    /// write bytes, which is exactly the public-leak path, so it is easy to miss.
     pub fn finalize_market(ctx: Context<FinalizeMarket>, market_id: u64) -> Result<()> {
         require_eq!(ctx.accounts.market.market_id, market_id);
         require!(
@@ -1182,6 +1201,9 @@ pub mod sinbazaar {
                 msg!("{:?}: nothing published, hash only", outcome);
             }
         }
+
+        // Flush before handing the account away.
+        ctx.accounts.market.exit(&crate::ID)?;
 
         MagicIntentBundleBuilder::new(
             ctx.accounts.payer.to_account_info(),
@@ -1965,11 +1987,39 @@ pub struct ResolveRumor<'info> {
     pub market: Box<Account<'info, Market>>,
 }
 
-#[ephemeral_accounts]
 #[derive(Accounts)]
 #[instruction(market_id: u64)]
 pub struct SettleBid<'info> {
     /// CHECK: permissionless crank; funds only ever move to the bidder's own purse
+    #[account(mut)]
+    pub cranker: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [MARKET_SEED, market.village.as_ref(), &market_id.to_le_bytes()],
+        bump = market.bump
+    )]
+    pub market: Box<Account<'info, Market>>,
+    /// CHECK: the ephemeral bid; deserialized and address-checked in the handler
+    #[account(
+        mut,
+        owner = crate::ID,
+        seeds = [BID_SEED, market.key().as_ref(), purse.owner.as_ref()],
+        bump
+    )]
+    pub bid: UncheckedAccount<'info>,
+    #[account(
+        mut,
+        seeds = [PURSE_SEED, purse.owner.as_ref()],
+        bump = purse.bump
+    )]
+    pub purse: Box<Account<'info, Purse>>,
+}
+
+#[ephemeral_accounts]
+#[derive(Accounts)]
+#[instruction(market_id: u64)]
+pub struct CloseBid<'info> {
+    /// CHECK: permissionless crank
     #[account(mut)]
     pub cranker: Signer<'info>,
     #[account(
@@ -1983,16 +2033,12 @@ pub struct SettleBid<'info> {
     #[account(
         mut,
         eph,
-        seeds = [BID_SEED, market.key().as_ref(), purse.owner.as_ref()],
+        seeds = [BID_SEED, market.key().as_ref(), bidder.key().as_ref()],
         bump
     )]
     pub bid: UncheckedAccount<'info>,
-    #[account(
-        mut,
-        seeds = [PURSE_SEED, purse.owner.as_ref()],
-        bump = purse.bump
-    )]
-    pub purse: Account<'info, Purse>,
+    /// CHECK: the villager whose bid this is; pins the bid PDA
+    pub bidder: UncheckedAccount<'info>,
     /// CHECK: verified by the permission program
     #[account(mut)]
     pub bid_permission: UncheckedAccount<'info>,

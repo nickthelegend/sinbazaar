@@ -518,17 +518,24 @@ export async function resolveMarket(
     for (const bidder of bidders) {
       const bid = bidPda(market, bidder);
       if (!(await er.getAccountInfo(bid))) continue; // already settled and closed
-      const ix = await methodsOf(pEr)
+      // settle_bid moves the money; close_bid CPIs the magic program to reclaim the
+      // ephemeral account. One transaction, two instructions — the runtime refuses
+      // to see a lamport transfer and that CPI in the same instruction.
+      const settle = await methodsOf(pEr)
         .settleBid(marketId)
+        .accountsPartial({ cranker: signer.publicKey, market, bid, purse: pursePda(bidder) })
+        .instruction();
+      const close = await methodsOf(pEr)
+        .closeBid(marketId)
         .accountsPartial({
           cranker: signer.publicKey,
           market,
           bid,
-          purse: pursePda(bidder),
+          bidder,
           bidPermission: permissionPdaFromAccount(bid),
         })
         .instruction();
-      await sendIxs(er, [ix], signer);
+      await sendIxs(er, [settle, close], signer);
     }
   });
 

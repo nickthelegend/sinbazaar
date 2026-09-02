@@ -346,20 +346,37 @@ export class Bazaar {
     throw new Error(`VRF never resolved; status=${statusName(m.status)}`);
   }
 
+  /**
+   * Settle then close every bid, and shut the book.
+   *
+   * `settle_bid` (money) and `close_bid` (magic-program CPI) go in one transaction
+   * but stay separate instructions — the runtime rejects an instruction that does
+   * both.
+   */
   async settleAll(marketId: BN, market: PublicKey, villagers: Villager[]): Promise<void> {
     for (const v of villagers) {
       const bid = bidPda(market, v.kp.publicKey);
       if (!(await this.erConn.getAccountInfo(bid))) continue;
-      await this.erCall(
-        this.authorProgramEr.methods.settleBid(marketId).accountsPartial({
+      const settle = await this.authorProgramEr.methods
+        .settleBid(marketId)
+        .accountsPartial({
           cranker: this.authority.publicKey,
           market,
           bid,
           purse: v.purse,
+        })
+        .instruction();
+      const close = await this.authorProgramEr.methods
+        .closeBid(marketId)
+        .accountsPartial({
+          cranker: this.authority.publicKey,
+          market,
+          bid,
+          bidder: v.kp.publicKey,
           bidPermission: permissionPdaFromAccount(bid),
-        }),
-        this.authority
-      );
+        })
+        .instruction();
+      await this.sendEr([settle, close], [this.authority]);
     }
     await this.erCall(
       this.authorProgramEr.methods

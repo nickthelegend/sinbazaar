@@ -354,6 +354,53 @@ people, and it is not built to be one.
 
 ---
 
+## Proven on devnet
+
+Program `2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN` is deployed to Solana devnet, and the privacy
+claim has been run against the real TEE validator `MTEWGuqxUpYZGFJQcp8tLN7x5v9BSeoFHYWQQ3n3xzo`:
+
+```bash
+. ./.env.devnet && npx ts-node scripts/prove-privacy.ts
+```
+
+```
+tee  https://devnet-tee.magicblock.app  (real TEE)
+
+1. The confession is never submitted in a base-layer transaction
+  PASS  the Secret account is allocated EMPTY on L1
+2. It is written only inside the rollup
+  PASS  the secret's ephemeral permission is PRIVATE
+  PASS  the member list is exactly [author]
+3. The author — and only the author — can read it
+  PASS  the author reads it back through their own TEE token
+  PASS  the public commitment is sha256(body || salt)
+4. Nobody else can
+  PASS  the base layer still shows an empty body
+  PASS  an unauthenticated rollup connection is refused the account
+  PASS  a stranger with a VALID TEE token is refused the confession
+  PASS  the market itself is public — hash, timer and pots are readable
+  PASS  a stranger CAN read the market — the game is public, the secret is not
+
+PRIVACY PROVEN against the devnet TEE.
+```
+
+The last four lines are the ones that matter, and the ones a local run cannot produce. The stranger is
+a freshly generated keypair that completes the TEE's own challenge/response handshake and holds a
+valid JWT — it is refused because it is not on the account's permission member list, not because it
+failed to authenticate.
+
+Try it yourself on a market from that run:
+
+| | |
+|---|---|
+| market (public) | [`9tE7qFDnVug5iEeSdgtb6xg6MiAJyeXtLxDGqbfUtYh1`](https://explorer.solana.com/address/9tE7qFDnVug5iEeSdgtb6xg6MiAJyeXtLxDGqbfUtYh1?cluster=devnet) |
+| secret (private) | [`9ZyuZERpymZGpy68CFTornYViCY4LYYncrSYaFWGPaiL`](https://explorer.solana.com/address/9ZyuZERpymZGpy68CFTornYViCY4LYYncrSYaFWGPaiL?cluster=devnet) |
+
+The explorer shows the secret as an account owned by the delegation program with an all-zero body.
+That is not a rendering quirk — that is the whole design.
+
+---
+
 ## A gotcha worth knowing
 
 `solana program deploy` upgrades the program on the base layer, but the **ephemeral
@@ -373,14 +420,14 @@ bash scripts/rebuild.sh      # anchor build + stop-stack + local-stack
 
 Honest list. These are things we would say out loud in the demo.
 
-**1. The local stack does not enforce private reads the way the devnet TEE does.**
-`bash scripts/local-stack.sh` brings up a query-filtering service on `:6699`, and the SDK routes
-`TEE_PROVIDER_ENDPOINT` there so the code path is identical. But the local QFS is not a TEE: the
-confidentiality boundary — an unauthorised key being *refused* the body — is only fully exercised
-against `https://devnet-tee.magicblock.app`. The SDK's own `isRealTee()` returns `false` locally for
-exactly this reason. Locally you can verify that the permission exists, that `is_private` is true, and
-that the member list changes when `grant_reader` runs; you cannot verify that a stranger is turned
-away. Judge the privacy claim on devnet.
+**1. The privacy claim is proven on devnet, not on the local stack.**
+`bash scripts/local-stack.sh` brings up a query-filtering service on `:6699` and the SDK routes
+`TEE_PROVIDER_ENDPOINT` there, so the code path is identical — but the local QFS is not a TEE and it
+answers reads it should refuse. Locally you can verify the permission exists, that `is_private` is
+true, and that the member list changes when `grant_reader` runs; you cannot verify that a stranger is
+turned away. `scripts/prove-privacy.ts` reports those two assertions as `N/A` locally and as `PASS`
+against `https://devnet-tee.magicblock.app`, where they have been run — see
+[Proven on devnet](#proven-on-devnet). Do not read a green local run as proof of confidentiality.
 
 **2. Whisper IPO settles by author attestation, not by an oracle.**
 `resolve_rumor` requires the signer to equal `market.author` and takes the result as an argument. There

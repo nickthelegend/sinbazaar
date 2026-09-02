@@ -438,10 +438,12 @@ describe("SINBAZAAR", function () {
 
       let threw = false;
       try {
-        await z.authorProgramEr.methods
-          .finalizeMarket(m.marketId)
-          .accountsPartial({ payer: z.authority.publicKey, market: m.market, secret: m.secret })
-          .rpc();
+        await z.erCall(
+          z.authorProgramEr.methods
+            .finalizeMarket(m.marketId)
+            .accountsPartial({ payer: z.authority.publicKey, market: m.market, secret: m.secret }),
+          z.authority
+        );
       } catch (e: any) {
         threw = true;
         expect(String(e)).to.match(/NotSettled|not fully settled|0x/);

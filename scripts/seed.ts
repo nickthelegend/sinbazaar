@@ -279,21 +279,21 @@ const explorer = (key: PublicKey, layer: "base" | "er") =>
   encodeURIComponent(layer === "base" ? ENDPOINTS.base : ENDPOINTS.er);
 
 /**
- * The one thing the deployed program cannot do yet.
+ * A regression guard for a bug that is now fixed.
  *
- * `finalize_market` mutates `market.revealed` and then commits + undelegates in the
- * same instruction. The rollup hands the account to the delegation program inside
- * that CPI, so Anchor's automatic serialization at instruction exit writes to an
- * account the program no longer owns -> `ExternalAccountDataModified`. It only bites
- * for the two verdicts that actually write bytes (PublicLeak, RandomReveal); every
- * other verdict writes zeros over zeros, the data is unchanged, and finalize sails
- * through — which is why scripts/smoke.ts gets its SoleReader tombstone.
+ * `finalize_market` used to mutate `market.revealed` and then commit + undelegate in
+ * the same instruction. The rollup hands the account to the delegation program
+ * inside that CPI, so Anchor's automatic serialization at instruction exit wrote to
+ * an account the program no longer owned -> `ExternalAccountDataModified`. It only
+ * bit the two verdicts that actually write bytes (PublicLeak, RandomReveal); every
+ * other verdict writes zeros over zeros, the data is unchanged, and finalize sailed
+ * through — which is why it hid behind a passing SoleReader run.
  *
- * The fix is the single line every MagicBlock example carries before a commit (see
- * vendor/magicblock-engine-examples/session-keys/anchor/programs/anchor-counter-session/
- * src/lib.rs :: increment_and_undelegate): flush with
- * `ctx.accounts.market.exit(&crate::ID)?;` before building the intent bundle. This
- * script needs no edit once that ships — it will simply stop taking the fallback.
+ * The fix is the line every official example carries before a commit (see
+ * vendor/magicblock-engine-examples/counter, session-keys and rock-paper-scissor):
+ * flush with `ctx.accounts.market.exit(&crate::ID)?` before building the intent
+ * bundle. This guard stays so that if it ever regresses, the seed says so plainly
+ * instead of dying with an opaque rollup error.
  */
 const FINALIZE_REVEAL_BLOCKER =
   "finalize_market cannot publish text yet: it mutates market.revealed and then " +
@@ -367,25 +367,47 @@ interface Tail {
   blocker: string | null;
 }
 
-async function buildMarket(ctx: SeedCtx, spec: MarketSpec, marketId: BN): Promise<Built> {
+/** Another writer got to this id between the free-slot check and the create. */
+const isIdTaken = (e: any) =>
+  /already in use|custom program error: 0x0\b/i.test(String(e?.message || e));
+
+async function buildMarket(
+  ctx: SeedCtx,
+  spec: MarketSpec,
+  claimId: () => Promise<BN>
+): Promise<Built> {
   const { base, er, author, pBase, pEr, village, villagers } = ctx;
-  const market = marketPda(village, marketId);
-  const secret = secretPda(market);
 
   log(`\n[${spec.n}] ${spec.room} — "${spec.body}"`);
-  log(`     market_id=${marketId.toString()} market=${market.toBase58()}`);
 
   // ---- L1: the public shell and the empty secret -------------------------
-  await pBase.methods
-    .createMarket(
-      marketId,
-      Room[spec.room],
-      new BN(spec.durationSecs),
-      new BN(spec.ransomFloor),
-      new BN(spec.ransomSlope)
-    )
-    .accountsPartial({ author: author.publicKey, village, market })
-    .rpc();
+  // Claiming an id is a check-then-act, and this repo has more than one script
+  // pointed at the same village, so losing the race is a retry rather than a crash.
+  let marketId!: BN;
+  let market!: PublicKey;
+  for (let attempt = 0; ; attempt++) {
+    marketId = await claimId();
+    market = marketPda(village, marketId);
+    try {
+      await pBase.methods
+        .createMarket(
+          marketId,
+          Room[spec.room],
+          new BN(spec.durationSecs),
+          new BN(spec.ransomFloor),
+          new BN(spec.ransomSlope)
+        )
+        .accountsPartial({ author: author.publicKey, village, market })
+        .rpc();
+      break;
+    } catch (e: any) {
+      if (!isIdTaken(e) || attempt >= 16) throw e;
+      log(`     market_id=${marketId.toString()} was taken under us; trying the next one`);
+    }
+  }
+  const secret = secretPda(market);
+  log(`     market_id=${marketId.toString()} market=${market.toBase58()}`);
+
   await pBase.methods
     .createSecretShell(marketId)
     .accountsPartial({ author: author.publicKey, market, secret })
@@ -564,7 +586,8 @@ async function settleMarket(ctx: SeedCtx, built: Built): Promise<Tail> {
   );
 
   // finalize copies the body out of the private secret into the market's reveal
-  // buffer — only because the outcome authorised it — then commits and undelegates.
+  // buffer — only because the outcome authorised it — flushes the account, then
+  // commits and undelegates.
   try {
     await erRpc(
       er,
@@ -758,7 +781,7 @@ async function describeMarket(
     !!a.settle === !!b.settle ? b.durationSecs - a.durationSecs : a.settle ? -1 : 1
   );
   const built: Built[] = [];
-  for (const spec of order) built.push(await buildMarket(ctx, spec, await claimId()));
+  for (const spec of order) built.push(await buildMarket(ctx, spec, claimId));
 
   // Phase B. Now, with every live market already on the board.
   const tails = new Map<number, Tail>();
