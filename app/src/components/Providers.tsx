@@ -9,6 +9,7 @@
  *            against a local validator, which a browser extension cannot reach,
  *            so this is the default there.
  */
+import { useBackoffPoll } from "@/hooks/useBackoffPoll";
 import { Buffer } from "buffer";
 import React, {
   createContext,
@@ -48,8 +49,10 @@ export interface VillageWallet {
   signer: VillageSigner | null;
   address: string | null;
   /** Base-layer lamports held by the signing key itself, not by its purse. */
-  balance: number;
-  refresh: () => Promise<void>;
+  /** null when the base layer did not answer. Zero is a balance; null is not. */
+  balance: number | null;
+  /** Resolves to whether the base layer answered. */
+  refresh: () => Promise<boolean>;
   airdrop: () => Promise<void>;
   newBurner: () => void;
   /** False until the burner has been read out of localStorage on the client. */
@@ -68,7 +71,7 @@ function SignerProvider({ children }: { children: React.ReactNode }) {
   const adapter = useWallet();
   const [mode, setModeState] = useState<WalletMode>(IS_LOCALNET ? "burner" : "wallet");
   const [burner, setBurner] = useState<Keypair | null>(null);
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState<number | null>(0);
   const [ready, setReady] = useState(false);
   const airdropped = useRef(false);
 
@@ -107,15 +110,25 @@ function SignerProvider({ children }: { children: React.ReactNode }) {
 
   const address = signer?.publicKey.toBase58() ?? null;
 
-  const refresh = useCallback(async () => {
+  /**
+   * Returns whether the base layer answered.
+   *
+   * It used to swallow the failure and set the balance to zero, which told the
+   * villager they had no SOL when the truth was that nothing had been asked
+   * successfully. It also meant every caller believed the poll had succeeded, so
+   * the backoff never engaged and a dead validator was polled forever.
+   */
+  const refresh = useCallback(async (): Promise<boolean> => {
     if (!signer) {
       setBalance(0);
-      return;
+      return true;
     }
     try {
       setBalance(await baseConnection().getBalance(signer.publicKey));
+      return true;
     } catch {
-      setBalance(0);
+      setBalance(null);
+      return false;
     }
   }, [signer]);
 
@@ -134,16 +147,14 @@ function SignerProvider({ children }: { children: React.ReactNode }) {
     airdropped.current = false;
   }, []);
 
-  useEffect(() => {
-    void refresh();
-    const id = setInterval(() => void refresh(), 10_000);
-    return () => clearInterval(id);
-  }, [refresh]);
+  // Backs off while the base layer is unreachable. This provider is mounted on
+  // every route, so a fixed retry here is the loudest poller in the app.
+  useBackoffPoll(refresh, 10_000);
 
   // Localnet burners start empty and nobody wants to run solana airdrop by hand.
   useEffect(() => {
     if (!IS_LOCALNET || mode !== "burner" || !signer || airdropped.current) return;
-    if (balance >= LAMPORTS_PER_SOL) return;
+    if (balance === null || balance >= LAMPORTS_PER_SOL) return;
     airdropped.current = true;
     void airdrop().catch(() => {
       airdropped.current = false;

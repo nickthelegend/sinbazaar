@@ -9,6 +9,7 @@
  */
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useBackoffPoll } from "@/hooks/useBackoffPoll";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BN } from "@coral-xyz/anchor";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
@@ -93,11 +94,19 @@ export default function MarketPage() {
     }
   }, [wallet.signer]);
 
-  useEffect(() => {
-    void refreshPurse();
-    const id = setInterval(() => void refreshPurse(), 5000);
-    return () => clearInterval(id);
-  }, [refreshPurse]);
+  useBackoffPoll(
+    useCallback(async () => {
+      if (!wallet.signer) return true;
+      try {
+        setPurse(await readPurse(wallet.signer.publicKey));
+        return true;
+      } catch {
+        setPurse(null);
+        return false;
+      }
+    }, [wallet.signer]),
+    5000
+  );
 
   const report = useCallback((id: string, state: StepState, detail?: string) => {
     setFlowStates((prev) => ({ ...prev, [id]: state }));

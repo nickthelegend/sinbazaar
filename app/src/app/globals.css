@@ -1197,7 +1197,10 @@ kbd,
 }
 
 .branch-arrow {
-  color: var(--dim);
+  /* --dim lands at 4.2:1 once the live branch's amber wash is composited under
+     it, which is under AA. The arrow is decorative but it is still rendered
+     text, so it takes the secondary ink instead. */
+  color: var(--muted);
 }
 
 .branch-then {
@@ -1208,11 +1211,11 @@ kbd,
   letter-spacing: -0.012em;
 }
 
-.branch.active {
+.branch.live {
   background: var(--amber-wash);
 }
 
-.branch.active .branch-then {
+.branch.live .branch-then {
   color: var(--amber);
 }
 
@@ -2172,4 +2175,53 @@ textarea {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Surfaces whose headline is a sentence, not a title
+ *
+ * A market's headline is the room's own rule, which runs to a dozen words. At
+ * the hero's 64px that is two lines of display type doing the job of a caption,
+ * so it gets its own step down. This existed before the aurora rewrite and was
+ * lost with it; the market page has been shouting its rule ever since.
+ * ------------------------------------------------------------------------- */
+
+.market-head h1 {
+  font-size: clamp(26px, 3.2vw, 40px);
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  max-width: 22ch;
+}
+
+/* ---------------------------------------------------------------------------
+ * A destructive keycap
+ *
+ * `resolve the market` fires an irreversible chain: expire, VRF, settle, close,
+ * finalize, tombstone. It was rendering as an ordinary key, identical to
+ * "fund the purse", which gives a one-way action no affordance at all. It stays
+ * a keycap, because it is still the primary action of that panel, and takes the
+ * aurora's crimson so it reads as the one that cannot be taken back.
+ * ------------------------------------------------------------------------- */
+
+button.act.danger,
+.keycap.danger {
+  background: var(--crimson);
+  /* Near-black rather than white: white on this crimson is 3.5:1 and fails AA
+     at 14px. Dark ink reaches 5.4:1 and keeps the keycap's own language, which
+     is dark type on a bright fill. */
+  color: #1a0406;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.85),
+    0 0 14px rgba(255, 47, 58, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+}
+
+button.act.danger:hover:not(:disabled),
+.keycap.danger:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.85),
+    0 0 22px rgba(255, 47, 58, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24);
 }

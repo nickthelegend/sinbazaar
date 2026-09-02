@@ -26,31 +26,69 @@ export function usePulse(intervalMs = 5000): Pulse {
   const [base, setBase] = useState<Ping>(EMPTY);
   const [er, setEr] = useState<Ping>(EMPTY);
   const alive = useRef(true);
+  const failed = useRef(false);
 
   useEffect(() => {
     alive.current = true;
+    let stop: (() => void) | null = null;
 
-    const stop = subscribeSlot((s) => {
-      if (!alive.current) return;
-      setSlot(s);
-      setLive(true);
-    });
-
+    /**
+     * Subscribe only once a read has actually succeeded, and drop the socket
+     * again the moment the rollup stops answering.
+     *
+     * `onSlotChange` against a dead validator reconnects forever and fills the
+     * console with failures, on every route, because this hook lives in the
+     * footer. Measured with the cluster down: a steady stream of
+     * ERR_CONNECTION_REFUSED that says nothing the page has not already said in
+     * words.
+     */
     const measure = async () => {
       const r = await pingBoth();
       if (!alive.current) return;
       setBase(r.base);
       setEr(r.er);
-      // A slot from the RPC is still a slot; it just did not arrive by push.
-      setSlot((prev) => (prev === null ? r.er.slot : prev));
+
+      failed.current = r.er.error && r.base.error;
+      if (r.er.error) {
+        if (stop) {
+          stop();
+          stop = null;
+        }
+        setLive(false);
+        setSlot(null);
+        return;
+      }
+
+      setSlot((prev) => prev ?? r.er.slot);
+      if (!stop) {
+        stop = subscribeSlot((s) => {
+          if (!alive.current) return;
+          setSlot(s);
+          setLive(true);
+        });
+      }
     };
-    void measure();
-    const id = setInterval(() => void measure(), intervalMs);
+
+    // Same backoff as the feed: an unreachable rollup is retried less and less
+    // often rather than every few seconds forever.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let failures = 0;
+
+    const cycle = async () => {
+      const started = Date.now();
+      await measure();
+      if (!alive.current) return;
+      failures = failed.current ? failures + 1 : 0;
+      const wait = failures === 0 ? intervalMs : Math.min(intervalMs * 2 ** failures, 60_000);
+      timer = setTimeout(() => void cycle(), Math.max(0, wait - (Date.now() - started)));
+    };
+
+    void cycle();
 
     return () => {
       alive.current = false;
-      clearInterval(id);
-      stop();
+      if (timer) clearTimeout(timer);
+      if (stop) stop();
     };
   }, [intervalMs]);
 

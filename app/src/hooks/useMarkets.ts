@@ -25,6 +25,7 @@ function usePolled<T>(load: () => Promise<T>, initial: T, intervalMs: number): F
   const alive = useRef(true);
   const loader = useRef(load);
   loader.current = load;
+  const errRef = useRef<string | null>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -32,20 +33,45 @@ function usePolled<T>(load: () => Promise<T>, initial: T, intervalMs: number): F
       if (!alive.current) return;
       setData(next);
       setError(null);
+      errRef.current = null;
     } catch (err) {
-      if (alive.current) setError(err instanceof Error ? err.message : String(err));
+      if (alive.current) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setError(msg);
+        errRef.current = msg;
+      }
     } finally {
       if (alive.current) setLoading(false);
     }
   }, []);
 
+  /**
+   * Poll, backing off while the cluster is unreachable.
+   *
+   * A tab left open against a dead validator otherwise hammers it at a fixed
+   * rate forever, and every refused attempt is a console entry. Backing off to
+   * a minute keeps the page responsive when the cluster returns without
+   * pretending nothing is wrong in the meantime.
+   */
   useEffect(() => {
     alive.current = true;
-    void reload();
-    const id = setInterval(() => void reload(), intervalMs);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let failures = 0;
+
+    const cycle = async () => {
+      const before = Date.now();
+      await reload();
+      if (!alive.current) return;
+      failures = errRef.current ? failures + 1 : 0;
+      const wait = failures === 0 ? intervalMs : Math.min(intervalMs * 2 ** failures, 60_000);
+      const spent = Date.now() - before;
+      timer = setTimeout(() => void cycle(), Math.max(0, wait - spent));
+    };
+
+    void cycle();
     return () => {
       alive.current = false;
-      clearInterval(id);
+      if (timer) clearTimeout(timer);
     };
   }, [reload, intervalMs]);
 

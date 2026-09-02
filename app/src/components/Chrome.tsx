@@ -61,6 +61,9 @@ export function TopNav() {
               key={item.href}
               href={item.href}
               className={active ? "nav-link active" : "nav-link"}
+              // A class only changes how the link looks. Without aria-current a
+              // screen reader has no way to know which page it is already on.
+              aria-current={active ? "page" : undefined}
             >
               {item.label}
             </Link>
@@ -112,7 +115,9 @@ function WalletStall() {
         <div className="burner-readout">
           <code className="key">{wallet.address ? shortKey(wallet.address, 4) : "…"}</code>
           <span className="balance">
-            {(wallet.balance / LAMPORTS_PER_SOL).toFixed(2)} SOL
+            {wallet.balance === null
+              ? "balance unknown"
+              : `${(wallet.balance / LAMPORTS_PER_SOL).toFixed(2)} SOL`}
           </span>
           <button type="button" className="chip" onClick={onAirdrop} disabled={busy}>
             {busy ? "…" : "airdrop"}

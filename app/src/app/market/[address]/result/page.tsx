@@ -187,8 +187,10 @@ export default function ResultPage() {
             <div className="fact">
               <div className="lbl">sole reader</div>
               <div className="val">
+                {/* The system program address is the program's "nobody". Saying
+                    so beats printing a placeholder that looks like a value. */}
                 {market.soleReader === "11111111111111111111111111111111"
-                  ? ", "
+                  ? "nobody"
                   : shortKey(market.soleReader, 6)}
               </div>
             </div>

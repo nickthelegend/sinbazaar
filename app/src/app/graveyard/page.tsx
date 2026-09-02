@@ -189,7 +189,11 @@ export default function GraveyardPage() {
                   </div>
                   <div className="fact">
                     <div className="lbl">randomness</div>
-                    <div className="val">{tomb.randomness === "0" ? ", " : tomb.randomness}</div>
+                    {/* PublicLeak short-circuits without VRF, so a zero here is
+                        not a missing value, it is an outcome that needed none. */}
+                    <div className="val">
+                      {tomb.randomness === "0" ? "not needed" : tomb.randomness}
+                    </div>
                   </div>
                 </div>
 

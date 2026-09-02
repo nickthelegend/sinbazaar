@@ -25,6 +25,17 @@ import { LIVE_ROOMS } from "@/lib/rooms";
 const MAX_BODY = 180;
 const MAX_REDACTED = 96;
 
+/**
+ * The program's limits are in BYTES, not characters.
+ *
+ * `seal_secret` refuses anything over 180 bytes with `InvalidBodyLength`, and a
+ * UTF-8 confession is not one byte per character: an accented letter is two, a
+ * CJK character is three, an emoji four. Counting `String.length` let a
+ * confession in any non-ASCII language read as comfortably under the limit and
+ * then be rejected on chain, after five transactions had already been signed.
+ */
+const byteLen = (s: string) => new TextEncoder().encode(s).length;
+
 /** Fiction mode. Startup village sins only. */
 const SEEDS: { body: string; redacted: string }[] = [
   {
@@ -85,7 +96,13 @@ export default function ConfessPage() {
       setError("no key. Pick burner mode, or connect a wallet.");
       return;
     }
-    if (body.trim().length === 0 || body.length > MAX_BODY) {
+    // seal_secret checks the redacted line too, so catch it here rather than
+    // after five transactions have already been signed.
+    if (byteLen(redacted) > MAX_REDACTED) {
+      setError(`the redacted sentence has to be at most ${MAX_REDACTED} bytes`);
+      return;
+    }
+    if (body.trim().length === 0 || byteLen(body) > MAX_BODY) {
       setError(`the body has to be 1..${MAX_BODY} bytes`);
       return;
     }
@@ -152,7 +169,7 @@ export default function ConfessPage() {
 
           <label className="field">
             <span className="lbl">
-              body · {body.length}/{MAX_BODY}
+              body · {byteLen(body)}/{MAX_BODY}
             </span>
             <textarea
               value={body}
@@ -169,7 +186,7 @@ export default function ConfessPage() {
 
           <label className="field">
             <span className="lbl">
-              one redacted sentence · {redacted.length}/{MAX_REDACTED}
+              one redacted sentence · {byteLen(redacted)}/{MAX_REDACTED}
             </span>
             <input
               value={redacted}

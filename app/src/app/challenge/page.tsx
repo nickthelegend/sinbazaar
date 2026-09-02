@@ -255,13 +255,14 @@ export default function ChallengePage() {
               <select value={chosen} onChange={(e) => setTarget(e.target.value)}>
                 {candidates.map((m) => (
                   <option key={m.address} value={m.address}>
-                    {shortKey(m.address)} · {m.status} · {m.bidCount} bids
+                    {shortKey(m.address)} · {m.status} · {m.bidCount}{" "}
+                    {m.bidCount === 1 ? "bid" : "bids"}
                   </option>
                 ))}
               </select>
               <span className="hint">
                 Its secret lives at{" "}
-                <code>{chosen ? secretPda(new PublicKey(chosen)).toBase58() : ", "}</code>
+                <code>{chosen ? secretPda(new PublicKey(chosen)).toBase58() : "no target selected"}</code>
               </span>
             </label>
             <div className="actions">
