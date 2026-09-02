@@ -52,6 +52,21 @@ export function defaultWsUrl(httpUrl: string): string {
   return url.toString().replace(/\/$/, "");
 }
 
+/**
+ * Explorer link for a given layer.
+ *
+ * The rollup is a different chain with its own accounts, so a market that is
+ * currently delegated does not exist at that address on the base explorer in the
+ * form you are looking at. Pointing both at the base layer quietly sent people
+ * to a stale snapshot.
+ */
+export function explorerUrlFor(address: string, layer: "base" | "er" = "base"): string {
+  const endpoint = layer === "er" ? ER_RPC : BASE_RPC;
+  return `https://explorer.solana.com/address/${address}?cluster=custom&customUrl=${encodeURIComponent(
+    endpoint
+  )}`;
+}
+
 /** Explorer link for the base layer. Local validators have no hosted explorer. */
 export function explorerUrl(address: string): string {
   if (IS_LOCALNET) {

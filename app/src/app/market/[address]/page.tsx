@@ -17,7 +17,9 @@ import { useVillageWallet } from "@/components/Providers";
 import { RuleBox } from "@/components/RuleBox";
 import { useMarket } from "@/hooks/useMarkets";
 import { useNow } from "@/hooks/useNow";
-import { explorerUrl } from "@/lib/config";
+import { explorerUrlFor } from "@/lib/config";
+import { Copyable } from "@/components/Copyable";
+import { secretPda } from "@/lib/pdas";
 import {
   BID_STEPS,
   errorText,
@@ -504,20 +506,46 @@ export default function MarketPage() {
           <div className="panel">
             <h3>Addresses</h3>
             <div className="lbl">market</div>
-            <div className="mono-block">{market.address}</div>
+            <div className="mono-block">
+              <Copyable value={market.address} label="market address" />
+            </div>
+            <div className="lbl" style={{ marginTop: 10 }}>
+              secret
+            </div>
+            <div className="mono-block">
+              <Copyable
+                value={secretPda(new PublicKey(market.address)).toBase58()}
+                label="secret address"
+              />
+            </div>
             <div className="lbl" style={{ marginTop: 10 }}>
               commitment
             </div>
-            <div className="mono-block">{fullHash(market.commitment)}</div>
+            <div className="mono-block">
+              <Copyable value={fullHash(market.commitment)} label="commitment" />
+            </div>
             <div className="actions" style={{ marginTop: 12 }}>
+              {/* A delegated market does not exist at this address on the base
+                  explorer in the shape you are looking at, so the link follows
+                  the layer the account is actually on. */}
               <a
                 className="explorer"
-                href={explorerUrl(market.address)}
+                href={explorerUrlFor(market.address, market.layer)}
                 target="_blank"
                 rel="noreferrer"
               >
-                view on solana explorer
+                {market.layer === "er" ? "view on the rollup" : "view on solana"}
               </a>
+              {market.layer === "er" ? (
+                <a
+                  className="explorer"
+                  href={explorerUrlFor(market.address, "base")}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  and its base-layer record
+                </a>
+              ) : null}
             </div>
           </div>
         </div>
