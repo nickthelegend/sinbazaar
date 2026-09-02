@@ -149,6 +149,7 @@ pub mod sinbazaar {
         market.tombstoned = false;
         market.revealed_len = 0;
         market.revealed = [0u8; MAX_TOMB_BODY];
+        market.revealed_salt = [0u8; 32];
         market.bump = ctx.bumps.market;
 
         let village = &mut ctx.accounts.village;
@@ -311,9 +312,11 @@ pub mod sinbazaar {
         if market.outcome.reveals_text() {
             tomb.revealed_len = market.revealed_len;
             tomb.revealed = market.revealed;
+            tomb.revealed_salt = market.revealed_salt;
         } else {
             tomb.revealed_len = 0;
             tomb.revealed = [0u8; MAX_TOMB_BODY];
+            tomb.revealed_salt = [0u8; 32];
         }
 
         let market_key = market.key();
@@ -1063,9 +1066,15 @@ pub mod sinbazaar {
                 .ok_or(SinError::MathOverflow)?;
         }
 
-        // Whatever the bidder does not get back belongs to the author.
+        // Whatever the bidder does not get back belongs to the author — except in a
+        // two-sided book, where the losing stake pays the WINNERS and is already
+        // inside their payout. Crediting it to the author as well would promise
+        // lamports the escrow does not hold; `close_book`'s invariant catches it.
         let staked = if bid.funded { bid.amount } else { 0 };
-        let forfeited = staked.saturating_sub(payout.min(staked));
+        let forfeited = match market_snapshot.outcome {
+            Outcome::Forgiven | Outcome::Slashed => 0,
+            _ => staked.saturating_sub(payout.min(staked)),
+        };
 
         {
             let purse = &mut ctx.accounts.purse;
@@ -1173,6 +1182,7 @@ pub mod sinbazaar {
         );
 
         let outcome = ctx.accounts.market.outcome;
+        let salt = ctx.accounts.secret.salt;
         match outcome {
             Outcome::PublicLeak => {
                 let len = ctx.accounts.secret.body_len as usize;
@@ -1181,6 +1191,7 @@ pub mod sinbazaar {
                 market.revealed = [0u8; MAX_TOMB_BODY];
                 market.revealed[..len].copy_from_slice(&body[..len]);
                 market.revealed_len = len as u16;
+                market.revealed_salt = salt;
                 msg!("PUBLIC_LEAK: {} bytes released to the graveyard", len);
             }
             Outcome::RandomReveal => {
@@ -1190,6 +1201,7 @@ pub mod sinbazaar {
                 market.revealed = [0u8; MAX_TOMB_BODY];
                 market.revealed[..len].copy_from_slice(&red[..len]);
                 market.revealed_len = len as u16;
+                market.revealed_salt = salt;
                 msg!("RANDOM_REVEAL: {} redacted bytes released", len);
             }
             _ => {
@@ -1198,6 +1210,7 @@ pub mod sinbazaar {
                 let market = &mut ctx.accounts.market;
                 market.revealed = [0u8; MAX_TOMB_BODY];
                 market.revealed_len = 0;
+                market.revealed_salt = [0u8; 32];
                 msg!("{:?}: nothing published, hash only", outcome);
             }
         }
@@ -1374,6 +1387,10 @@ fn charge_session<'info>(
 /// Selection walks the READ bids in recorded order; `index` is assigned at bid
 /// time, so every cranker derives the same winner from the same randomness.
 fn is_chosen_bid(market: &Market, bid: &Bid) -> bool {
+    // A bid that never paid cannot win anything — least of all read access.
+    if !bid.funded {
+        return false;
+    }
     match market.outcome {
         Outcome::SoleReader => {
             if market.read_bid_count == 0 || bid.side != BidSide::Read {

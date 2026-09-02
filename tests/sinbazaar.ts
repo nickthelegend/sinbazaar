@@ -6,6 +6,7 @@
  * Then:                . ./scripts/local-env.sh && npm test
  */
 import { expect } from "chai";
+import { createHash } from "crypto";
 import { Transaction, TransactionInstruction, SystemProgram } from "@solana/web3.js";
 import { permissionPdaFromAccount } from "@magicblock-labs/ephemeral-rollups-sdk";
 import {
@@ -199,6 +200,10 @@ describe("SINBAZAAR", function () {
       expect(outcomeName(tomb.outcome)).to.equal("buried");
       expect(tomb.revealedLen).to.equal(0);
       expect(tombText(tomb)).to.equal("");
+      expect(
+        Buffer.from(tomb.revealedSalt).every((b: number) => b === 0),
+        "a buried market publishes no salt — it would only help a brute force"
+      ).to.equal(true);
       expect(Buffer.from(tomb.commitmentHash).equals(m.expectedHash)).to.equal(true);
 
       // The confession is still in the rollup, still private, still author-only.
@@ -259,6 +264,17 @@ describe("SINBAZAAR", function () {
       expect(outcomeName(tomb.outcome)).to.equal("publicLeak");
       expect(tombText(tomb)).to.equal(body);
       expect(Buffer.from(tomb.commitmentHash).equals(m.expectedHash)).to.equal(true);
+
+      // The commitment has to be openable by someone who only ever sees L1. The
+      // salt otherwise lives solely inside the private secret, so a reveal without
+      // it would be a claim nobody could check.
+      const publishedSalt = Buffer.from(tomb.revealedSalt);
+      expect(publishedSalt.equals(m.salt), "the salt is published with the reveal").to.equal(true);
+      expect(
+        createHash("sha256").update(Buffer.from(tombText(tomb), "utf8")).update(publishedSalt).digest()
+          .equals(Buffer.from(tomb.commitmentHash)),
+        "sha256(revealed || salt) reproduces the published commitment"
+      ).to.equal(true);
     });
   });
 

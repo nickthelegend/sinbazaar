@@ -34,7 +34,7 @@ import {
   type WalletMode,
 } from "@/lib/burner";
 
-import "@solana/wallet-adapter-react-ui/styles.css";
+import "@/styles/wallet-adapter.css";
 
 // The Anchor browser build reaches for a global Buffer at call time.
 if (typeof globalThis !== "undefined") {

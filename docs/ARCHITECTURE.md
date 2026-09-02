@@ -20,11 +20,12 @@ Contents:
 
 | Constant | Value | Why |
 |---|---|---|
-| `MAX_BIDDERS` | `8` | Bounds the ER rent the market PDA has to sponsor, and bounded the original single-transaction resolution design. Enforced against `market.bid_count` in `place_bid`. |
+| `MAX_BIDDERS` | `8` | Bounds the ER rent the market PDA has to sponsor, and bounded the original single-transaction resolution design. Enforced against `market.bid_count` in `check_biddable`, which both bid instructions call. |
 | `MAX_BODY_LEN` | `180` | The confession body. Fixed-size array inside `Secret`. |
 | `MAX_REDACTED_LEN` | `96` | The author-supplied single sentence — the most a `RandomReveal` ever publishes. |
 | `MAX_TOMB_BODY` | `= MAX_BODY_LEN` (180) | Reveal buffer size on both `Market` and `Tombstone`. |
 | `SPONSOR_FLOAT` | `40_000_000` lamports | Transferred author → market PDA at `create_market`, on top of `ephemeral_accounts::rent(EphemeralPermission::size_of(MAX_BIDDERS + 2))`. Pays for the market's own permission, the secret's permission, and one ephemeral account + permission per bidder. |
+| `VRF_GRACE_SECS` | `120` | How long past `expires_at` a market may sit in `VrfPending` before `retry_vrf` may return it to `Expired`. |
 
 Seeds: `village`, `market`, `secret`, `bid`, `purse`, `session`, `tomb`.
 
@@ -40,7 +41,7 @@ keeps its original program owner. "Ephemeral" means it is born in the ER and nev
 | **Village** | `[b"village", authority]` | L1 only | Never | None |
 | **Market** | `[b"market", village, market_id.to_le_bytes()]` | L1 → ER → L1 | Yes, by `delegate_market`; returns via `commit_and_undelegate` in `finalize_market` | **Public.** `is_private = false`, `members = [market.author]`. Created by `init_market_permission`. Hash, timer, pots and status are meant to be readable. |
 | **Secret** | `[b"secret", market]` | L1 (empty) → ER (filled) | Yes, by `delegate_secret`. **Never undelegated.** | **Private for confession rooms.** `init_secret_permission` passes `is_private = market.room.is_confession_market()` — true for `GuiltMarket` and `BlackmailEscrow`, false for `WhisperIpo`. `members = [secret.author]`, becoming `[author, sole_reader]` after `grant_reader`. |
-| **Bid** | `[b"bid", market, bidder]` | ER only | n/a — ephemeral account (`#[ephemeral_accounts]`, `eph`), sponsored by the market PDA | **Private.** `is_private = true`, `members = [bid.bidder]`. Created by `init_bid_permission`; closed by `settle_bid` before the bid account itself. |
+| **Bid** | `[b"bid", market, bidder]` | ER only | n/a — ephemeral account (`#[ephemeral_accounts]`, `eph`), sponsored by the market PDA | **Private.** `is_private = true`, `members = [bid.bidder]`. Created by `init_bid_permission`; closed by `close_bid`, which closes the permission before the bid account itself. |
 | **Purse** | `[b"purse", owner]` | L1 → ER → L1 | Yes, by `delegate_purse`; returns via `undelegate_purse` (refuses while `locked != 0`) | **None.** The program creates no permission for a purse. |
 | **SessionScope** | `[b"session", market, owner]` | ER only | n/a — ephemeral account, sponsored by the market PDA | **None.** |
 | **Tombstone** | `[b"tomb", market]` | L1 only | Never | None. Written once by `write_tombstone`; never deleted. |
@@ -70,7 +71,8 @@ Notes that matter:
                                 create_market
                                       |
                                       v
-                                 [ Open ]  <-- place_bid + fund_bid, seal_secret,
+                                 [ Open ]  <-- place_bid (or place_bid_with_session)
+                                      |         + fund_bid, seal_secret,
                                       |         open_session / revoke_session
                                       |
                     expire_market  (permissionless, requires now >= expires_at)
@@ -85,19 +87,22 @@ Notes that matter:
       status  = Resolved  ------------------+          request_resolution_vrf
       (no randomness needed)                |                        |
                                             |                        v
-                                            |                 [ VrfPending ]
-                                            |                        |
-                                            |     callback_resolve   |  <-- signed by the VRF
-                                            |     (MagicBlock VRF)   |      program identity PDA
-                                            |                        |
-                                            +------------------------+
-                                                         |
+                                            |                 [ VrfPending ] ----------.
+                                            |                        |                 |
+                                            |     callback_resolve   |                 |  retry_vrf
+                                            |     (MagicBlock VRF),  |                 |  permissionless,
+                                            |     signed by the VRF  |                 |  only past
+                                            |     program identity   |                 |  expires_at + 120s
+                                            |                        |                 |
+                                            +------------------------+                 v
+                                                         |                     back to [ Expired ]
                                                          v
                                                    [ Resolved ]
                                                          |
-                                  settle_bid  x bid_count  (permissionless)
+                    settle_bid + close_bid  x bid_count  (permissionless, one tx per bid)
                                                          |
-                                       close_book  (closed_bid_count == bid_count)
+                            close_book  (closed_bid_count == bid_count
+                                         AND escrow_lamports == author_payout)
                                                          |
                                                          v
                                                    [ Settled ]
@@ -116,9 +121,14 @@ Notes that matter:
 ```
 
 **Whisper IPO takes the side door.** `resolve_rumor` accepts status `Open` **or** `Expired` and jumps
-straight to `Resolved` with `Forgiven` (result 1) or `Slashed` (result 2). `callback_resolve` explicitly
-returns `WrongRoom` for any room that is not `GuiltMarket` or `BlackmailEscrow`, so a rumor market can
-never be resolved by randomness.
+straight to `Resolved` with `Forgiven` (result 1) or `Slashed` (result 2). It never touches
+`VrfPending`, and it must not be able to: `request_resolution_vrf` requires
+`market.room.is_confession_market()`, and `callback_resolve` returns `WrongRoom` for anything that is
+not `GuiltMarket` or `BlackmailEscrow`. Both checks are load-bearing. Without the first, anyone could
+push a rumor market into `VrfPending`, where the callback would reject it as `WrongRoom` and
+`resolve_rumor` — which only accepts `Open | Expired` — could no longer reach it. `retry_vrf` would
+now dig such a market out after the grace period, but the guard is the real fix: the market never gets
+stuck, rather than getting stuck for two minutes at a time at any griefer's convenience.
 
 **Outcome selection in `callback_resolve`:**
 
@@ -149,11 +159,19 @@ _ => return err!(SinError::WrongRoom),
 `write_tombstone` then repeats the check as defense in depth: `if market.outcome.reveals_text()` copy,
 `else` write zeros. `Outcome::reveals_text()` is `matches!(self, PublicLeak | RandomReveal)`.
 
+**And one line that has to be there:** `ctx.accounts.market.exit(&crate::ID)?` immediately before the
+intent bundle. `commit_and_undelegate` hands the account to the delegation program *inside* this
+instruction, so Anchor's automatic serialization at instruction exit would then be writing to an
+account the program no longer owns — `ExternalAccountDataModified`. Flushing first is the pattern
+`counter`, `session-keys` and `rock-paper-scissor` all use in magicblock-engine-examples. It only
+bites when the instruction actually dirtied the account, which here is exactly the two reveal
+verdicts, so a `SoleReader` run passes right over it. See [ASSUMPTIONS.md](../ASSUMPTIONS.md).
+
 ---
 
 ## Instructions by layer
 
-28 program instructions. (`process_undelegation` also appears in the IDL — it is injected by
+31 program instructions. (`process_undelegation` also appears in the IDL — it is injected by
 `#[ephemeral]`, not hand-written.)
 
 **Base layer (Solana L1)** — `initialize_village`, `create_market`, `create_secret_shell`,
@@ -163,22 +181,31 @@ _ => return err!(SinError::WrongRoom),
 **Ephemeral Rollup — permissions** — `init_market_permission`, `init_secret_permission`, `seal_secret`,
 `grant_reader`.
 
-**Ephemeral Rollup — sessions and bidding** — `open_session`, `revoke_session`, `place_bid`, `fund_bid`,
-`init_bid_permission`.
+**Ephemeral Rollup — sessions and bidding** — `open_session`, `revoke_session`, `place_bid`,
+`place_bid_with_session`, `fund_bid`, `init_bid_permission`.
 
 **Ephemeral Rollup — expiry, randomness, resolution** — `expire_market`, `request_resolution_vrf`,
-`callback_resolve`, `resolve_rumor`, `settle_bid`, `close_book`, `finalize_market`, `commit_market`,
-`undelegate_purse`.
+`callback_resolve`, `retry_vrf`, `resolve_rumor`, `settle_bid`, `close_bid`, `close_book`,
+`finalize_market`, `commit_market`, `undelegate_purse`.
 
 **Permissionless cranks** (anyone may call; the destination or the content is pinned by state):
-`expire_market`, `settle_bid` (funds only ever move to the bidder's own purse), `close_book`,
-`write_tombstone` (content fixed by market state).
+`expire_market`, `retry_vrf` (returns a stalled market to `Expired`; decides nothing), `settle_bid`
+(funds only ever move to the bidder's own purse), `close_bid`, `close_book`, `write_tombstone`
+(content fixed by market state).
 
-**Bidding is two instructions in one transaction.** `place_bid` creates and records the bid; `fund_bid`
-moves the lamports `purse -> market`. They are split because creating an ephemeral account is a CPI to
-the magic program, and keeping the program's own lamport arithmetic in its own instruction makes each
-instruction's balance change trivially auditable. The client sends them in a single atomic transaction.
-An unfunded bid stays `funded = false`, contributes to no pot, and settles for zero.
+**Three splits, two reasons.** `place_bid` + `fund_bid`, and `settle_bid` + `close_bid`, are
+separate instructions the client sends in one atomic transaction. The runtime refuses a single
+instruction that both CPIs the magic program for an ephemeral account **and** moves lamports itself:
+the magic program settles its rent outside the instruction's own accounting, so the balance check sees
+an unmatched transfer and fails with `UnbalancedInstruction` — "sum of account balances before and
+after instruction do not match". So the ephemeral-account CPI goes in one instruction and the escrow
+move in the other. An unfunded bid stays `funded = false`, contributes to no pot, and settles for zero.
+
+The third split has a different cause. `place_bid` and `place_bid_with_session` are two instructions
+rather than one with an optional account, because the session scope has to be **written** to charge the bid against
+its ceiling, and the ER rejects a writable account that is not delegated. The wallet-signed path
+therefore must not carry a writable session account it never uses. `place_bid` additionally requires
+`signer == bidder`; only the session path lets a third key sign.
 
 ---
 
@@ -260,10 +287,15 @@ _ => false,
 `market.randomness` is `vrf_sdk::rnd::random_u64(&randomness)` over the 32 bytes the oracle delivered,
 kept on the market and copied to the tombstone so the draw is auditable after the fact.
 
-`bid.index` is assigned in `place_bid` from `market.bid_count` (arrival order across all bids).
-`bid.read_rank` is assigned in `place_bid` from `market.read_bid_count`, and is `u8::MAX` for non-READ
-bids. Note that `read_bid_count` is incremented in **`fund_bid`**, not `place_bid` — see
-[ASSUMPTIONS.md](../ASSUMPTIONS.md) for what that means when the two are not sent together.
+`bid.index` is assigned in `record_bid` — which both bid instructions call — from `market.bid_count`,
+so it is arrival order across all bids, funded or not. `bid.read_rank` is written as `u8::MAX` there
+and only assigned for real in **`fund_bid`**, from `market.read_bid_count` in the same breath as that
+counter advances. Rank and count therefore cannot drift apart, and a READ bid that was opened but
+never funded keeps `u8::MAX` — a value `randomness % read_bid_count` can never produce, since
+`read_bid_count <= MAX_BIDDERS`. An unfunded READ bid cannot be drawn as the sole reader.
+
+`Inherited` is the exception worth knowing: it draws on `bid.index` against `market.bid_count`, both of
+which count unfunded bids. See [ASSUMPTIONS.md](../ASSUMPTIONS.md).
 
 When `settle_bid` finds the chosen bid it writes `market.sole_reader = bid.bidder`. `grant_reader` then
 refuses to run unless the outcome is `SoleReader` or `Inherited` **and** `sole_reader != Pubkey::default()`,
@@ -311,16 +343,21 @@ None of these come from MagicBlock. They are `require!`s in `lib.rs`.
 - **Who may become the reader.** `grant_reader` requires outcome ∈ {`SoleReader`, `Inherited`} and a
   non-default `sole_reader`, and the winner index is derived from the recorded randomness, not chosen
   by a caller.
-- **Session scope.** `authorise_bidder` re-derives the session PDA from
-  `[b"session", market, bidder]`, checks the account is owned by this program and non-empty, then
+- **Session scope.** On the `place_bid_with_session` path, `charge_session` re-derives the session PDA
+  from `[b"session", market, bidder]`, checks the account is owned by this program and non-empty, then
   validates `!revoked`, `session_key == signer`, `market == this market`, `now < expires_at`, and
-  `spent + amount <= max_spend` — writing `spent` back. The client cannot widen its own scope.
+  `spent + amount <= max_spend` — writing `spent` back. The client cannot widen its own scope. Plain
+  `place_bid` carries no session account at all and instead requires `signer == bidder`.
 - **Bid legality.** Side must match the room (`Yes`/`No` only in `WhisperIpo`, `Seal`/`Read`
   everywhere else), `amount > 0`, market `Open` and `now < expires_at`, `bid_count < MAX_BIDDERS`, and
   the purse must be the bidder's own with sufficient `available`.
 - **Settlement completeness.** `close_book` refuses to mark a market `Settled` until
   `closed_bid_count == bid_count`, which in turn gates `finalize_market`. Escrow cannot be stranded by
   undelegating early. (This is the `sealed-auction` example's cleanup gate.)
+- **Escrow adds up.** `close_book` also requires `escrow_lamports == author_payout` (`EscrowNotEmpty`).
+  Once every bid is closed, the only escrow left must be what the author is owed — which turns "the
+  refunds balance" from an invariant we reasoned about into one the program checks before it lets the
+  market home.
 - **Purse safety.** `withdraw_purse` and `undelegate_purse` both refuse while `locked != 0`.
 - **Arithmetic.** Every pot, payout and balance mutation uses `checked_*` or `saturating_*`.
 
@@ -333,8 +370,13 @@ Say these out loud rather than let a judge discover them.
 - **A granted reader can copy the text.** Once a key is on the member list, the plaintext is in that
   person's client. No permission change takes it back.
 - **Outside a real TEE, the validator operator can read ER state.** That is exactly the situation on the
-  local stack, where `TEE_PROVIDER_ENDPOINT` points at a query-filtering service on `localhost:6699`.
-  The privacy assertion is only fully exercised against `https://devnet-tee.magicblock.app`.
+  local stack, where `TEE_PROVIDER_ENDPOINT` points at a query-filtering service on `localhost:6699`,
+  which answers reads a TEE refuses. The refusal is only exercised against
+  `https://devnet-tee.magicblock.app` — where `scripts/prove-privacy.ts` has been run, and where both
+  refusals passed: an unauthenticated rollup read, and a stranger holding a valid TEE token. Output and
+  explorer links are in the README's [Proven on devnet](../README.md#proven-on-devnet). What that does
+  *not* establish is the attestation claim above: the run proves the permission boundary holds, not
+  which workload the enclave is running.
 - **The commitment hash proves consistency, not honesty.** It lets anyone verify that a revealed body
   matches what was sealed. For a `Buried` market, where nothing is ever revealed, it proves nothing
   about the content at all.
@@ -342,5 +384,7 @@ Say these out loud rather than let a judge discover them.
   takes the result as an argument. There is no oracle and no proof.
 - **`fiction_mode` is a label, not a filter.** The program cannot inspect the body — that is the whole
   design — so it cannot moderate it.
-- **Late or missing VRF.** The market sits in `VrfPending` until a callback arrives. There is no
-  timeout path in the program; recovery is operational.
+- **Late or missing VRF.** The market sits in `VrfPending` until a callback arrives. `retry_vrf` keeps
+  the escrow from being stranded — permissionless, and only `VRF_GRACE_SECS` (120s) past `expires_at`,
+  it puts the market back to `Expired` so anyone can ask for randomness again. It is a retry, not a
+  timeout: it never picks an outcome, and if the oracle is down for good the market never resolves.

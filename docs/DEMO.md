@@ -29,11 +29,17 @@ export TEE_PROVIDER_ENDPOINT=https://devnet-tee.magicblock.app
 | Wallet | Role | Pre-staged before recording |
 |---|---|---|
 | **A** — the author | Creates the market, types the confession | Funded on L1 |
-| **B** — the sealer | Bids SEAL | Purse deposited **and delegated** (`deposit_purse` + `delegate_purse`), session key open |
-| **C** — the reader | Bids READ, wins | Purse deposited **and delegated**, session key open |
+| **B** — the sealer | Bids SEAL | Purse deposited **and delegated** (`deposit_purse` + `delegate_purse`) |
+| **C** — the reader | Bids READ, wins | Purse deposited **and delegated** |
 
 Purses must already be on the ER. `deposit_purse` and `delegate_purse` are base-layer transactions and
 there is no time for them inside sixty seconds — that is the point of the purse, not a cheat.
+
+**Be precise about what removes the popup.** The app signs with a burner keypair held in the browser
+(`app/src/lib/burner.ts`), which is why bidding is one click. That is *not* the program's session-key
+path: `open_session` + `place_bid_with_session` are real, scoped to one market with a spend ceiling and
+a TTL, and exercised by the test suite — but the UI does not call them. Say "no wallet popup," not
+"session key," when you are pointing at the browser.
 
 **Seeded markets that must already exist**
 
@@ -54,10 +60,19 @@ there is no time for them inside sixty seconds — that is the point of the purs
 +---------------------------------------------------------------------+
 ```
 
-Set the market's `duration_secs` to **25** so the timer runs out at 0:32. (`scripts/smoke.ts` uses the
-same value.) Have a cranker loop running so `expire_market`, `settle_bid`, `close_book`,
-`finalize_market` and `write_tombstone` fire the moment they become legal — every one of them is
-permissionless, which is why nobody has to click them on camera.
+Set the market's `duration_secs` to **25** so the timer runs out at 0:32. Have a cranker loop running so
+`expire_market`, `settle_bid`, `close_bid`, `close_book`, `finalize_market` and `write_tombstone` fire
+the moment they become legal — every one of them is permissionless, which is why nobody has to click
+them on camera.
+
+**Rehearse it in the terminal first.** `npm run demo` runs `scripts/demo.ts`, which walks these same
+beats headlessly against a live cluster and prints what each one actually did on-chain. It also makes a
+good second pane in the edit: the browser shows the village, the terminal shows the transactions.
+
+One difference to expect: `demo.ts` bids **both** sides on the 0:40 market, so `seal_pot > 0` and it
+resolves `BURIED` — "silence was bought, Solana got the hash and nothing else." That is the rule the
+shooting note below is about, demonstrated rather than worked around. To rehearse the `SOLE_READER`
+payoff you need a READ-only market.
 
 ---
 
@@ -68,7 +83,7 @@ permissionless, which is why nobody has to click them on camera.
 | **0:00** | Wide, left window | Wallet A clicks **Connect**. Address appears. FICTION MODE banner visible. | "This is SINBAZAAR. The thing being traded is a secret." |
 | **0:05** | Push in on the input | Wallet A types `I reused my teammate's pitch deck.` and hits **Seal**. | "I write one line. It never touches Solana." |
 | **0:10** | Split — both windows | Left: market card resolves to a hash, timer counting from 25, SEAL 0 / READ 0. Right: incognito shows the same hash, same timer, body **PRIVATE**. | "The village gets a hash and a timer. The private rollup keeps the sentence. Second window, no key — nothing." |
-| **0:18** | Left, wallet switcher | Wallet B bids **0.5 SOL SEAL**. One click, no popup. SEAL pot ticks up instantly. | "Wallet two pays to bury it. Session key, rollup speed, no wallet popup." |
+| **0:18** | Left, wallet switcher | Wallet B bids **0.5 SOL SEAL**. One click, no popup. SEAL pot ticks up instantly. | "Wallet two pays to bury it. Rollup speed, no wallet popup, no base-layer transaction." |
 | **0:24** | Left, wallet switcher | Wallet C bids **0.5 SOL READ**. READ pot ticks up. Neither card shows who bid what. | "Wallet three pays to read it. Every bid is a private account — nobody sees the other side." |
 | **0:32** | Timer to zero, cut to the resolution strip | Timer hits 0. Status flips `Open → Expired → VrfPending`. VRF badge spins. | "Timer's out. The market asks MagicBlock VRF who gets to read." |
 | **0:40** | Split — the payoff | Left, as Wallet C: the confession renders in plaintext. Right, incognito, unchanged: **PRIVATE**. Graveyard card shows the hash and **SOLE_READER**. | "One key was added to the permission. Wallet three sees it. Nobody else ever will. The graveyard gets the hash." |
@@ -132,10 +147,16 @@ window, no key — nothing."*
 goes to `0.5` in well under a second.
 
 One transaction, two instructions: `place_bid` creates the ER-only bid account and `fund_bid` moves
-0.5 SOL from B's delegated purse into the market PDA. `init_bid_permission` then hides the bid behind
-a private permission whose only member is B.
+0.5 SOL from B's delegated purse into the market PDA. They are two instructions because the runtime
+refuses one that both CPIs the magic program for an ephemeral account and moves lamports itself
+(`UnbalancedInstruction`) — see [ASSUMPTIONS.md](../ASSUMPTIONS.md) §5. `init_bid_permission` then
+hides the bid behind a private permission whose only member is B.
 
-**Narration.** *"Wallet two pays to bury it. Session key, rollup speed, no wallet popup."*
+**Narration.** *"Wallet two pays to bury it. Rollup speed, no wallet popup, no base-layer
+transaction."*
+
+All three claims are literally true and none of them is the session-key claim. The one click is the
+browser's burner key; the rollup speed and the absent L1 transaction are the delegation.
 
 ---
 
@@ -182,11 +203,12 @@ Left window as Wallet C: the card flips open and the plaintext renders — *"I r
 deck."* Right window, incognito, unchanged: still **PRIVATE**. Below, the graveyard card shows the
 truncated hash and the badge **SOLE_READER**, with C's key as the reader.
 
-What just ran: `settle_bid` per bid (which is also where the winner is derived from
-`randomness % read_bid_count`), `close_book`, then `grant_reader` — the single
-`UpdateEphemeralPermissionCpi` that rewrites the secret's member list from `[A]` to `[A, C]`. Then
-`finalize_market` publishes nothing, because `SoleReader` is not a reveal outcome, and
-`commit_and_undelegate`s the market home.
+What just ran: `settle_bid` + `close_bid` per bid, in one transaction each (the winner is derived in
+`settle_bid` from `randomness % read_bid_count`; `close_bid` reclaims the ephemeral account and its
+permission). Then `close_book`, which will not pass until every bid is closed *and*
+`escrow_lamports == author_payout`. Then `grant_reader` — the single `UpdateEphemeralPermissionCpi`
+that rewrites the secret's member list from `[A]` to `[A, C]`. Then `finalize_market`, which publishes
+nothing, because `SoleReader` is not a reveal outcome, and `commit_and_undelegate`s the market home.
 
 **Narration.** *"One key was added to the permission. Wallet three sees it. Nobody else ever will. The
 graveyard gets the hash."*
@@ -199,6 +221,11 @@ graveyard gets the hash."*
 market with `seal_pot == 0` and `read_pot == 0`, and sets **PUBLIC_LEAK** on the spot — no randomness
 needed, that is the rule of the bazaar. `close_book` passes trivially (`0 == 0`), `finalize_market`
 copies `secret.body` into `market.revealed`, and `write_tombstone` carves it into L1.
+
+Worth knowing before you shoot it: this is the one path that writes bytes before undelegating, and it
+is where `finalize_market`'s `ExternalAccountDataModified` bug lived until late — a `SoleReader` run
+never touches it. It works now; see [ASSUMPTIONS.md](../ASSUMPTIONS.md) §8. Rehearse this beat rather
+than trusting a green run of the other one.
 
 On screen: the card turns from a lock into a full sentence, with a **PUBLIC_LEAK** badge and an
 explorer link to the tombstone account on Solana.
@@ -230,8 +257,13 @@ seal, both bids and their ER-native lamport moves, expiry, the VRF request and c
 `grant_reader`, the public leak, and the Whisper IPO resolution.
 
 **Pre-staged before the take, because it is base-layer work with no time budget:** wallet funding,
-`deposit_purse` + `delegate_purse` for B and C, `open_session` for B and C, the village, the seeded
-markets, and at least one older graveyard entry.
+`deposit_purse` + `delegate_purse` for B and C, the village, the seeded markets, and at least one older
+graveyard entry.
+
+**Not in the video at all:** `open_session` and `place_bid_with_session`. The scoped session key is a
+real program feature with a real test (`tests/sinbazaar.ts`, "a session key is bound to one market and
+one spend ceiling"), but the web app bids with a burner key, so do not narrate it as if the browser
+were using it.
 
 **Timing caveat you should mention:** `finalize_market` does `commit_and_undelegate`, and the market
 takes a few seconds to land back on L1 before `write_tombstone` can run. The graveyard card shows the
@@ -243,3 +275,14 @@ bids to settle and needs no randomness.
 **Privacy caveat:** shoot the incognito shot against `https://devnet-tee.magicblock.app`. The local
 query-filtering service exercises the same client code path but is not a TEE and does not enforce the
 read boundary. If you shoot locally, say so.
+
+If there is room in the cut — or in the submission text — this is the shot that settles it:
+
+```bash
+. ./.env.devnet && npx ts-node scripts/prove-privacy.ts
+```
+
+It has been run against the devnet TEE and every check passed, including a stranger holding a *valid*
+TEE token being refused the confession. The output and the explorer links are in the README's
+[Proven on devnet](../README.md#proven-on-devnet). An incognito browser window is the picture; that
+terminal is the proof.

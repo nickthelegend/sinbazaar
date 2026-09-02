@@ -4,7 +4,8 @@
 > MagicBlock VRF picks the reader. Solana only receives a tombstone.**
 
 MagicBlock Solana Blitz v8 submission.
-Program: [`2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN`](programs/sinbazaar/src/lib.rs) — Anchor, 28 instructions.
+Program: [`2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN`](programs/sinbazaar/src/lib.rs) — Anchor, 31 instructions,
+[deployed to devnet](#proven-on-devnet).
 
 **FICTION MODE.** Every confession in this build is startup-village satire. No real secrets, no real
 targets, no real leverage. See [Safety / fiction mode](#safety--fiction-mode).
@@ -101,7 +102,8 @@ TEE validator refuses the read to everyone else.
   |                                             purse -> market, ER-native   |
   |                                                                          |
   |   expire_market -> request_resolution_vrf -> callback_resolve   [VRF]    |
-  |   settle_bid (xN) -> close_book -> grant_reader -> finalize_market       |
+  |   settle_bid + close_bid (xN) -> close_book -> grant_reader              |
+  |                               -> finalize_market                         |
   +==========================================================================+
                                        |
                         commit_and_undelegate  (market only)
@@ -129,14 +131,15 @@ Full account-by-account detail, the state machine and the payout tables are in
 |---|---|---|
 | **Private Ephemeral Rollups** — ephemeral permissions, `is_private` + member list | The `Secret` account's permission is created with `is_private = true` and `members = [author]`, so the confession body is unreadable over any RPC — TEE endpoint included — by anyone else. The same CPI creates the `Market`'s permission with `is_private = false`, deliberately: hash, timer, pots and status *are* the market. `grant_reader` rewrites the secret's member list to `[author, sole_reader]` — that single `UpdateEphemeralPermissionCpi` is the entire reveal mechanism. | `init_secret_permission`, `init_market_permission`, `grant_reader` |
 | **Ephemeral Rollups** — delegation, ER-native lamport escrow | `Market`, `Secret` and `Purse` are created on L1 and delegated with `DelegateConfig { validator }` so the market and its secret land on the same validator. Because a delegated account keeps its original program owner inside the ER, `fund_bid` moves lamports `purse -> market` directly between two program-owned PDAs: real value, no base-layer transaction, no wallet round trip. | `delegate_market`, `delegate_secret`, `delegate_purse`, `fund_bid` |
-| **Ephemeral Accounts** — ER-only lifecycle | `Bid` and `SessionScope` are born in the rollup and die there, via `#[ephemeral_accounts]` with the market PDA as `sponsor` and the account itself marked `eph`. The market's `SPONSOR_FLOAT` (40,000,000 lamports, transferred at `create_market`) pays their ER rent, so bidders never pay for storage. `settle_bid` closes the bid's permission and then the bid itself, refunding that rent to the market. | `place_bid`, `open_session`, `settle_bid` |
-| **MagicBlock VRF** — request + authenticated callback | `request_resolution_vrf` calls `create_request_scoped_randomness_ix` against the *ephemeral* oracle queue from inside the rollup, while the market is still delegated, passing the market as a writable callback account. `callback_resolve` is declared `#[vrf_callback]`, which injects a `vrf_program_identity` signer constrained to `scoped_vrf_identity(&crate::ID)` — a PDA only the VRF program can sign for. No user transaction can forge a verdict. | `request_resolution_vrf`, `callback_resolve` |
+| **Ephemeral Accounts** — ER-only lifecycle | `Bid` and `SessionScope` are born in the rollup and die there, via `#[ephemeral_accounts]` with the market PDA as `sponsor` and the account itself marked `eph`. The market's `SPONSOR_FLOAT` (40,000,000 lamports, transferred at `create_market`) pays their ER rent, so bidders never pay for storage. `close_bid` closes the bid's permission and then the bid itself, refunding that rent to the market — a separate instruction from `settle_bid`, which moves the money. | `place_bid`, `open_session`, `close_bid` |
+| **MagicBlock VRF** — request + authenticated callback | `request_resolution_vrf` calls `create_request_scoped_randomness_ix` against the *ephemeral* oracle queue from inside the rollup, while the market is still delegated, passing the market as a writable callback account. `callback_resolve` is declared `#[vrf_callback]`, which injects a `vrf_program_identity` signer constrained to `scoped_vrf_identity(&crate::ID)` — a PDA only the VRF program can sign for. No user transaction can forge a verdict. `retry_vrf` is the escape hatch: permissionless, and only `VRF_GRACE_SECS` (120s) past expiry, it returns a stalled market to `Expired` so randomness can be asked for again. It never decides an outcome. | `request_resolution_vrf`, `callback_resolve`, `retry_vrf` |
 | **`commit` / `commit_and_undelegate`** | `finalize_market` builds a `MagicIntentBundleBuilder` and `commit_and_undelegate`s the **market only**, immediately after deciding whether `market.revealed` may be filled. `commit_market` pushes live state to L1 mid-market without ending it. `undelegate_purse` sends a purse home so its owner can withdraw real SOL. The `Secret` is deliberately in none of these calls. | `finalize_market`, `commit_market`, `undelegate_purse` |
-| **Session keys** — scoped delegated signing | A villager mints a `SessionScope` (an ephemeral account) pinned to **one market**, with a spend ceiling and a TTL, then bids repeatedly with no wallet popup. The scope is validated by *this program*, not by the client: `authorise_bidder` re-derives the session PDA, checks `revoked` / `session_key` / `market` / `expires_at`, and increments `spent` against `max_spend` on every bid. `Pubkey::default()` as the market is not accepted. | `open_session`, `revoke_session`, `authorise_bidder` in `lib.rs` |
+| **Session keys** — scoped delegated signing | A villager mints a `SessionScope` (an ephemeral account) pinned to **one market**, with a spend ceiling and a TTL, then bids repeatedly with no wallet popup via `place_bid_with_session`. The scope is validated by *this program*, not by the client: `charge_session` re-derives the session PDA, checks `revoked` / `session_key` / `market` / `expires_at`, and increments `spent` against `max_spend` on every bid. `Pubkey::default()` as the market is not accepted. | `open_session`, `revoke_session`, `place_bid_with_session`, `charge_session` in `lib.rs` |
 
 The client side of all of this — the three connections, the `?token=` auth flow, PDA derivation and the
 hand-rolled permission parser — is in [`sdk/src/index.ts`](sdk/src/index.ts).
-[`scripts/smoke.ts`](scripts/smoke.ts) runs the whole loop end to end.
+[`tests/harness.ts`](tests/harness.ts) drives the whole loop and
+[`scripts/demo.ts`](scripts/demo.ts) narrates it.
 
 ---
 
@@ -216,6 +219,12 @@ npm install -g @magicblock-labs/vrf-oracle-$(uname -s | tr A-Z a-z)-$(uname -m)
 solana-keygen new --no-bip39-passphrase
 ```
 
+Or do all of that in one go — it also vendors the official examples and installs the MagicBlock skill:
+
+```bash
+bash scripts/setup.sh
+```
+
 **Build, bring the cluster up, seed it**
 
 ```bash
@@ -231,19 +240,25 @@ bash scripts/local-stack.sh --detach   # background; stop with scripts/stop-stac
 
 # in a second terminal
 npm run seed        # opens the village and the seeded fiction markets
-npm run demo        # scripted walkthrough of the loop
+npm test            # the spec suite: tests/sinbazaar.ts against the live stack
+npm run demo        # the 60-second demo, narrated, beat by beat
 ```
 
-**Prove the loop by itself** — this is the end-to-end probe, and it prints every assertion it checks:
+Those two scripts are the end-to-end probes, and both print every assertion they check.
+`npm run demo` walks create → delegate → seal → bid (ER-native lamport move) → expire → VRF → settle
++ close bid → close book → `commit_and_undelegate` → tombstone, asserting along the way that the secret
+shell is all-zero on L1, that each bid's permission lists only its bidder, and that
+`tomb.revealed_len == 0` when nothing leaked.
+
+**Prove the privacy claim on its own:**
 
 ```bash
-. ./scripts/local-env.sh && npx ts-node scripts/smoke.ts
+. ./scripts/local-env.sh && npx ts-node scripts/prove-privacy.ts
 ```
 
-It walks create → delegate → seal → bid (ER-native lamport move) → expire → VRF → settle → close book
-→ grant reader → `commit_and_undelegate` → tombstone, and asserts along the way that the secret shell
-is all-zero on L1, that `commitment_hash == sha256(body || salt)`, that the purse debit equals the bid
-exactly, and that `tomb.revealed_len == 0` when nothing leaked.
+Locally it checks the permission flags and the empty L1 shell, and reports the two refusal assertions
+as `N/A` — the local query-filtering service answers reads a TEE would refuse. Against the devnet TEE
+it reports them as `PASS`; see [Proven on devnet](#proven-on-devnet).
 
 **The web app**
 
@@ -259,17 +274,16 @@ endpoint variables unset.
 ## Deploy to devnet
 
 ```bash
-solana config set --url https://api.devnet.solana.com
-solana airdrop 5
+npm run build                        # anchor keys sync && anchor build
+bash scripts/deploy-devnet.sh        # program id 2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN
 
-npm run build                                  # anchor keys sync && anchor build
-anchor deploy --provider.cluster devnet        # program id 2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN
-
-# devnet endpoints are the SDK defaults, so just clear the local overrides:
-unset PROVIDER_ENDPOINT WS_ENDPOINT EPHEMERAL_PROVIDER_ENDPOINT EPHEMERAL_WS_ENDPOINT \
-      TEE_PROVIDER_ENDPOINT TEE_WS_ENDPOINT VALIDATOR VRF_EPHEMERAL_QUEUE
-npx ts-node scripts/smoke.ts
+# the script writes .env.devnet — source it instead of scripts/local-env.sh
+. ./.env.devnet && npx ts-node scripts/prove-privacy.ts
+. ./.env.devnet && npx ts-node scripts/demo.ts
 ```
+
+`deploy-devnet.sh` checks the deployer's balance against the binary's rent before it tries, because
+devnet's faucet is rate limited and a half-funded `solana program deploy` is a bad afternoon.
 
 Two things must line up or delegation silently goes to the wrong place:
 
@@ -384,10 +398,12 @@ tee  https://devnet-tee.magicblock.app  (real TEE)
 PRIVACY PROVEN against the devnet TEE.
 ```
 
-The last four lines are the ones that matter, and the ones a local run cannot produce. The stranger is
-a freshly generated keypair that completes the TEE's own challenge/response handshake and holds a
-valid JWT — it is refused because it is not on the account's permission member list, not because it
-failed to authenticate.
+The two refusal lines are the ones that matter, and the only two a local run cannot produce —
+`prove-privacy.ts` prints them as `N/A` against the local query-filtering service, which answers reads
+a TEE refuses. The unauthenticated read is the same devnet host with no `?token=` on the URL. The
+stranger is a freshly generated keypair that completes the TEE's own challenge/response handshake and
+holds a valid JWT — it is refused because it is not on the account's permission member list, not
+because it failed to authenticate.
 
 Try it yourself on a market from that run:
 
@@ -432,9 +448,7 @@ against `https://devnet-tee.magicblock.app`, where they have been run — see
 **2. Whisper IPO settles by author attestation, not by an oracle.**
 `resolve_rumor` requires the signer to equal `market.author` and takes the result as an argument. There
 is no proof the rumor was true. The payout path reads `market.rumor_result` and nothing else, so
-swapping in a real oracle is a change to one signature check — but that swap has not been made. (The
-error constant on that check is named `NotVillageAuthority`, a leftover from an earlier design; the
-check is against the author.)
+swapping in a real oracle is a change to one signature check — but that swap has not been made.
 
 **3. `MAX_BIDDERS` is 8.**
 A market accepts at most eight bids and the bid PDA is seeded `[b"bid", market, bidder]`, so that is
@@ -446,12 +460,15 @@ ninth bidder gets `TooManyBidders`.
 (`MAX_REDACTED_LEN`), and the tombstone reveal buffer at 180 (`MAX_TOMB_BODY`). Fixed-size arrays, so
 the rent is paid for the full 180 whether you use it or not.
 
-**5. `place_bid` and `fund_bid` are separate instructions, and the program does not require them in the
-same transaction.** The client always sends them together and the transaction is atomic, so a bid is
-opened and funded together or not at all. But a hand-built transaction can call `place_bid` alone,
-leaving a bid with `funded = false` that contributes to no pot and settles for zero — while still
-consuming one of the eight bid slots and one `read_rank`. See
-[ASSUMPTIONS.md](ASSUMPTIONS.md) for the read-rank consequence.
+**5. Three pairs of instructions must be sent together, and the program does not require it.**
+`place_bid` + `fund_bid`, and `settle_bid` + `close_bid`, are split because the runtime rejects a
+single instruction that both CPIs the magic program for an ephemeral account and moves lamports itself
+(`UnbalancedInstruction`). The client always sends each pair in one atomic transaction, so a bid is
+opened and funded together or not at all — but a hand-built transaction can call `place_bid` alone,
+leaving a bid with `funded = false` that contributes to no pot and settles for zero while still
+consuming one of the eight bid slots. `settle_bid` alone leaves a settled bid whose ephemeral account
+is still open, which `close_book` then refuses to look past. See [ASSUMPTIONS.md](ASSUMPTIONS.md) for
+what an unfunded bid can and can no longer do.
 
 **6. Money is SOL/lamports, not SPL.** Week 1 holds value directly in the market PDA. The
 `spl-tokens` example is the migration target and nothing in the outcome or payout logic depends on the
@@ -478,14 +495,21 @@ time lets anyone verify that a *revealed* body is the one that was sealed. It pr
 ## Repo map
 
 ```
-programs/sinbazaar/src/lib.rs     the Anchor program — 28 instructions
+programs/sinbazaar/src/lib.rs     the Anchor program — 31 instructions
 programs/sinbazaar/src/state.rs   accounts, Room / MarketStatus / Outcome / BidSide, the constants
 programs/sinbazaar/src/error.rs   SinError
 sdk/src/index.ts                  TypeScript client: PDAs, the three connections, ?token= auth,
                                   commitment hashing, the hand-rolled permission parser
+tests/harness.ts                  one market through the whole lifecycle, reusable
+tests/sinbazaar.ts                the spec suite the harness exists for
+scripts/setup.sh                  one-time: toolchain, skill, vendored examples, deps
 scripts/local-env.sh              every endpoint, as environment variables
 scripts/local-stack.sh            base + ER + QFS + two VRF oracles, one command
-scripts/smoke.ts                  the whole loop, end to end, with assertions
+scripts/rebuild.sh                anchor build + stack restart (the ER caches the program)
+scripts/stop-stack.sh             kill the stack and wait for the ports
+scripts/deploy-devnet.sh          devnet deploy, balance-checked, writes .env.devnet
+scripts/demo.ts                   the 60-second demo, narrated, beat by beat
+scripts/prove-privacy.ts          the privacy challenge — the claim, on its own
 target/idl/sinbazaar.json         the IDL — authoritative for account names and argument order
 docs/ARCHITECTURE.md              accounts, state machine, payout tables, trust model
 docs/DEMO.md                      the 60-second video script

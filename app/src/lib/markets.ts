@@ -59,6 +59,8 @@ export interface TombstoneView {
   randomness: string;
   buriedAt: number;
   revealed: string;
+  /** Published only with an authorised reveal; all-zero otherwise. */
+  salt: number[];
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -107,10 +109,19 @@ async function marketsOn(layer: Layer): Promise<MarketView[]> {
   }
 }
 
-/** Read one market, preferring the rollup copy — it is the live one. */
+/**
+ * Read one market, asking the base layer first.
+ *
+ * Which endpoint answers is what tells us where the market actually lives. A
+ * delegated market is owned by the delegation program on L1, so an Anchor fetch
+ * there fails and we fall through to the rollup. Once it is committed and
+ * undelegated the base copy is the authoritative one — and asking the rollup first
+ * would keep reporting "on the rollup" forever, because the rollup never drops its
+ * stale copy.
+ */
 export async function fetchMarket(address: string): Promise<MarketView | null> {
   const key = new PublicKey(address);
-  for (const layer of ["er", "base"] as Layer[]) {
+  for (const layer of ["base", "er"] as Layer[]) {
     const connection = layer === "er" ? erConnection() : baseConnection();
     try {
       const acct = await accountsOf(programFor(connection)).market.fetch(key);
@@ -126,8 +137,11 @@ export async function fetchMarket(address: string): Promise<MarketView | null> {
 export async function fetchMarkets(): Promise<MarketView[]> {
   const [er, base] = await Promise.all([marketsOn("er"), marketsOn("base")]);
   const byAddress = new Map<string, MarketView>();
+  for (const m of er) byAddress.set(m.address, m);
+  // Base-layer `market.all()` only returns markets this program still owns, i.e.
+  // the ones that are NOT delegated. Anything it returns has come home, so it wins
+  // over the rollup's stale copy — both for the data and for the layer badge.
   for (const m of base) byAddress.set(m.address, m);
-  for (const m of er) byAddress.set(m.address, m); // the rollup copy wins
 
   if (byAddress.size === 0) {
     const remembered = await Promise.all(knownMarkets().map((a) => fetchMarket(a)));
@@ -158,6 +172,7 @@ export async function fetchTombstones(): Promise<TombstoneView[]> {
           randomness: acct.randomness.toString(),
           buriedAt: toNumber(acct.buriedAt),
           revealed: decodeRevealed(acct.revealed as number[], toNumber(acct.revealedLen)),
+          salt: Array.from(acct.revealedSalt as number[]),
         } satisfies TombstoneView;
       })
       .sort((a: TombstoneView, b: TombstoneView) => b.buriedAt - a.buriedAt);

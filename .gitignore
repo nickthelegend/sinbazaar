@@ -27,3 +27,6 @@ app/.env.local
 vendor/
 
 .DS_Store
+
+# fetched by the app build, not authored here
+!app/public/fonts/

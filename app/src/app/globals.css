@@ -1,5 +1,43 @@
 /* SINBAZAAR — candlelit market stall. Dark, sharp, readable. */
 
+/*
+ * Type, self-hosted.
+ *
+ * Nothing here reaches a CDN: the whole point of this product is that it keeps
+ * working when the network will not co-operate, and a webfont that 404s silently
+ * downgrades every headline to Georgia. Three variable faces, latin subset only,
+ * ~187KB total.
+ *
+ *   Fraunces  — display. High-contrast old-style with an optical-size axis and a
+ *               WONK axis that lets the serifs go slightly feral. This is a ledger
+ *               of other people's sins; it should not look like a SaaS dashboard.
+ *   Archivo   — interface. A grotesk with tight apertures and a public-notice
+ *               flatness. It reads as posted, not designed.
+ *   JetBrains Mono — hashes, keys, lamport figures. Half this UI is a commitment
+ *               digest; it deserves a real mono with an unambiguous 0.
+ */
+@font-face {
+  font-family: "Fraunces";
+  src: url("/fonts/fraunces-var.woff2") format("woff2-variations");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/archivo-var.woff2") format("woff2-variations");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/jetbrains-mono-var.woff2") format("woff2-variations");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --ink: #0b0806;
   --ink-2: #12100c;
@@ -17,9 +55,9 @@
   --parchment-2: #b9ac97;
   --parchment-3: #7d7261;
 
-  --display: Georgia, "Iowan Old Style", "Times New Roman", serif;
-  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --display: "Fraunces", Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   --radius: 3px;
   --shell: 1180px;
@@ -1060,4 +1098,46 @@ button.act.danger {
 .spinner {
   color: var(--parchment-3);
   font-size: 13px;
+}
+
+
+/* ---------------------------------------------------------------------------
+ * Variable-axis settings
+ *
+ * Fraunces ships four axes. Left at their defaults it is merely a nice serif;
+ * the character comes from pushing opsz up at display sizes and letting WONK
+ * off its leash a little. SOFT stays low — this is a market for secrets, and it
+ * should feel engraved rather than friendly.
+ * ------------------------------------------------------------------------- */
+h1,
+h2,
+h3,
+.tomb-head .room-tag,
+.page-head h1 {
+  font-variation-settings: "opsz" 120, "SOFT" 12, "WONK" 1;
+  font-weight: 500;
+  letter-spacing: -0.014em;
+}
+
+h1,
+.page-head h1 {
+  font-variation-settings: "opsz" 144, "SOFT" 10, "WONK" 1;
+}
+
+/* The interface face wants slightly more weight than a grotesk default to hold
+   up on a near-black ground. */
+body {
+  font-variation-settings: "wght" 420;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hashes are the most-read thing on the site; make them tabular so columns of
+   digests line up and a changed character is obvious. */
+code,
+.hash,
+.val,
+.mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1, "ss01" 1;
 }

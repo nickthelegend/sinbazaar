@@ -8,11 +8,58 @@
  * `Outcome::reveals_text()` was true and never otherwise.
  */
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Empty, OutcomeBadge } from "@/components/Bits";
 import { useTombstones } from "@/hooks/useMarkets";
 import { explorerUrl } from "@/lib/config";
 import { fmtSol, fullHash, OUTCOME_LABEL, revealsText, shortHash, shortKey } from "@/lib/format";
 import { roomOf } from "@/lib/rooms";
+
+/**
+ * Recompute the commitment in the reader's own browser.
+ *
+ * This is the point of publishing the salt alongside an authorised reveal: the
+ * claim "this is the sentence that was sealed" stops being something you take on
+ * trust from us and becomes something the base layer proves on its own. Nothing
+ * here touches the rollup.
+ */
+function CommitmentCheck({ text, salt, commitment }: { text: string; salt: number[]; commitment: number[] }) {
+  const [state, setState] = useState<"checking" | "ok" | "mismatch" | "nosalt">("checking");
+
+  useEffect(() => {
+    let live = true;
+    if (salt.every((b) => b === 0)) {
+      setState("nosalt");
+      return;
+    }
+    const body = new TextEncoder().encode(text);
+    const bytes = new Uint8Array(body.length + salt.length);
+    bytes.set(body, 0);
+    bytes.set(Uint8Array.from(salt), body.length);
+    crypto.subtle
+      .digest("SHA-256", bytes)
+      .then((buf) => {
+        if (!live) return;
+        const got = [...new Uint8Array(buf)];
+        setState(got.every((b, i) => b === commitment[i]) ? "ok" : "mismatch");
+      })
+      .catch(() => live && setState("mismatch"));
+    return () => {
+      live = false;
+    };
+  }, [text, salt, commitment]);
+
+  if (state === "nosalt") return null;
+  return (
+    <p className={state === "mismatch" ? "err small" : "epitaph small"}>
+      {state === "checking"
+        ? "checking the commitment…"
+        : state === "ok"
+          ? "sha256(sentence ‖ salt) matches the commitment sealed before any bid was placed — verified in your browser, from the base layer alone."
+          : "commitment MISMATCH — this text is not what was sealed."}
+    </p>
+  );
+}
 
 export default function GraveyardPage() {
   const { data: tombs, loading, error, reload } = useTombstones();
@@ -72,7 +119,14 @@ export default function GraveyardPage() {
                 </div>
 
                 {leaked ? (
-                  <div className="confession">{tomb.revealed}</div>
+                  <>
+                    <div className="confession">{tomb.revealed}</div>
+                    <CommitmentCheck
+                      text={tomb.revealed}
+                      salt={tomb.salt}
+                      commitment={tomb.commitment}
+                    />
+                  </>
                 ) : (
                   <p className="epitaph">
                     {tomb.outcome === "buried"

@@ -181,6 +181,10 @@ pub struct Market {
     /// only when the verdict authorised it.
     pub revealed_len: u16,
     pub revealed: [u8; MAX_TOMB_BODY],
+    /// The salt, published alongside a reveal and only then. Without it nobody can
+    /// check `sha256(revealed || salt)` against `commitment_hash`, because the salt
+    /// otherwise lives only inside the private secret.
+    pub revealed_salt: [u8; 32],
     pub bump: u8,
 }
 
@@ -204,6 +208,7 @@ impl Market {
         + 1      // rumor_result
         + 1      // tombstoned
         + 2 + MAX_TOMB_BODY // revealed_len, revealed
+        + 32     // revealed_salt
         + 1; // bump
 
     /// Ransom the village must raise to bury a blackmail market, at `now`.
@@ -324,10 +329,13 @@ pub struct Tombstone {
     pub buried_at: i64,
     pub revealed_len: u16,
     pub revealed: [u8; MAX_TOMB_BODY],
+    /// Present only for outcomes that publish text, so anyone can verify
+    /// `sha256(revealed || salt) == commitment_hash` without ever seeing the rollup.
+    pub revealed_salt: [u8; 32],
     pub bump: u8,
 }
 
 impl Tombstone {
     pub const LEN: usize =
-        32 + 8 + 32 + 1 + 32 + 1 + 8 + 8 + 32 + 8 + 8 + 2 + MAX_TOMB_BODY + 1;
+        32 + 8 + 32 + 1 + 32 + 1 + 8 + 8 + 32 + 8 + 8 + 2 + MAX_TOMB_BODY + 32 + 1;
 }

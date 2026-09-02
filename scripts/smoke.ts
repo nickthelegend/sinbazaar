@@ -162,7 +162,6 @@ async function waitForEr(conn: any, key: PublicKey, label: string, ms = 30000) {
       market,
       bid,
       purse,
-      session: sessionPda(market, bidder.publicKey),
     })
     .instruction();
   const fundIx = await pErBidder.methods
@@ -232,10 +231,38 @@ async function waitForEr(conn: any, key: PublicKey, label: string, ms = 30000) {
 
   // settle the single bid, close the book
   const { permissionPdaFromAccount: ppa } = await import("@magicblock-labs/ephemeral-rollups-sdk");
-  await pEr.methods
+  // settle_bid moves the money, close_bid reclaims the ephemeral account — one
+  // transaction, two instructions, because the runtime refuses to see a lamport
+  // transfer and a magic-program CPI in the same instruction.
+  const settleIx = await pEr.methods
     .settleBid(marketId)
-    .accountsPartial({ cranker: author.publicKey, market, bid, purse, bidPermission: ppa(bid) })
-    .rpc({ skipPreflight: true });
+    .accountsPartial({ cranker: author.publicKey, market, bid, purse })
+    .instruction();
+  const closeIx = await pEr.methods
+    .closeBid(marketId)
+    .accountsPartial({
+      cranker: author.publicKey,
+      market,
+      bid,
+      bidder: bidder.publicKey,
+      bidPermission: ppa(bid),
+    })
+    .instruction();
+  {
+    const { Transaction: T3 } = await import("@solana/web3.js");
+    const stx = new T3().add(settleIx, closeIx);
+    stx.feePayer = author.publicKey;
+    stx.recentBlockhash = (await er.getLatestBlockhash()).blockhash;
+    stx.sign(author);
+    const ssig = await er.sendRawTransaction(stx.serialize(), { skipPreflight: true });
+    await sleep(2500);
+    const sti = await er.getTransaction(ssig, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+    if (sti?.meta?.err) {
+      log("settle failed:", JSON.stringify(sti.meta.err));
+      (sti.meta.logMessages || []).forEach((l: string) => log("   ", l));
+      process.exit(1);
+    }
+  }
   const mAfterSettle: any = await (pEr.account as any).market.fetch(market);
   log("settled. sole_reader:", mAfterSettle.soleReader.toBase58(), "closed:", mAfterSettle.closedBidCount, "/", mAfterSettle.bidCount);
 

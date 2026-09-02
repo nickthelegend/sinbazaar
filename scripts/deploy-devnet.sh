@@ -55,8 +55,11 @@ cat > .env.devnet <<EOF
 # MagicBlock cluster, including the TEE that actually enforces private reads.
 export PROVIDER_ENDPOINT=https://api.devnet.solana.com
 export WS_ENDPOINT=wss://api.devnet.solana.com
-export EPHEMERAL_PROVIDER_ENDPOINT=https://devnet-as.magicblock.app
-export EPHEMERAL_WS_ENDPOINT=wss://devnet-as.magicblock.app
+# Both the market and its secret are delegated to the TEE validator, so the ER
+# connection has to be the TEE host too — not a regional ER, which would not host
+# these accounts. This is the configuration the devnet privacy run used.
+export EPHEMERAL_PROVIDER_ENDPOINT=https://devnet-tee.magicblock.app
+export EPHEMERAL_WS_ENDPOINT=wss://devnet-tee.magicblock.app
 export TEE_PROVIDER_ENDPOINT=https://devnet-tee.magicblock.app
 export TEE_WS_ENDPOINT=wss://devnet-tee.magicblock.app
 export ROUTER_ENDPOINT=https://devnet-router.magicblock.app

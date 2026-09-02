@@ -115,6 +115,109 @@
       ]
     },
     {
+      "name": "close_bid",
+      "docs": [
+        "Reclaim a settled bid: close its private permission, then the ephemeral",
+        "account itself. Rent goes back to the market that sponsored it."
+      ],
+      "discriminator": [
+        169,
+        171,
+        66,
+        115,
+        220,
+        168,
+        231,
+        21
+      ],
+      "accounts": [
+        {
+          "name": "cranker",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bid",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  105,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "bidder"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bidder"
+        },
+        {
+          "name": "bid_permission",
+          "writable": true
+        },
+        {
+          "name": "permission_program",
+          "address": "ACLseoPoyC3cBqoUtkbjZ4aDrkurZW86v19pXz2XQnp1"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "close_book",
       "docs": [
         "Mark the market fully settled once every bid has been closed."
@@ -1226,9 +1329,18 @@
         "The last act on the rollup.",
         "",
         "If — and only if — the verdict authorises text, copy it out of the private",
-        "secret into the market's public reveal buffer. Then commit and undelegate",
-        "the market so Solana receives the tombstone. The secret is never undelegated:",
-        "a buried confession stays inside the TEE for good."
+        "secret into the market's public reveal buffer. Then commit and undelegate the",
+        "market so Solana receives the tombstone. The secret is never undelegated: a",
+        "buried confession stays inside the TEE for good.",
+        "",
+        "Note the `exit(&crate::ID)` before the intent bundle. `commit_and_undelegate`",
+        "hands the account to the delegation program *inside* this instruction, so",
+        "Anchor's automatic serialization at instruction exit would then be writing to",
+        "an account the program no longer owns (`ExternalAccountDataModified`).",
+        "Flushing first is the pattern every official example uses before a commit —",
+        "see `counter`, `session-keys` and `rock-paper-scissor` in",
+        "magicblock-engine-examples. It only bites for the two verdicts that actually",
+        "write bytes, which is exactly the public-leak path, so it is easy to miss."
       ],
       "discriminator": [
         16,
@@ -2152,11 +2264,16 @@
         "Open a bid. Runs entirely on the ER, signed by the villager's own wallet.",
         "",
         "This instruction only *creates and records* the bid; `fund_bid` moves the",
-        "money. They are deliberately separate instructions sent in ONE transaction:",
-        "creating an ephemeral account is a CPI to the magic program, and keeping the",
-        "program's own lamport arithmetic in its own instruction makes each",
-        "instruction's balance trivially auditable. The transaction stays atomic, so",
-        "a bid is still opened and funded together or not at all.",
+        "money. They are deliberately separate instructions sent in ONE transaction.",
+        "",
+        "The reason is a hard runtime rule, learned the hard way: an instruction that",
+        "CPIs the magic program for an ephemeral account **and** moves lamports itself",
+        "fails with `UnbalancedInstruction` (\"sum of account balances before and after",
+        "instruction do not match\"). The magic program settles its rent outside the",
+        "instruction's own accounting, so the runtime's balance check sees the",
+        "program's transfer as unmatched. Every place in SINBAZAAR that needs both is",
+        "split the same way — see `settle_bid` / `close_bid`. The transaction stays",
+        "atomic, so a bid is still opened and funded together or not at all.",
         "",
         "A bid that is created but never funded counts for nothing: it stays",
         "`funded = false`, contributes to no pot, and settles for zero."
@@ -2976,8 +3093,12 @@
     {
       "name": "settle_bid",
       "docs": [
-        "Settle one bid: pay it, refund it, or forfeit it, then close the ephemeral",
-        "account and its permission.",
+        "Settle one bid: pay it, refund it, or forfeit it.",
+        "",
+        "Money only. `close_bid` then reclaims the ephemeral account and its",
+        "permission — a separate instruction because this one moves lamports and that",
+        "one CPIs the magic program, and the runtime refuses to see both in one",
+        "(`UnbalancedInstruction`). The client sends them together.",
         "",
         "Permissionless — anyone can crank it — because the destination is pinned to",
         "the bidder's own purse and the arithmetic is fixed by the recorded outcome."
@@ -3020,9 +3141,8 @@
                 "account": "Market"
               },
               {
-                "kind": "account",
-                "path": "market.market_id",
-                "account": "Market"
+                "kind": "arg",
+                "path": "market_id"
               }
             ]
           }
@@ -3074,23 +3194,6 @@
               }
             ]
           }
-        },
-        {
-          "name": "bid_permission",
-          "writable": true
-        },
-        {
-          "name": "permission_program",
-          "address": "ACLseoPoyC3cBqoUtkbjZ4aDrkurZW86v19pXz2XQnp1"
-        },
-        {
-          "name": "vault",
-          "writable": true,
-          "address": "MagicVau1t999999999999999999999999999999999"
-        },
-        {
-          "name": "magic_program",
-          "address": "Magic11111111111111111111111111111111111111"
         }
       ],
       "args": [
@@ -3804,6 +3907,20 @@
             }
           },
           {
+            "name": "revealed_salt",
+            "docs": [
+              "The salt, published alongside a reveal and only then. Without it nobody can",
+              "check `sha256(revealed || salt)` against `commitment_hash`, because the salt",
+              "otherwise lives only inside the private secret."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
             "name": "bump",
             "type": "u8"
           }
@@ -4149,6 +4266,19 @@
               "array": [
                 "u8",
                 180
+              ]
+            }
+          },
+          {
+            "name": "revealed_salt",
+            "docs": [
+              "Present only for outcomes that publish text, so anyone can verify",
+              "`sha256(revealed || salt) == commitment_hash` without ever seeing the rollup."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
               ]
             }
           },
