@@ -6,8 +6,9 @@ against.
 
 ## Result
 
-**135 of 135 items PASS.** Sixteen defects were found and fixed at the root, and
-the plan has been run end to end twice. Nothing is marked PASS on inspection:
+**135 of 135 items PASS.** Seventeen defects were found and fixed at the root,
+and the plan has been run end to end three times, the last of them entirely in
+Claude in Chrome. Nothing is marked PASS on inspection:
 every row was observed in the browser or in a command that ran.
 
 The second run added section L, an explicit row for every one of the 32
@@ -44,6 +45,7 @@ not the same claim as "the suite is green".
 14. **B2** The split headline's word gaps are a CSS `column-gap`, so its accessible name read "Somebodyhassomething". The real sentence now lives on `aria-label`.
 15. **L31** `commit_market` is a real instruction in the deployed program and **nothing in the repo called it**. It checkpoints a live market to Solana without ending it, and an instruction nobody exercises is one nobody knows still works. It now has a test that bids, confirms L1 still holds the pre-bid snapshot, commits, and asserts both that the base layer catches up **and** that the market is still delegated and still open.
 16. **B14** The landing page's counters were hardcoded. Within one commit of adding a test, the page was already stating a figure that was no longer true. Instructions and error codes are now read straight out of the IDL the app already loads, so they cannot drift.
+17. **J1** The app had **82px of horizontal overflow at 375px**, and three passes had missed it because none of them ever actually reached 375. The Browser pane's "mobile preset" reported 391 to 500, and Chrome clamps its own window to a 500px minimum, so every check labelled 375 had been run wider. Rendering the page inside a same-origin 375px iframe produced the true viewport and the overflow with it: a 44-character base58 program address in a bare `<code>`, which had no wrapping rule of its own, plus the wallet stall's fourth control running off the edge. Bare `<code>` now wraps anywhere, and the stall wraps below 560px. All seven routes re-checked at a true 375px: zero overflow, zero clipped controls.
 
 Defects 5, 11 and 12 are one mistake in three places, and it is the one this
 project keeps making: **presenting an absence as a value**. Zero markets, zero

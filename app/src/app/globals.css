@@ -2339,3 +2339,53 @@ button.act.danger:hover:not(:disabled),
   gap: 4px;
   min-width: 0;
 }
+
+/* ---------------------------------------------------------------------------
+ * Narrow-viewport containment
+ *
+ * Found at a real 375px viewport, which earlier passes never actually reached:
+ * the browser pane reported 391 to 500 and Chrome clamps its own window to 500,
+ * so every "375px" check had been run wider than 375. Rendering the page in a
+ * same-origin 375px iframe finally produced the true viewport and 82px of
+ * horizontal overflow with it.
+ *
+ * Two causes, both real:
+ *   a 44-character base58 program address inside a bare <code>, which has no
+ *   wrapping rule of its own and so refused to break;
+ *   and the wallet stall, whose four controls do not fit on one 375px line.
+ * ------------------------------------------------------------------------- */
+
+/* Any inline code may hold a pubkey or a digest. None of them may push the page
+   sideways. `.mono-block` already did this; a bare <code> did not. */
+code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 560px) {
+  /* Let the readout use the full row and wrap its own controls rather than
+     running the last button off the edge. */
+  .burner-readout {
+    max-width: 100%;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .wallet-stall {
+    width: 100%;
+  }
+
+  .wallet-stall > * {
+    min-width: 0;
+  }
+
+  /* The nav pill has nothing to gain from side padding this narrow. */
+  .topnav {
+    padding: 12px 10px;
+  }
+
+  .shell {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
