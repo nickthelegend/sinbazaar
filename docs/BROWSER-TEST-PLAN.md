@@ -145,7 +145,7 @@ Legend — **L1** base Solana · **ER** ephemeral rollup · **PER** private roll
 | B11 | Verdict table | Three rules matching the program's own outcome table | ✅ PASS |
 | B12 | Graveyard proof | One released and one withheld tombstone, both real L1 accounts | ✅ PASS |
 | B13 | Inline probe | Runs a real handshake; prints a refusal and an unfiltered control | ✅ PASS |
-| B14 | Counters | 32 instructions, 31 tests, 3 of 25 rooms, 34 error codes | ✅ PASS |
+| B14 | Counters | 32 instructions, 32 tests, 3 of 25 rooms, 34 error codes; instructions and errors derived from the IDL, not hardcoded | ✅ PASS |
 | B15 | Counters without motion | Real figures still shown when the ticker never runs | ✅ PASS |
 | B16 | Close CTAs | Both navigate | ✅ PASS |
 
@@ -251,11 +251,11 @@ Legend — **L1** base Solana · **ER** ephemeral rollup · **PER** private roll
 
 | # | Item | Correct means | Status |
 |---|---|---|---|
-| J1 | 375px | Every route readable, no overflow, nav wraps unclipped | ✅ PASS |
+| J1 | 375px | Every route readable, no overflow, nav wraps unclipped. Measured at a TRUE 375px viewport, not a preset | ✅ PASS |
 | J2 | 1440px | Nav on one line, no overflow | ✅ PASS |
 | J3 | Contrast | WCAG AA on every text/ground pair, alpha composited | ✅ PASS (fixed) |
 | J4 | Keyboard | Every control reachable and operable, visible focus ring | ✅ PASS |
-| J5 | Reduced motion | Aurora holds, animations stop, all content still visible | ✅ PASS |
+| J5 | Reduced motion | Aurora holds, animations stop, and all content is still visible with every animation and transition disabled | ✅ PASS |
 
 ## K. Off-browser, verified by execution
 
