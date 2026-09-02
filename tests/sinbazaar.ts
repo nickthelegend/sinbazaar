@@ -402,8 +402,18 @@ describe("SINBAZAAR", function () {
       expect(after.no1 - before.no1).to.equal(0);
 
       const settled = await z.marketState(m.market);
+      // A rumor market is zero-sum between the two sides. The 3 SOL the NO side
+      // lost is already inside what the YES side was paid, so the escrow drains to
+      // nothing and the author — who is not a counterparty here — is owed nothing.
+      // Crediting the losing stake to the author as well would promise lamports the
+      // escrow does not hold; `close_book` refuses to let that market home.
       expect(settled.escrowLamports.toNumber()).to.equal(0);
-      expect(settled.authorPayout.toNumber()).to.equal(3 * LAMPORTS);
+      expect(settled.authorPayout.toNumber(), "the author is not a counterparty in a rumor market").to.equal(0);
+
+      // The book balanced: everything the three bidders staked came back out.
+      const paidOut =
+        after.yes1 - before.yes1 + (after.yes2 - before.yes2) + (after.no1 - before.no1);
+      expect(paidOut, "every staked lamport was paid out").to.equal(6 * LAMPORTS);
     });
   });
 

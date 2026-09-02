@@ -8,17 +8,18 @@
  * downgrades every headline to Georgia. Three variable faces, latin subset only,
  * ~187KB total.
  *
- *   Fraunces  — display. High-contrast old-style with an optical-size axis and a
- *               WONK axis that lets the serifs go slightly feral. This is a ledger
- *               of other people's sins; it should not look like a SaaS dashboard.
+ *   Newsreader — display. A newspaper serif with an optical-size axis: the face
+ *               obituaries are set in. That is exactly what the graveyard is, and
+ *               it holds its weight on a near-black ground where a didone's
+ *               hairlines would break up.
  *   Archivo   — interface. A grotesk with tight apertures and a public-notice
  *               flatness. It reads as posted, not designed.
  *   JetBrains Mono — hashes, keys, lamport figures. Half this UI is a commitment
  *               digest; it deserves a real mono with an unambiguous 0.
  */
 @font-face {
-  font-family: "Fraunces";
-  src: url("/fonts/fraunces-var.woff2") format("woff2-variations");
+  font-family: "Newsreader";
+  src: url("/fonts/newsreader-var.woff2") format("woff2-variations");
   font-weight: 300 700;
   font-style: normal;
   font-display: swap;
@@ -55,7 +56,7 @@
   --parchment-2: #b9ac97;
   --parchment-3: #7d7261;
 
-  --display: "Fraunces", Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --display: "Newsreader", Georgia, "Iowan Old Style", "Times New Roman", serif;
   --sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
@@ -1104,24 +1105,27 @@ button.act.danger {
 /* ---------------------------------------------------------------------------
  * Variable-axis settings
  *
- * Fraunces ships four axes. Left at their defaults it is merely a nice serif;
- * the character comes from pushing opsz up at display sizes and letting WONK
- * off its leash a little. SOFT stays low — this is a market for secrets, and it
- * should feel engraved rather than friendly.
+ * Newsreader carries an optical-size axis from 6 to 72. Left at its default it is
+ * a competent body serif; the display character only appears when opsz is driven
+ * up, which is the whole reason to ship the variable file rather than a static cut.
  * ------------------------------------------------------------------------- */
 h1,
 h2,
 h3,
 .tomb-head .room-tag,
 .page-head h1 {
-  font-variation-settings: "opsz" 120, "SOFT" 12, "WONK" 1;
+  font-variation-settings: "opsz" 40;
   font-weight: 500;
-  letter-spacing: -0.014em;
+  letter-spacing: -0.006em;
 }
 
+/* Push the optical size to the top of its range on the page headline: Newsreader
+   thins its strokes and tightens its fit as opsz climbs, which is what gives a
+   display line its edge. */
 h1,
 .page-head h1 {
-  font-variation-settings: "opsz" 144, "SOFT" 10, "WONK" 1;
+  font-variation-settings: "opsz" 72;
+  font-weight: 450;
 }
 
 /* The interface face wants slightly more weight than a grotesk default to hold
