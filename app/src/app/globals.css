@@ -1408,6 +1408,13 @@ textarea {
   padding: 15px 16px;
 }
 
+/* A probe that behaved as the claim requires had no rule of its own, so it was
+   indistinguishable from one that had not run. On the page whose entire job is
+   to be falsifiable, the affirmative result has to read as affirmative. */
+.probe.good {
+  border-color: rgba(255, 179, 71, 0.26);
+}
+
 .probe.bad {
   border-color: rgba(255, 47, 58, 0.4);
 }
@@ -2224,4 +2231,111 @@ button.act.danger:hover:not(:disabled),
     0 0 22px rgba(255, 47, 58, 0.46),
     inset 0 1px 0 rgba(255, 255, 255, 0.34),
     inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+}
+
+/* ---------------------------------------------------------------------------
+ * Room cards
+ *
+ * These were sharing the glass surface with the market cards but had none of
+ * their own interior: no padding, so the text ran to the border, and no rule
+ * styling, so a room's two lines of rule were set in the same full-white body
+ * as its name and the whole card read as one block. A live room and a Phase 2
+ * room were also indistinguishable once the aurora replaced the earlier world.
+ * ------------------------------------------------------------------------- */
+
+.room-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.room-card h2 {
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.rule {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.room-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--hair);
+}
+
+/* A live room is in service and says so with the aurora's amber. A Phase 2 room
+   is real in the enum and refused by the program, so it is drawn back: dimmer
+   ink, no lift on hover, and a hairline border instead of the full one. */
+.room-card.live {
+  border-color: rgba(255, 179, 71, 0.22);
+}
+
+.room-card.off {
+  background: rgba(20, 22, 26, 0.4);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: none;
+}
+
+.room-card.off h2 {
+  color: var(--muted);
+}
+
+.room-card.off .rule {
+  color: var(--dim);
+}
+
+.room-card.off:hover {
+  transform: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Small structural pieces that were rendering with no rule of their own
+ * ------------------------------------------------------------------------- */
+
+/* The graveyard entry's head: room name on the left, verdict on the right. */
+.tomb-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+/* The condition half of a rule branch, e.g. `seal pot > 0`. */
+.branch-when {
+  color: var(--muted);
+}
+
+.branch.live .branch-when {
+  color: var(--amber);
+}
+
+/* The wallet readout's two halves. */
+.burner-readout .key {
+  color: var(--white);
+}
+
+.burner-readout .balance {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* The sequence stage's own column. It survived the PinnedSequence rewrite as a
+   wrapper with no rule, so it was contributing nothing. */
+.lp-layers-stage {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
