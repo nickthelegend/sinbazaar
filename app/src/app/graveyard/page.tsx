@@ -9,7 +9,7 @@
  */
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Empty, OutcomeBadge, Redaction } from "@/components/Bits";
+import { CardSkeleton, Empty, OutcomeBadge, Redaction } from "@/components/Bits";
 import { useTombstones } from "@/hooks/useMarkets";
 import { explorerUrl } from "@/lib/config";
 import { fmtSol, fullHash, OUTCOME_LABEL, revealsText, shortHash, shortKey } from "@/lib/format";
@@ -127,7 +127,7 @@ export default function GraveyardPage() {
 
       {tombs.length === 0 ? (
         loading ? (
-          <Empty>walking the rows…</Empty>
+          <CardSkeleton count={3} />
         ) : (
           <Empty>
             Nothing is buried yet. Take a market to zero and it will end up here.{" "}

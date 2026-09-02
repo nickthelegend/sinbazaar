@@ -1,165 +1,146 @@
 # Design System: SINBAZAAR
 
-Single source of truth for this interface. Written from the built product. Any
-later change inherits these rules rather than drifting back to defaults. Product
-truth lives in [PRODUCT.md](PRODUCT.md); the implementation is one stylesheet,
-`app/src/app/globals.css`, plus `app/src/components/Aurora.tsx`.
+Generated with `stitch-design-taste` from the built product. Single source of
+truth for this interface: any later change inherits these rules rather than
+drifting back to defaults. Product truth lives in [PRODUCT.md](PRODUCT.md), the
+audit that produced this in [docs/UI-AUDIT.md](docs/UI-AUDIT.md), and the
+implementation in `app/src/app/globals.css` plus `app/src/components/Aurora.tsx`.
 
 **Design read:** an on-chain secrets market for crypto-native users and hackathon
-judges, rendered as a cinematic dark product surface whose entire personality is
-a living warm aurora. Native CSS, no component library.
+judges, with a cinematic warm-aurora language, leaning toward native CSS and a
+single pinned dark theme.
 
-**Dials:** Variance 6, Motion 6, Density 5.
+**Dials:** Variance 6 (Offset Asymmetric), Motion 6 (Fluid CSS), Density 5 (Daily
+App Balanced). Sub-direction: `high-end-visual-design`, one register, not blended.
 
 ---
 
-## 1. Visual theme and atmosphere
+## 1. Visual Theme and Atmosphere
 
-Near-black ground. Behind everything, several large soft-focus diagonal
-light-blades glow crimson at their cores and blend through coral into amber at
-the tips, drifting and breathing on staggered pure-CSS loops, under real
-`feTurbulence` film grain and a vignette.
+A cinematic, near-black product surface whose entire personality is a **living
+warm aurora**. Three large soft-focus diagonal light-blades drift and breathe
+behind everything, glowing crimson at their cores and blending through coral into
+amber at the tips, under real film grain and a vignette. The mood is a night
+market lit by a fire somewhere off-frame: warm, moving, and slightly ominous,
+with every piece of chrome held to cold neutral so the light is the only colour
+in the room.
 
-Two rules carry the whole look and are absolute:
+Density sits mid-scale. The hero breathes; the market book below it is data and
+is packed accordingly. Motion is constant but slow, on 15 to 22 second loops, so
+the page feels alive without ever asking to be watched.
 
-1. **Strictly warm.** Crimson, coral, amber. No purple, indigo, violet, cyan or
-   green anywhere. The aurora is the only chroma in the composition.
-2. **Everything else is neutral.** `#ffffff`, `#9c9c9d`, `#07080a`.
+## 2. Colour Palette and Roles
 
-**Page theme lock.** This is a single-theme dark product. The brief pins the
-near-black canvas as the personality, so no light rendition is served and
-`color-scheme` is forced rather than following the OS.
+- **Void Ground** (`#07080a`) - Primary background. Near-black, cool-tinted, never pure `#000000`.
+- **Sunk Well** (`#050607`) - Inputs, code blocks, evidence containers. The one surface below the ground.
+- **Raised Neutral** (`#0d0f12`) - Lifted flat surfaces.
+- **Dark Glass** (`rgba(20,22,26,0.66)`) - Every panel, card and the floating nav. Backdrop-blurred 16px.
+- **Pure White** (`#ffffff`) - Primary type only.
+- **Muted Steel** (`#9b9ca1`) - Secondary type, descriptions, metadata. 6.9:1 on glass.
+- **Dim Steel** (`#82838a`) - Tertiary labels. 5.0:1 on glass. Set by measurement, not by eye.
+- **Whisper Border** (`rgba(255,255,255,0.09)`) - 1px structural lines, with `inset 0 1px 0 rgba(255,255,255,0.07)` as the top highlight.
+- **Aurora Crimson** (`#ff2f3a`) - Blade core. Released, leaked, slashed, urgent, error.
+- **Aurora Coral** (`#ff6b4a`) - Blade mid. Rollup, sole reader, focus ring.
+- **Aurora Amber** (`#ffb347`) - Blade tip. Open, live, forgiven, the active step.
+- **Keycap** (`#e6e6e6` fill, `#2f3031` ink) - The single raised surface.
 
-Two things are load-bearing rather than decorative and must survive any future
-change:
+The three aurora values are **one accent, not three**: they are stops on a single
+gradient and are never used as independent semantic colours competing for
+attention. There is no green success and no blue info anywhere in this system.
+Open reads amber, released reads crimson, withheld reads neutral.
 
-* **The redaction bar.** Where a confession exists but may not be shown, the page
-  draws its withheld shape. It renders `Outcome::reveals_text()`.
-* **The classification band.** A released body carries a crimson band saying it
-  was authorised; a withheld one carries a neutral band that refuses it.
+Shadows are tinted to the ground (`rgba(2,4,9,…)`), never pure black, because a
+neutral shadow on a blue-black canvas reads as a smudge instead of depth.
 
-## 2. Colour palette and roles
+## 3. Typography Rules
 
-| Token | Value | Role |
-|---|---|---|
-| `--ground` | `#07080a` | Page ground. |
-| `--raise` | `#0d0f12` | Lifted neutral. |
-| `--glass` | `rgba(20,22,26,.66)` | Every panel, card and the nav. Backdrop-blurred. |
-| `--sunk` | `#050607` | Inputs, code blocks, evidence containers. |
-| `--white` | `#ffffff` | Primary type. |
-| `--muted` | `#9c9c9d` | Secondary type. |
-| `--dim` | `#838487` | Tertiary. Set by measurement: `#6d6e70` failed AA at 3.7:1. |
-| `--crimson` | `#ff2f3a` | Aurora core. Released, leaked, failed, urgent. |
-| `--coral` | `#ff6b4a` | Aurora mid. Rollup, sole reader, focus ring. |
-| `--amber` | `#ffb347` | Aurora tip. Open, live, forgiven, active step. |
-| `--key` / `--key-ink` | `#e6e6e6` / `#2f3031` | The keycap. |
+- **Display and Body:** **Inter** (`400-700`, self-hosted variable, 48KB). Hierarchy is driven by size and weight, not by family: 64px/600 headline over 18px/400 muted subtitle. `text-wrap: balance` on every heading, `pretty` on body, so no headline orphans a word.
+- **Mono:** **Geist Mono** (`400-600`, self-hosted, 23KB). Digests, pubkeys, lamports, clocks, the install caption and shortcut chips. Tabular figures throughout.
+- **Accent:** exactly one headline word per page in `.flare`, an amber to crimson gradient via `background-clip: text`, echoing the aurora behind it. Never a whole line.
+- **Banned:** system-default stacks, serif in any data surface, all-caps stamping on every label.
+- **Knowingly kept against the default ban:** Inter and Geist Mono are both flagged by the detector as overused. Both are pinned by the brief, and a user pin outranks the default. Recorded in section 7.
 
-State is tinted **from the aurora**, never from a second colour family. There is
-no green "success" and no blue "info" in this system; open reads amber, released
-reads crimson, and withheld reads neutral.
+## 4. Component Stylings
 
-## 3. Typography
+* **Buttons (Keycap):** the one raised surface in a flat language. `#e6e6e6` fill, `#2f3031` ink, 8px radius, and a layered stack of a 2px black ring, a soft white outer glow, and inset top-white and bottom-dark highlights so it reads as a physical key. Presses down 1px on `:active` with the glow collapsing. Secondary is a ghost pill: transparent fill, thin ring, trailing arrow, exactly one per page.
+* **Cards:** dark glass, 14px radius, 1px whisper border, top highlight, ground-tinted cast shadow. Hover lifts 2px and deepens the cast. No coloured stripe down any edge.
+* **Inputs:** label above, hint below, 6px radius, sunk fill. Focus is a coral border plus a 3px coral halo, never a browser default outline.
+* **Loaders:** `CardSkeleton`, shaped to the real card's room name, hash line, clock and book, with a single compositor-only background sweep. No circular spinners, and never a centred word of text: the layout must already be the right shape before the rollup answers.
+* **Empty States:** composed and specific, each naming the next action. "No markets standing. Open one, the village is only interesting when somebody has something to lose."
+* **Badges:** washed aurora tint plus matching ink, 999px. Semantic state only.
+* **The redaction bar:** the signature graphic. Where a confession exists but may not be shown, the page draws its withheld shape under a neutral band. A released body carries a crimson band instead. This renders `Outcome::reveals_text()` and is not decoration.
 
-Two self-hosted variable faces, latin subset, 71KB. Nothing loads from a CDN:
-this runs against a validator on localhost with no internet.
+## 5. Layout Principles
 
-* **Inter** for all UI. Hierarchy comes from size and weight: a 64px/600 headline
-  over an 18px/400 muted subtitle.
-* **Geist Mono** for digests, pubkeys, lamports, clocks, the install caption and
-  shortcut chips. Half this interface is a value compared character by character.
+Grid-first. Content column caps at `1180px`; prose at 640px. The hero is centred
+over the aurora rather than split left-text right-image. The market feed is
+`repeat(auto-fill, minmax(310px, 1fr))`; detail pages are a `1.4fr / 1fr` split
+collapsing to a single column at 900px. The nav is a floating translucent pill,
+not a full-bleed bar, and drops to its own stacked rows below 1040px rather than
+clipping a link. Viewport heights use `100dvh`, never `100vh`. No flexbox
+percentage math anywhere.
 
-**One word of the headline** is set in a warm amber to crimson gradient via
-`background-clip: text` (`.flare`), so the type ties to the light behind it.
-Exactly one word, never a whole line.
+## 6. Motion and Interaction
 
-## 4. Component stylings
+* **The aurora** is the signature: three blades drifting (translate plus a small rotate) and breathing (opacity plus scale) on staggered 15s, 18s and 22s loops. Every `0%` keyframe is full bloom, so any still frame is the richest frame.
+* **Cascade:** cards rise 12px over 520ms on `cubic-bezier(0.16,1,0.3,1)`, staggered 50ms, capped at the fifth item so a long feed does not crawl in.
+* **Countdown:** inside the final 20 seconds the clock goes crimson and breathes. This is the only sustained motion in the content, and the last seconds are the only moment in this product that earns one.
+* **Keycap press:** 130ms, shadow stack collapsing under the finger.
+* Transforms and opacity only. Nothing animates a box size, because that forces layout every frame.
+* Everything above stops under `prefers-reduced-motion`, and the aurora holds its full-bloom frame rather than freezing mid-drift.
 
-* **Radius:** `6px` small, `10px` default, `14px` panels, `8px` keycaps, `999px`
-  pills. One system.
-* **Glass:** `--glass` fill, 1px hairline, `inset 0 1px 0` top highlight, and a
-  deep soft drop shadow. Used for the nav, every card and every panel.
-* **The keycap** is the one raised surface in an otherwise flat language:
-  `#e6e6e6` fill, `#2f3031` text, and a layered shadow stack of a 2px black ring,
-  a soft white outer glow, and inset top-white and bottom-dark highlights, so it
-  reads as a physical key. It presses down on `:active`.
-* **The nav floats.** A translucent pill near the top, not a full-bleed bar.
-* **Ghost pill:** transparent fill, thin ring, trailing arrow. Exactly one per
-  page, and it closes the page rather than floating in a void.
-* **Badges** are washed aurora tints with matching ink.
+## 7. Anti-Patterns (Banned)
 
-## 5. Motion
-
-* **The aurora** is the signature: three blades drifting (translate plus a small
-  rotate) and breathing (opacity plus scale) on staggered 15s, 18s and 22s loops.
-  Every `0%` keyframe is full bloom, so any still frame is the richest frame.
-* **Card entry:** 520ms rise, staggered 50ms, capped at the fifth item.
-* **Countdown:** inside the final 20 seconds the clock goes crimson and breathes.
-* **Keycap press:** 130ms, and the shadow stack collapses under the finger.
-
-Under `prefers-reduced-motion` everything stops, and the aurora holds its
-full-bloom frame rather than freezing mid-drift.
-
-## 6. Deliberate deviations from the detector
-
-The design detector reports three findings. All three are pinned by the brief
-and are kept knowingly rather than silently:
-
-| Finding | Why it stands |
-|---|---|
-| `overused-font: Inter` | The brief pins "ONE Inter typeface for all UI". |
-| `overused-font: Geist Mono` | The brief pins GeistMono for the caption and shortcut chips. |
-| `gradient-text` | The brief pins one headline word in a warm gradient. It is one word, not a whole header, which is the permitted form. |
-
-Nothing else is suppressed. Anything the detector flags that is **not** in this
-table is a real defect and gets fixed.
-
-## 7. What this system does not do
-
-* No purple, indigo, violet, cyan or green. Ever.
-* No second colour family for state.
-* No fake product UI built from divs. The lower half of the landing page is the
-  real live market feed, not a mockup of one.
-* No invented commercial claims. There is no "featured on" badge, because the
-  product has not been featured anywhere.
+* No purple, indigo, violet, cyan or green. Anywhere. Ever.
+* No second colour family for semantic state.
+* No pure `#000000` and no pure `#ffffff` as a surface.
 * No em-dashes or en-dashes anywhere a user can see. Currently zero.
+* No neon outer glows, no glassmorphism outside the committed dark-glass token, no gradient text beyond one headline word.
+* No side-tab accent borders on cards.
+* No fake product UI built from divs. The lower half of the landing page is the real live market feed, not a mockup of one.
+* No invented commercial claims. There is no "featured on" badge, because the product has not been featured anywhere.
 * No scroll cues, no version labels in the hero, no section-number eyebrows.
+* No emoji as iconography, no generic placeholder names, no AI copywriting clichés.
+* No circular spinners, no unstyled framework defaults for 404 or errors.
+
+**Deliberate deviations, kept knowingly rather than suppressed.** The detector
+reports exactly three findings and all three are pinned by the brief: Inter,
+Geist Mono, and the one-word gradient headline. Anything it flags that is *not*
+in this list is a real defect and gets fixed.
 
 ## 8. Surfaces
 
-Every route carries the system. There is no unstyled default anywhere:
+Every route carries the system. No unstyled default anywhere.
 
 | Route | Notes |
 |---|---|
 | `/` | Hero over the aurora, then the live market feed. |
-| `/confess` | The nine-step walk, as command-bar style result rows. |
+| `/confess` | The nine-step walk as command-bar style result rows. |
 | `/rooms` | Three live rooms, twenty-two enumerated and marked. |
 | `/graveyard` | Released and withheld tombstones, side by side. |
 | `/challenge` | Five probes with raw JSON-RPC replies. |
 | `/market/[address]` | The book, the purse, the session, the rule at zero. |
 | `/market/[address]/result` | The verdict as a full glass section. |
-| `not-found.tsx` | 404. Next ships an unstyled default; this replaces it. |
+| `not-found.tsx` | 404. Replaces Next's unstyled default. |
 | `error.tsx` | Route error boundary. Prints the real error verbatim. |
 
 ## 9. Verification
 
-Measured, not assumed:
+Measured, never assumed:
 
 ```bash
 grep -ro "—\|–" app/src --include="*.tsx" --include="*.css" | wc -l   # must be 0
-node ~/.claude/skills/impeccable/scripts/detect.mjs --json app/src     # only the 3 above
+node ~/.claude/skills/impeccable/scripts/detect.mjs --json app/src     # only the 3 pinned
 ```
 
-* WCAG AA on every text and ground pair, sampled from the live DOM with **alpha
-  compositing**: a translucent wash must be flattened onto the ground before the
-  ratio is taken, or every glass surface reports a false 1.00.
+* WCAG AA on every text and ground pair, sampled from the live DOM with **alpha compositing**: a translucent wash must be flattened onto the ground before the ratio is taken, or every glass surface reports a false 1.00 and the check is worthless.
 * No horizontal overflow at 375px or 1440px.
-* Zero console errors on every route.
-* Every route above opened and checked, not assumed.
+* Zero console errors on every one of the nine routes above, each opened rather than assumed.
 
-## 10. What was blocked
+## 10. Known gap
 
-A locked visual reference could not be generated first: `generate-image.mjs`
-needs an `OPENAI_API_KEY` that is not set in this environment, and no
-harness-native image tool is available. The brief itself served as the reference
-instead, and it was specific enough to build against directly. If a key is added
-later, generate the comp and check the built surface against it.
+A locked visual reference could not be generated before implementation:
+`generate-image.mjs` requires an `OPENAI_API_KEY` that is not set in this
+environment, and no harness-native image tool is available. The brief served as
+the reference instead and was specific to hex values and shadow stacks. If a key
+is added later, generate the comp and check the built surface against it.

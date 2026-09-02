@@ -138,3 +138,36 @@ export function Redaction({ label }: { label?: string }) {
     </div>
   );
 }
+
+/**
+ * A loading skeleton shaped like a market card.
+ *
+ * A centred word of text is not a loading state: the page reflows the moment
+ * data lands. These blocks sit at the same size as the real card's room name,
+ * hash line, clock and book, so the grid is already the right shape before the
+ * rollup answers.
+ */
+export function CardSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="grid" aria-hidden="true">
+      {Array.from({ length: count }, (_, i) => (
+        <div className="market-card skeleton" key={i}>
+          <div className="card-top">
+            <span className="sk sk-title" />
+            <span className="sk sk-badge" />
+          </div>
+          <span className="sk sk-hash" />
+          <div className="card-mid">
+            <span className="sk sk-clock" />
+            <span className="sk sk-badge" />
+          </div>
+          <span className="sk sk-bar" />
+          <div className="card-foot">
+            <span className="sk sk-small" />
+            <span className="sk sk-small" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

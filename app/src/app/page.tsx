@@ -3,7 +3,7 @@
 /** The village feed. Live markets, polled off the rollup. */
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Empty } from "@/components/Bits";
+import { CardSkeleton, Empty } from "@/components/Bits";
 import { MarketCard } from "@/components/MarketCard";
 import { useMarkets } from "@/hooks/useMarkets";
 import { LIVE_ROOMS } from "@/lib/rooms";
@@ -103,7 +103,7 @@ export default function VillageFeed() {
 
       {shown.length === 0 ? (
         loading ? (
-          <Empty>reading the stalls…</Empty>
+          <CardSkeleton />
         ) : (
           <Empty>
             No markets standing. <Link href="/confess" className="explorer">Open one</Link>, the

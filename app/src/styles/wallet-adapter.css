@@ -185,7 +185,7 @@
 .wallet-adapter-modal-container {
     display: flex;
     margin: 3rem;
-    min-height: calc(100vh - 6rem); /* 100vh - 2 * margin */
+    min-height: calc(100dvh - 6rem); /* dvh, so iOS Safari does not jump */
     align-items: center;
     justify-content: center;
 }
@@ -193,7 +193,7 @@
 @media (max-width: 480px) {
     .wallet-adapter-modal-container {
         margin: 1rem;
-        min-height: calc(100vh - 2rem); /* 100vh - 2 * margin */
+        min-height: calc(100dvh - 2rem); /* dvh, so iOS Safari does not jump */
     }
 }
 

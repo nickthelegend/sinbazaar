@@ -49,12 +49,17 @@
   --sunk: #050607;
 
   --white: #ffffff;
-  --muted: #9c9c9d;
-  --dim: #838487;
+  --muted: #9b9ca1;
+  --dim: #82838a;
 
   --hair: rgba(255, 255, 255, 0.09);
   --hair-2: rgba(255, 255, 255, 0.16);
   --lift: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  /* Tinted to the ground rather than pure black. A neutral shadow on a
+     blue-black canvas reads as a smudge; this one reads as depth. */
+  --cast: 0 18px 40px rgba(2, 4, 9, 0.62);
+  --cast-lg: 0 22px 50px rgba(2, 4, 9, 0.72);
+  --cast-sm: 0 12px 34px rgba(2, 4, 9, 0.6);
 
   /* The aurora. The only chroma on the page. */
   --crimson: #ff2f3a;
@@ -253,6 +258,7 @@ h1,
 h2,
 h3 {
   margin: 0;
+  text-wrap: balance;
   font-weight: 600;
   letter-spacing: -0.028em;
   line-height: 1.1;
@@ -365,7 +371,7 @@ textarea {
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border: 1px solid var(--hair);
-  box-shadow: var(--lift), 0 12px 34px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--lift), var(--cast-sm);
   border-radius: 999px;
   position: sticky;
   top: 14px;
@@ -679,7 +685,7 @@ button:disabled,
   backdrop-filter: blur(16px);
   border: 1px solid var(--hair);
   border-radius: var(--r-lg);
-  box-shadow: var(--lift), 0 18px 40px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--lift), var(--cast);
 }
 
 .panel {
@@ -708,7 +714,7 @@ button:disabled,
 .market-card:hover {
   transform: translateY(-2px);
   border-color: var(--hair-2);
-  box-shadow: var(--lift), 0 22px 50px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--lift), var(--cast-lg);
 }
 
 .card-top {
@@ -1311,6 +1317,12 @@ textarea {
 }
 
 .lede,
+.pitch,
+.hero-sub {
+  text-wrap: pretty;
+}
+
+.lede,
 .pitch {
   color: var(--muted);
   font-size: 17px;
@@ -1633,7 +1645,7 @@ textarea {
   backdrop-filter: blur(16px);
   border: 1px solid var(--hair);
   border-radius: var(--r-lg);
-  box-shadow: var(--lift), 0 18px 40px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--lift), var(--cast);
   padding: 30px 28px;
   margin-bottom: 22px;
   text-align: center;
@@ -1670,4 +1682,69 @@ textarea {
   background: var(--neutral-wash);
   color: var(--muted);
   border-bottom-color: var(--hair);
+}
+
+/* ---------------------------------------------------------------------------
+ * Skeletons
+ *
+ * Shaped like the card they stand in for, so nothing reflows when the rollup
+ * answers. The shimmer is a single background sweep on the compositor.
+ * ------------------------------------------------------------------------- */
+.market-card.skeleton {
+  pointer-events: none;
+}
+
+.sk {
+  display: block;
+  border-radius: var(--r-sm);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 220% 100%;
+  animation: sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -130% 0;
+  }
+}
+
+.sk-title {
+  width: 46%;
+  height: 15px;
+}
+
+.sk-badge {
+  width: 58px;
+  height: 19px;
+  border-radius: 999px;
+}
+
+.sk-hash {
+  width: 100%;
+  height: 31px;
+}
+
+.sk-clock {
+  width: 74px;
+  height: 22px;
+}
+
+.sk-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  margin-top: 15px;
+}
+
+.sk-small {
+  width: 62px;
+  height: 12px;
 }
