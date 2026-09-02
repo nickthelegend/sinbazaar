@@ -208,7 +208,10 @@ export function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
       if (reduced()) return;
       return whenVisible(() => {
         const obj = { n: 0 };
-        if (el.current) el.current.textContent = `0${suffix}`;
+        // The zero is written by the tween's own first frame, never up front.
+        // Setting it here and trusting the tween to correct it means anything
+        // that stops the ticker, a throttled tab most of all, leaves the figure
+        // reading zero, which is a false statement rather than a lost animation.
         gsap.to(obj, {
           n: to,
           duration: 1.4,
