@@ -8,7 +8,8 @@
     "stack": "bash scripts/local-stack.sh",
     "test": ". ./scripts/local-env.sh && ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
     "seed": ". ./scripts/local-env.sh && ts-node scripts/seed.ts",
-    "demo": ". ./scripts/local-env.sh && ts-node scripts/demo.ts"
+    "demo": ". ./scripts/local-env.sh && ts-node scripts/demo.ts",
+    "keeper": ". ./scripts/local-env.sh && ts-node scripts/keeper.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",
