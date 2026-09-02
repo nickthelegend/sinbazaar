@@ -9,6 +9,53 @@ Legend — **L1** base Solana · **ER** ephemeral rollup · **PER** private (TEE
 
 ---
 
+## Result
+
+| | |
+|---|---|
+| `npm test` — `tests/sinbazaar.ts` | **19 passing, 0 failing** |
+| `tests/edges.ts` — the refusals | **12 passing, 0 failing** |
+| `bash scripts/test-vrf-stall.sh` | **1 passing, 0 failing** |
+| Browser pass — every page, console + network checked on each | **24 items, 0 errors** |
+| `scripts/prove-privacy.ts` on the **devnet TEE** | **9/9, both refusals proven** |
+| Impeccable design detector over `app/src` | **0 findings** |
+| WCAG AA contrast, measured in the live page | **0 failures** |
+| mock / stub / fake / placeholder / TODO in shipped code | **0** |
+
+Everything below ran against real software: a real Anchor program, real validators,
+real delegation, real VRF oracles, real signed transactions. Nothing is mocked and
+nothing is stubbed. Two rows are not full passes and say so.
+
+### What this run found and fixed
+
+Nine real defects, each caught by execution rather than by reading:
+
+1. **Whisper IPO paid the author money the escrow did not hold** — the losing stake
+   was credited to `author_payout` *and* included in the winners' payout. Caught by
+   the `close_book` invariant added the same day.
+2. **`finalize_market` could not publish text at all** — it wrote `market.revealed`
+   and then undelegated in the same instruction, so Anchor serialized an account the
+   delegation program already owned. It only broke the two verdicts that publish, so
+   a passing SOLE_READER run hid it. Fixed with the `exit(&crate::ID)` flush the
+   official examples use.
+3. **An unfunded bid could win the VRF draw** and be admitted to the secret.
+4. **A leaked confession was unverifiable** — the salt lived only inside the private
+   secret, so nobody outside the rollup could check the published commitment. Reveals
+   now publish the salt, and the graveyard recomputes the hash in the reader's browser.
+5. **A Whisper IPO could be griefed into a permanent lock** by requesting VRF on it.
+6. **The web app reported reverted transactions as successes** — `confirmTransaction`
+   resolves for anything that *landed*, and the error in `value.err` was dropped.
+7. **A settled market read "on the rollup" forever** — the layer badge trusted which
+   endpoint answered, but Anchor decodes a delegated market's stale base snapshot
+   without complaint.
+8. **Three console errors on every page load** — the wallet-adapter stylesheet imports
+   DM Sans from Google's CDN, which fails anywhere the network is restricted.
+9. **`deploy-devnet.sh` could not read its own keypair** — the Solana CLI cannot
+   handle a path containing a space, and this repo lives under `/Volumes/Extreme SSD`.
+   Its funding estimate was also more than double the real cost.
+
+---
+
 ## A. On-chain program — instruction level
 
 The program is the product. Each row is exercised by `tests/sinbazaar.ts` against a
@@ -150,6 +197,25 @@ requires a clean console and no failed network requests.**
 | E3 | No secrets committed | `keys/`, `.env.devnet`, seed manifests all git-ignored | ✅ PASS |
 | E4 | Docs match the code | Every instruction named in the docs exists in the IDL | ✅ PASS |
 | E5 | No plaintext in localStorage | Beyond the author's own session | ✅ PASS |
+
+---
+
+## The two items that are not full passes
+
+**C3 — the village feed's empty state.** The graveyard's empty state was verified for
+real (`0 tombstones`, the intentional copy, a link back to the village). The feed's own
+empty branch was never reachable: by the time it could be checked the cluster always had
+markets, and pointing the app at an unused program id did not take effect because Next
+inlines `NEXT_PUBLIC_*` at build time. It uses the same `Empty` component that was
+verified on the graveyard, but its own branch condition is untested. Not claimed as a pass.
+
+**D11 — `scripts/deploy-devnet.sh` end to end.** Its guards were exercised for real and
+two genuine bugs were fixed in the process (a keypair path containing a space, and a
+funding estimate more than double the true cost). The deploy itself could not be re-run:
+it needs ~5.1 SOL and the deployer holds 0.13, the first deploy having consumed 4.8 SOL
+of program rent-exemption. The program **is** live on devnet at
+`2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN` and `prove-privacy.ts` ran against it,
+so D10 and D12 are real passes; only the script's own happy path is unverified.
 
 ---
 
