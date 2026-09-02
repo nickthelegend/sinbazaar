@@ -52,11 +52,20 @@ the interface has to say which.
 
 ### Honest notes
 
-- **Claude in Chrome was unavailable** for the final pass; its extension
-  disconnected mid-session and did not recover across three retries. The sweep
-  ran in the Browser pane, which is a real Chromium driving the same running
-  product. Earlier in the session, while the extension was connected, the
-  landing page's scroll choreography was verified in real Chrome directly.
+- **The plan has now been executed through Claude in Chrome.** The extension was
+  disconnected for two earlier passes and reconnected for the third, which is
+  the run these statuses reflect: every section from A to L was re-walked in
+  Chrome against the production build, including the filters, the confess
+  validations, the five privacy probes, the market and result pages, and the
+  network tab. Chrome cannot emulate a device viewport, so its narrowest real
+  window is 500px wide; **J1 at exactly 375px** was measured in the Browser
+  pane, which does emulate viewports, and is the one item in this plan verified
+  in the other browser. Everything else is Chrome.
+- **The production server had to be moved under the preview manager.** Launched
+  from a shell it was reaped whenever the tool call's process group tore down,
+  which mid-sweep looks exactly like a page failing to load. `.claude/launch.json`
+  now carries a `sinbazaar-prod` entry so the production build has a supervised
+  home on port 3100, separate from the dev server on 3000.
 - **Console entries survive a `clear`.** Errors logged while the cluster was
   deliberately stopped kept being returned afterwards. Every "clean" claim here
   was re-confirmed in a **freshly opened tab**, and separately by instrumenting
