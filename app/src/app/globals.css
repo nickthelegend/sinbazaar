@@ -1529,13 +1529,21 @@ textarea {
  * Motion and access
  * ------------------------------------------------------------------------- */
 
+/*
+ * Movement only, never opacity.
+ *
+ * A fill-mode `both` entrance that starts at opacity 0 hides its element until
+ * the animation runs. That is fine right up until something stops it running,
+ * and then the content is simply gone with no error to explain it. This is the
+ * fourth time that shape of bug has been found in this project, so the rule is
+ * now structural: an entrance may move a thing, it may not decide whether the
+ * thing exists.
+ */
 @keyframes rise {
   from {
-    opacity: 0;
     transform: translateY(12px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }

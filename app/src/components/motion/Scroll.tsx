@@ -72,13 +72,16 @@ export function StaggerIn({
       if (reduced()) return;
       const targets = scope.current?.querySelectorAll(selector);
       if (!targets?.length) return;
+      // Movement only. The visibility gate below already stops this running when
+      // frames will not arrive, but an entrance that also owns opacity can strand
+      // its content if the tween is interrupted for any other reason. Section
+      // headings are content; they do not get to be conditional.
       return whenVisible(() => {
       gsap.fromTo(
         targets,
-        { y, opacity: 0 },
+        { y },
         {
           y: 0,
-          opacity: 1,
           duration: 0.85,
           stagger,
           ease: "power3.out",

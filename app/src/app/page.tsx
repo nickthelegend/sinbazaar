@@ -294,9 +294,9 @@ export default function Landing() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={layer}
-                initial={reduce ? false : { opacity: 0, y: 22 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduce ? undefined : { opacity: 0, y: -18 }}
+                initial={reduce ? false : { y: 22 }}
+                animate={{ y: 0 }}
+                exit={reduce ? undefined : { y: -18 }}
                 transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
               >
                 <h2 className="lp-layer-title">{LAYERS[layer].title}</h2>
@@ -346,9 +346,14 @@ export default function Landing() {
                 <motion.div
                   key={m.address}
                   layout
-                  initial={reduce ? false : { opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={reduce ? undefined : { opacity: 0, scale: 0.97 }}
+                  // Scale only, never opacity. A card that fades in is a card
+                  // that is invisible until something finishes, and if that
+                  // something is prevented the reader gets an empty strip where
+                  // the live market feed should be. Measured: with transitions
+                  // disabled these wrappers sat at opacity 0 forever.
+                  initial={reduce ? false : { scale: 0.97 }}
+                  animate={{ scale: 1 }}
+                  exit={reduce ? undefined : { scale: 0.97 }}
                   transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <MarketCard market={m} />

@@ -6,9 +6,14 @@ against.
 
 ## Result
 
-**135 of 135 items PASS.** Seventeen defects were found and fixed at the root,
-and the plan has been run end to end three times, the last of them entirely in
-Claude in Chrome. Nothing is marked PASS on inspection:
+**135 of 135 items PASS.** Eighteen defects were found and fixed at the root, and
+the plan has been run end to end four times, the last two entirely in Claude in
+Chrome.
+
+The fourth pass was an audit of the plan itself rather than the product: which
+rows recorded a PASS whose measurement never actually asserted the stated
+condition. That is what let defect 17 survive three passes, and it found two
+more. Nothing is marked PASS on inspection:
 every row was observed in the browser or in a command that ran.
 
 The second run added section L, an explicit row for every one of the 32
@@ -27,7 +32,7 @@ not the same claim as "the suite is green".
 | Mocks, stubs, fakes, placeholders | **0** |
 | Design detector | 3, all pinned by the brief and recorded in DESIGN.md |
 
-### The sixteen defects
+### The eighteen defects
 
 1. **A3** The active nav link had a class and no `aria-current`, so a screen reader could not tell which page it was on.
 2. **E4** The rule box never highlighted the applicable branch, on any market, in any design. `RuleBox` renders `branch live`; the stylesheet targeted `.branch.active`.
@@ -45,12 +50,25 @@ not the same claim as "the suite is green".
 14. **B2** The split headline's word gaps are a CSS `column-gap`, so its accessible name read "Somebodyhassomething". The real sentence now lives on `aria-label`.
 15. **L31** `commit_market` is a real instruction in the deployed program and **nothing in the repo called it**. It checkpoints a live market to Solana without ending it, and an instruction nobody exercises is one nobody knows still works. It now has a test that bids, confirms L1 still holds the pre-bid snapshot, commits, and asserts both that the base layer catches up **and** that the market is still delegated and still open.
 16. **B14** The landing page's counters were hardcoded. Within one commit of adding a test, the page was already stating a figure that was no longer true. Instructions and error codes are now read straight out of the IDL the app already loads, so they cannot drift.
+18. **J5** With every animation and transition disabled, the landing page's **live market strip stayed invisible**. Framer Motion's `initial={{opacity: 0}}` on the card wrappers, and a CSS `rise` keyframe whose `from` was also opacity 0, both made the page's primary content conditional on an animation finishing. This is the same shape of bug as the `gsap.from` hero, the zeroed counters and the entrance gating, in its fourth disguise, so the rule is now structural: **an entrance may move a thing, it may not decide whether the thing exists.** Every entrance in the app is transform-only. Re-measured with all motion killed: zero hidden elements, all three cards fully visible.
 17. **J1** The app had **82px of horizontal overflow at 375px**, and three passes had missed it because none of them ever actually reached 375. The Browser pane's "mobile preset" reported 391 to 500, and Chrome clamps its own window to a 500px minimum, so every check labelled 375 had been run wider. Rendering the page inside a same-origin 375px iframe produced the true viewport and the overflow with it: a 44-character base58 program address in a bare `<code>`, which had no wrapping rule of its own, plus the wallet stall's fourth control running off the edge. Bare `<code>` now wraps anywhere, and the stall wraps below 560px. All seven routes re-checked at a true 375px: zero overflow, zero clipped controls.
 
 Defects 5, 11 and 12 are one mistake in three places, and it is the one this
 project keeps making: **presenting an absence as a value**. Zero markets, zero
 balance, zero bytes. Not knowing a thing is not the same as it being zero, and
 the interface has to say which.
+
+Defect 18 is the other recurring one, and it took four passes to name properly:
+**motion must never own existence**. A hero that fades in is a hero that is
+absent until something finishes. Every entrance in this app now moves its
+element and nothing more.
+
+And the reason both survived so long is a third habit, this one in the testing
+rather than the code: **an item that names a condition has to assert that exact
+condition at the moment it measures**. "Mobile preset" was never 375px. "The
+reduced-motion block exists" was never "content survives without motion". A row
+that checks something adjacent to its own definition is a row that passes for
+the wrong reason.
 
 ### Honest notes
 
