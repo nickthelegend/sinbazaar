@@ -30,6 +30,15 @@ import {
   type StepState,
 } from "@/lib/flows";
 import { fmtSol, fullHash, shortKey } from "@/lib/format";
+import {
+  bidWithSession,
+  forgetSession,
+  loadSession,
+  openSession,
+  revokeSession,
+  SESSION_FUEL,
+  type SessionView,
+} from "@/lib/session";
 import { knownBidders } from "@/lib/registry";
 import { roomOf, SIDE_LABEL, type SideName } from "@/lib/rooms";
 
@@ -58,6 +67,7 @@ export default function MarketPage() {
   const [purse, setPurse] = useState<PurseView | null>(null);
   const [amountSol, setAmountSol] = useState(0.1);
   const [topUpSol, setTopUpSol] = useState(1);
+  const [ceilingSol, setCeilingSol] = useState(0.5);
   const [busy, setBusy] = useState<string | null>(null);
   const [flowStates, setFlowStates] = useState<Record<string, StepState>>({});
   const [flowDetails, setFlowDetails] = useState<Record<string, string>>({});
@@ -120,22 +130,80 @@ export default function MarketPage() {
     });
   }, [wallet.signer, topUpSol, startFlow, report]);
 
+  // A session, if this browser already holds one for this market.
+  const [session, setSession] = useState<SessionView | null>(null);
+  useEffect(() => {
+    setSession(market ? loadSession(market.address) : null);
+  }, [market?.address]);
+
+  const onOpenSession = useCallback(() => {
+    if (!wallet.signer || !market) return;
+    void startFlow("session", async () => {
+      const view = await openSession(
+        wallet.signer!,
+        new PublicKey(market.address),
+        new BN(market.marketId),
+        Math.max(60, market.expiresAt - Math.floor(Date.now() / 1000)),
+        Math.round(ceilingSol * LAMPORTS_PER_SOL)
+      );
+      setSession(view);
+      setNotice(
+        `session open — ${shortKey(view.publicKey)} may spend up to ${ceilingSol} SOL on this market and nothing else`
+      );
+    });
+  }, [wallet.signer, market, ceilingSol, startFlow]);
+
+  const onRevokeSession = useCallback(() => {
+    if (!wallet.signer || !market) return;
+    void startFlow("session", async () => {
+      await revokeSession(wallet.signer!, new PublicKey(market.address), new BN(market.marketId));
+      setSession(null);
+      setNotice("session revoked on the rollup — that key can no longer bid");
+    });
+  }, [wallet.signer, market, startFlow]);
+
   const onBid = useCallback(
     (side: SideName) => {
       if (!wallet.signer || !market) return;
       void startFlow("bid", async () => {
+        const amount = new BN(Math.round(amountSol * LAMPORTS_PER_SOL));
+        // With a live session the wallet is not involved at all: the scoped key
+        // signs, and `place_bid_with_session` checks the scope on chain.
+        if (session) {
+          try {
+            const signature = await bidWithSession(
+              session,
+              wallet.signer!.publicKey,
+              new PublicKey(market.address),
+              new BN(market.marketId),
+              side,
+              amount
+            );
+            setNotice(
+              `${SIDE_LABEL[side]} bid signed by the session key — no wallet popup — ${shortKey(signature, 8)}`
+            );
+            return;
+          } catch (err) {
+            // A revoked or expired session must not silently fall back to the
+            // wallet: the villager asked for a scoped key and is entitled to
+            // know it stopped working.
+            forgetSession(market.address);
+            setSession(null);
+            throw err;
+          }
+        }
         const signature = await placeBid(
           wallet.signer!,
           new PublicKey(market.address),
           new BN(market.marketId),
           side,
-          new BN(Math.round(amountSol * LAMPORTS_PER_SOL)),
+          amount,
           report
         );
         setNotice(`${SIDE_LABEL[side]} bid landed on the rollup — ${shortKey(signature, 8)}`);
       });
     },
-    [wallet.signer, market, amountSol, startFlow, report]
+    [wallet.signer, market, amountSol, session, startFlow, report]
   );
 
   const onResolve = useCallback(() => {
@@ -234,6 +302,56 @@ export default function MarketPage() {
                     disabled={!canBid}
                   />
                 </label>
+              </div>
+
+              <div className="session-box">
+                {session ? (
+                  <>
+                    <div className="row" style={{ justifyContent: "space-between" }}>
+                      <span className="lbl">session key · live</span>
+                      <button type="button" className="chip" onClick={onRevokeSession} disabled={!!busy}>
+                        revoke
+                      </button>
+                    </div>
+                    <p className="hint">
+                      <code>{shortKey(session.publicKey)}</code> may spend up to{" "}
+                      <strong>{(session.maxSpend / LAMPORTS_PER_SOL).toFixed(2)} SOL</strong> on
+                      this market and nothing else. Bids below are signed by it — no wallet
+                      popup, no base-layer transaction.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="row">
+                      <label className="field" style={{ margin: 0, flex: "1 1 140px" }}>
+                        <span className="lbl">session ceiling (SOL)</span>
+                        <input
+                          type="number"
+                          min={0.01}
+                          step={0.05}
+                          value={ceilingSol}
+                          onChange={(e) => setCeilingSol(Number(e.target.value))}
+                          disabled={!canBid}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="chip"
+                        onClick={onOpenSession}
+                        disabled={!canBid || !!busy}
+                      >
+                        {busy === "session" ? "opening…" : "open a session"}
+                      </button>
+                    </div>
+                    <p className="hint">
+                      Approve once and a scoped key takes over. <code>open_session</code> binds it
+                      to this market, this ceiling and this timer;{" "}
+                      <code>place_bid_with_session</code> checks all three on chain. It is funded
+                      with {(SESSION_FUEL / LAMPORTS_PER_SOL).toFixed(2)} SOL for rollup fees and
+                      can do nothing else with your purse.
+                    </p>
+                  </>
+                )}
               </div>
 
               <div className="actions" style={{ marginTop: 12 }}>

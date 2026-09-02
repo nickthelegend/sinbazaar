@@ -1305,3 +1305,15 @@ textarea {
   white-space: pre-wrap;
   margin: 0;
 }
+
+/* A session is a granted scope, so it is drawn as a sub-field of the book. */
+.session-box {
+  border: var(--rule-hair);
+  background: var(--form-2);
+  padding: 10px 11px;
+  margin-top: 12px;
+}
+
+.session-box .hint {
+  margin: 6px 0 0;
+}
