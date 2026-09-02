@@ -124,7 +124,23 @@ table is a real defect and gets fixed.
 * No em-dashes or en-dashes anywhere a user can see. Currently zero.
 * No scroll cues, no version labels in the hero, no section-number eyebrows.
 
-## 8. Verification
+## 8. Surfaces
+
+Every route carries the system. There is no unstyled default anywhere:
+
+| Route | Notes |
+|---|---|
+| `/` | Hero over the aurora, then the live market feed. |
+| `/confess` | The nine-step walk, as command-bar style result rows. |
+| `/rooms` | Three live rooms, twenty-two enumerated and marked. |
+| `/graveyard` | Released and withheld tombstones, side by side. |
+| `/challenge` | Five probes with raw JSON-RPC replies. |
+| `/market/[address]` | The book, the purse, the session, the rule at zero. |
+| `/market/[address]/result` | The verdict as a full glass section. |
+| `not-found.tsx` | 404. Next ships an unstyled default; this replaces it. |
+| `error.tsx` | Route error boundary. Prints the real error verbatim. |
+
+## 9. Verification
 
 Measured, not assumed:
 
@@ -138,3 +154,12 @@ node ~/.claude/skills/impeccable/scripts/detect.mjs --json app/src     # only th
   ratio is taken, or every glass surface reports a false 1.00.
 * No horizontal overflow at 375px or 1440px.
 * Zero console errors on every route.
+* Every route above opened and checked, not assumed.
+
+## 10. What was blocked
+
+A locked visual reference could not be generated first: `generate-image.mjs`
+needs an `OPENAI_API_KEY` that is not set in this environment, and no
+harness-native image tool is available. The brief itself served as the reference
+instead, and it was specific enough to build against directly. If a key is added
+later, generate the comp and check the built surface against it.
