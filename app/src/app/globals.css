@@ -1198,3 +1198,38 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* ---------------------------------------------------------------------------
+ * The pulse
+ *
+ * Two latencies side by side is the whole argument. The rollup figure is set in
+ * the cleared colour because a fast answer is a good answer; the base figure is
+ * left in ink because it is not a fault, it is just Solana.
+ * ------------------------------------------------------------------------- */
+.endpoints > div {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.lat {
+  border: var(--rule-hair);
+  padding: 1px 5px;
+}
+
+.lat.fast {
+  color: var(--cleared);
+  border-color: var(--cleared);
+}
+
+.lat.bad {
+  color: var(--seal);
+  border-color: var(--seal);
+}
+
+.live-pill {
+  background: var(--cleared);
+  color: var(--field);
+  border-color: var(--cleared);
+}

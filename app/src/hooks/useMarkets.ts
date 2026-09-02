@@ -8,6 +8,8 @@ import {
   type MarketView,
   type TombstoneView,
 } from "@/lib/markets";
+import { subscribeAccount, subscribeVillage } from "@/lib/live";
+import { PublicKey } from "@solana/web3.js";
 
 interface Feed<T> {
   data: T;
@@ -50,17 +52,61 @@ function usePolled<T>(load: () => Promise<T>, initial: T, intervalMs: number): F
   return { data, loading, error, reload };
 }
 
-/** The village feed. Polls the rollup, because that is where the book moves. */
-export function useMarkets(intervalMs = 3000): Feed<MarketView[]> {
-  return usePolled(fetchMarkets, [], intervalMs);
+/**
+ * Subscribe to the rollup and reload on every change, coalescing bursts.
+ *
+ * One bid touches three accounts — the market, the purse and the new bid — and
+ * would otherwise fire three reloads for one user action. A short trailing
+ * window collapses that into a single fetch while still landing well inside the
+ * time it takes a person to look up.
+ */
+function useLive(reload: () => Promise<void>, subscribe: (cb: () => void) => () => void) {
+  const reloadRef = useRef(reload);
+  reloadRef.current = reload;
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const stop = subscribe(() => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void reloadRef.current(), 120);
+    });
+    return () => {
+      if (timer) clearTimeout(timer);
+      stop();
+    };
+    // `subscribe` is recreated per render by callers; depending on it would
+    // resubscribe every render. The subscription target is fixed per mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }
 
-export function useMarket(address: string | null, intervalMs = 2000): Feed<MarketView | null> {
+/**
+ * The village feed.
+ *
+ * Live: a websocket subscription to every account this program owns on the
+ * rollup, so a bid placed in another tab appears here without a refresh. The
+ * poll stays as a slow safety net for endpoints that refuse subscriptions.
+ */
+export function useMarkets(intervalMs = 15000): Feed<MarketView[]> {
+  const feed = usePolled(fetchMarkets, [], intervalMs);
+  useLive(feed.reload, subscribeVillage);
+  return feed;
+}
+
+export function useMarket(address: string | null, intervalMs = 15000): Feed<MarketView | null> {
   const load = useCallback(
     () => (address ? fetchMarket(address) : Promise.resolve(null)),
     [address]
   );
-  return usePolled(load, null, intervalMs);
+  const feed = usePolled(load, null, intervalMs);
+  useLive(
+    feed.reload,
+    useCallback(
+      (cb: () => void) => (address ? subscribeAccount(new PublicKey(address), cb) : () => {}),
+      [address]
+    )
+  );
+  return feed;
 }
 
 /** The graveyard, read from the BASE layer. */

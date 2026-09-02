@@ -9,6 +9,7 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useVillageWallet } from "./Providers";
 import { CLUSTER, ER_RPC, TEE_RPC, BASE_RPC } from "@/lib/config";
 import { shortKey } from "@/lib/format";
+import { usePulse } from "@/hooks/usePulse";
 
 const WalletMultiButton = dynamic(
   async () => (await import("@solana/wallet-adapter-react-ui")).WalletMultiButton,
@@ -116,16 +117,39 @@ function WalletStall() {
   );
 }
 
+/**
+ * The endpoint footer, with a live pulse.
+ *
+ * Every page of this product asserts that the market runs on an Ephemeral
+ * Rollup. This is where that stops being an assertion: the rollup's slot height
+ * arrives by websocket push, and the two round-trip latencies sit next to each
+ * other so the difference between the layers is a number the reader watched
+ * appear rather than a claim in a paragraph.
+ */
 export function EndpointFooter() {
+  const pulse = usePulse();
+
+  const lat = (p: { ms: number | null; error: boolean }) =>
+    p.error ? "unreachable" : p.ms === null ? "…" : `${p.ms} ms`;
+
   return (
     <footer className="endpoints">
       <div>
         <span className="lbl">base</span>
         <code>{BASE_RPC}</code>
+        <code className={pulse.base.error ? "lat bad" : "lat"}>{lat(pulse.base)}</code>
       </div>
       <div>
         <span className="lbl">rollup</span>
         <code>{ER_RPC}</code>
+        <code className={pulse.er.error ? "lat bad" : "lat fast"}>{lat(pulse.er)}</code>
+      </div>
+      <div>
+        <span className="lbl">slot</span>
+        <code>{pulse.slot === null ? "…" : pulse.slot.toLocaleString()}</code>
+        <span className={pulse.live ? "pill live-pill" : "pill"}>
+          {pulse.live ? "live" : "polling"}
+        </span>
       </div>
       <div>
         <span className="lbl">tee</span>
