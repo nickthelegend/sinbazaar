@@ -29,13 +29,32 @@ export default function VillageFeed() {
     <>
       <section className="page-head">
         <p className="kicker">the village</p>
-        <h1>
-          {openCount} market{openCount === 1 ? "" : "s"} still <span className="flare">open</span>.
-        </h1>
-        <p className="lede">
-          Every card is a live account read off the rollup. The book moves here the moment a bid
-          lands anywhere, over a websocket, with no refresh.
-        </p>
+        {error ? (
+          <>
+            <h1>
+              The cluster is <span className="flare">not answering</span>.
+            </h1>
+            <p className="lede">
+              Neither the base layer nor the rollup returned anything, so this page has no idea
+              how many markets are standing. It is not showing you an empty village, it is
+              showing you a broken connection.
+            </p>
+            <p className="mono-block" style={{ marginTop: 16, maxWidth: "44rem" }}>
+              {error}
+            </p>
+          </>
+        ) : (
+          <>
+            <h1>
+              {openCount} market{openCount === 1 ? "" : "s"} still{" "}
+              <span className="flare">open</span>.
+            </h1>
+            <p className="lede">
+              Every card is a live account read off the rollup. The book moves here the moment a
+              bid lands anywhere, over a websocket, with no refresh.
+            </p>
+          </>
+        )}
       </section>
 
       <div className="actions" style={{ marginBottom: 18 }}>

@@ -98,15 +98,25 @@ function toMarketView(address: string, acct: any, layer: Layer): MarketView {
   };
 }
 
-async function marketsOn(layer: Layer): Promise<MarketView[]> {
+/** Thrown when neither layer could be reached at all. */
+export class ClusterUnreachable extends Error {
+  constructor(readonly cause?: unknown) {
+    super("the cluster did not answer");
+    this.name = "ClusterUnreachable";
+  }
+}
+
+async function marketsOn(layer: Layer): Promise<MarketView[] | null> {
   const connection = layer === "er" ? erConnection() : baseConnection();
   try {
     const rows = await accountsOf(programFor(connection)).market.all();
     return rows.map((row: any) => toMarketView(row.publicKey.toBase58(), row.account, layer));
   } catch {
-    // Some endpoints refuse getProgramAccounts. The registry fallback below
-    // still surfaces everything this browser has touched.
-    return [];
+    // null means "this endpoint did not answer", which is different from an
+    // endpoint that answered with nothing. Collapsing the two made an
+    // unreachable validator render as a village with no markets in it, which
+    // is a false statement rather than a missing feature.
+    return null;
   }
 }
 
@@ -161,12 +171,13 @@ export async function fetchMarket(address: string): Promise<MarketView | null> {
 /** The village feed: every market either layer will admit to. */
 export async function fetchMarkets(): Promise<MarketView[]> {
   const [er, base] = await Promise.all([marketsOn("er"), marketsOn("base")]);
+  if (er === null && base === null) throw new ClusterUnreachable();
   const byAddress = new Map<string, MarketView>();
-  for (const m of er) byAddress.set(m.address, m);
+  for (const m of er ?? []) byAddress.set(m.address, m);
   // Base-layer `market.all()` only returns markets this program still owns, i.e.
   // the ones that are NOT delegated. Anything it returns has come home, so it wins
   // over the rollup's stale copy, both for the data and for the layer badge.
-  for (const m of base) byAddress.set(m.address, m);
+  for (const m of base ?? []) byAddress.set(m.address, m);
 
   if (byAddress.size === 0) {
     const remembered = await Promise.all(knownMarkets().map((a) => fetchMarket(a)));

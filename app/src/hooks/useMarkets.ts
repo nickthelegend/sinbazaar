@@ -60,11 +60,16 @@ function usePolled<T>(load: () => Promise<T>, initial: T, intervalMs: number): F
  * window collapses that into a single fetch while still landing well inside the
  * time it takes a person to look up.
  */
-function useLive(reload: () => Promise<void>, subscribe: (cb: () => void) => () => void) {
+function useLive(
+  reload: () => Promise<void>,
+  subscribe: (cb: () => void) => () => void,
+  enabled: boolean
+) {
   const reloadRef = useRef(reload);
   reloadRef.current = reload;
 
   useEffect(() => {
+    if (!enabled) return;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const stop = subscribe(() => {
       if (timer) clearTimeout(timer);
@@ -77,7 +82,7 @@ function useLive(reload: () => Promise<void>, subscribe: (cb: () => void) => () 
     // `subscribe` is recreated per render by callers; depending on it would
     // resubscribe every render. The subscription target is fixed per mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [enabled]);
 }
 
 /**
@@ -89,7 +94,8 @@ function useLive(reload: () => Promise<void>, subscribe: (cb: () => void) => () 
  */
 export function useMarkets(intervalMs = 15000): Feed<MarketView[]> {
   const feed = usePolled(fetchMarkets, [], intervalMs);
-  useLive(feed.reload, subscribeVillage);
+  // A dead validator must not be handed a websocket to retry against forever.
+  useLive(feed.reload, subscribeVillage, feed.error === null && !feed.loading);
   return feed;
 }
 
@@ -104,7 +110,8 @@ export function useMarket(address: string | null, intervalMs = 15000): Feed<Mark
     useCallback(
       (cb: () => void) => (address ? subscribeAccount(new PublicKey(address), cb) : () => {}),
       [address]
-    )
+    ),
+    feed.error === null && !feed.loading
   );
   return feed;
 }

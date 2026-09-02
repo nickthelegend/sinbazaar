@@ -93,7 +93,7 @@ const VERDICTS = [
 ];
 
 export default function Landing() {
-  const { data: markets } = useMarkets();
+  const { data: markets, error: marketsError } = useMarkets();
   const { data: tombs } = useTombstones();
   const pulse = usePulse();
   const reduce = useReducedMotion();
@@ -179,10 +179,19 @@ export default function Landing() {
       <HeroIntro>
         <section className="lp-hero">
           <p className="eyebrow" data-hero="eyebrow">
-            <b>
-              {openCount} market{openCount === 1 ? "" : "s"} open
-            </b>
-            right now on {CLUSTER}
+            {marketsError ? (
+              <>
+                <b>{CLUSTER} is not answering</b>
+                the page below is live, the cluster is not
+              </>
+            ) : (
+              <>
+                <b>
+                  {openCount} market{openCount === 1 ? "" : "s"} open
+                </b>
+                right now on {CLUSTER}
+              </>
+            )}
           </p>
 
           <h1 className="lp-h1">
@@ -329,8 +338,9 @@ export default function Landing() {
           </motion.div>
         ) : (
           <div className="empty">
-            No markets are standing on {CLUSTER} at the moment. Open one and it appears here, in
-            this list, without a reload.
+            {marketsError
+              ? `Neither layer answered, so there is nothing to show. This is a broken connection to ${CLUSTER}, not an empty village.`
+              : `No markets are standing on ${CLUSTER} at the moment. Open one and it appears here, in this list, without a reload.`}
           </div>
         )}
       </section>
