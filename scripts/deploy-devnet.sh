@@ -13,11 +13,23 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-DEPLOYER="${DEPLOYER:-$ROOT/keys/deployer.json}"
+# Relative on purpose. The Solana CLI cannot read a keypair from a path containing
+# a space — `solana address -k "/Volumes/Extreme SSD/.../deployer.json"` fails with
+# "No default signer found" even though the file is right there — and this repo may
+# well live under such a path. We cd to $ROOT above, so a relative path sidesteps it.
+DEPLOYER="${DEPLOYER:-keys/deployer.json}"
 RPC="${RPC:-https://api.devnet.solana.com}"
 PROGRAM_KP="target/deploy/sinbazaar-keypair.json"
 
 [ -f "$DEPLOYER" ] || { echo "ERROR: no deployer keypair at $DEPLOYER"; exit 1; }
+case "$DEPLOYER" in
+  *\ *)
+    echo "ERROR: the Solana CLI cannot read a keypair from a path containing a space:"
+    echo "  $DEPLOYER"
+    echo "Pass a space-free path instead, e.g. DEPLOYER=~/.config/solana/id.json"
+    exit 1
+    ;;
+esac
 [ -f target/deploy/sinbazaar.so ] || { echo "ERROR: run 'anchor build' first."; exit 1; }
 
 ADDR="$(solana address -k "$DEPLOYER")"
@@ -31,8 +43,12 @@ echo "binary    $SIZE_BYTES bytes"
 BAL="$(solana balance -k "$DEPLOYER" --url "$RPC" | awk '{print $1}')"
 echo "balance   $BAL SOL"
 
-# A program deploy needs roughly 2x the binary's rent, plus fees.
-NEED="$(awk "BEGIN{printf \"%.2f\", ($SIZE_BYTES * 2 * 0.00000696) + 1}")"
+# Ask the cluster what the program account will actually cost rather than guessing.
+# `solana program deploy` without --max-len allocates exactly the binary's length, so
+# the rent-exempt minimum for that size plus a little for fees is the real number.
+# (An earlier 2x rule of thumb here overstated it by more than double.)
+RENT="$(solana rent "$SIZE_BYTES" --url "$RPC" 2>/dev/null | awk '/Rent-exempt minimum/{print $(NF-1)}')"
+NEED="$(awk "BEGIN{printf \"%.2f\", ${RENT:-5} + 0.3}")"
 if awk "BEGIN{exit !($BAL < $NEED)}"; then
   echo ""
   echo "Not enough devnet SOL: need about $NEED, have $BAL."
@@ -69,7 +85,7 @@ export VALIDATOR=MTEWGuqxUpYZGFJQcp8tLN7x5v9BSeoFHYWQQ3n3xzo
 # ephemeral_vrf_sdk::consts::DEFAULT_EPHEMERAL_QUEUE
 export VRF_EPHEMERAL_QUEUE=5hBR571xnXppuCPveTrctfTU7tJLSN94nq7kv7FRK5Tc
 export ANCHOR_PROVIDER_URL=\$PROVIDER_ENDPOINT
-export ANCHOR_WALLET=$DEPLOYER
+export ANCHOR_WALLET=./$DEPLOYER
 EOF
 
 echo ""
