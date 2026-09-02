@@ -8,6 +8,7 @@
  */
 import { PublicKey } from "@solana/web3.js";
 import { accountsOf, baseConnection, erConnection, programFor } from "./anchor";
+import { PROGRAM_ID } from "./config";
 import { decodeRevealed, toNumber, variantOf } from "./format";
 import { knownMarkets } from "./registry";
 import { roomOf } from "./rooms";
@@ -110,24 +111,48 @@ async function marketsOn(layer: Layer): Promise<MarketView[]> {
 }
 
 /**
- * Read one market, asking the base layer first.
+ * Read one market, and be careful about which copy is the live one.
  *
- * Which endpoint answers is what tells us where the market actually lives. A
- * delegated market is owned by the delegation program on L1, so an Anchor fetch
- * there fails and we fall through to the rollup. Once it is committed and
- * undelegated the base copy is the authoritative one — and asking the rollup first
- * would keep reporting "on the rollup" forever, because the rollup never drops its
- * stale copy.
+ * A delegated market still has an account on L1 — owned by the delegation program,
+ * holding a pre-delegation snapshot. Anchor will decode that snapshot perfectly
+ * happily (it does not enforce the owner on `fetch`), so "try base, fall back to the
+ * rollup" silently serves a market with zero bids and an empty book.
+ *
+ * The account's OWNER is the only reliable signal:
+ *   owned by us            -> committed and undelegated; the base copy is the truth
+ *   owned by the delegator -> delegated; the rollup copy is the truth
  */
 export async function fetchMarket(address: string): Promise<MarketView | null> {
   const key = new PublicKey(address);
-  for (const layer of ["base", "er"] as Layer[]) {
-    const connection = layer === "er" ? erConnection() : baseConnection();
+  const base = baseConnection();
+  const onBase = await base.getAccountInfo(key).catch(() => null);
+  const homed = !!onBase && onBase.owner.equals(PROGRAM_ID);
+
+  if (homed) {
     try {
-      const acct = await accountsOf(programFor(connection)).market.fetch(key);
-      if (acct) return toMarketView(address, acct, layer);
+      const acct = await accountsOf(programFor(base)).market.fetch(key);
+      if (acct) return toMarketView(address, acct, "base");
     } catch {
-      /* not here; try the other layer */
+      /* fall through to the rollup */
+    }
+  }
+
+  try {
+    const acct = await accountsOf(programFor(erConnection())).market.fetch(key);
+    if (acct) return toMarketView(address, acct, "er");
+  } catch {
+    /* not on the rollup either */
+  }
+
+  // Last resort: a market caught mid-delegation, where the rollup has not cloned it
+  // yet. Render the snapshot rather than a blank page, and label it as delegated —
+  // because it is.
+  if (onBase) {
+    try {
+      const acct = await accountsOf(programFor(base)).market.fetch(key);
+      if (acct) return toMarketView(address, acct, "er");
+    } catch {
+      /* genuinely unreadable */
     }
   }
   return null;

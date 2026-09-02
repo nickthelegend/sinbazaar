@@ -90,8 +90,46 @@ export async function sendIxs(
     skipPreflight: opts.skipPreflight ?? true,
   });
   const bh = await connection.getLatestBlockhash();
-  await connection.confirmTransaction({ signature, ...bh }, "confirmed");
+  const result = await connection.confirmTransaction({ signature, ...bh }, "confirmed");
+
+  // `confirmTransaction` resolves for a transaction that LANDED, whether or not it
+  // succeeded — a reverted instruction comes back in `value.err` rather than being
+  // thrown. Ignoring it makes every on-chain failure render as a green tick, which
+  // is exactly what it did here: a bid larger than the purse "succeeded" in the UI
+  // while the market recorded no bid at all.
+  if (result.value.err) throw await explainFailure(connection, signature, result.value.err);
   return signature;
+}
+
+/**
+ * Turn a landed-but-failed transaction into something a person can act on.
+ *
+ * Anchor writes the human-readable reason into the program logs
+ * ("Error Message: purse has insufficient available lamports."), so pull that out
+ * rather than showing the caller a raw `{"InstructionError":[0,{"Custom":6017}]}`.
+ */
+async function explainFailure(
+  connection: Connection,
+  signature: string,
+  err: unknown
+): Promise<Error> {
+  let logs: string[] = [];
+  try {
+    const tx = await connection.getTransaction(signature, {
+      commitment: "confirmed",
+      maxSupportedTransactionVersion: 0,
+    });
+    logs = tx?.meta?.logMessages ?? [];
+  } catch {
+    /* the logs are a courtesy; the failure is real either way */
+  }
+  const message = logs.find((l) => l.includes("Error Message:"));
+  if (message) {
+    return new Error(message.slice(message.indexOf("Error Message:") + 15).trim());
+  }
+  const panic = logs.find((l) => l.includes("failed:"));
+  if (panic) return new Error(panic.slice(panic.indexOf("failed:") + 7).trim());
+  return new Error(`transaction failed: ${JSON.stringify(err)}`);
 }
 
 /** Wait for a delegated account to show up on the rollup. */

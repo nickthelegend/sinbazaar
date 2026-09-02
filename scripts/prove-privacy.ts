@@ -192,9 +192,14 @@ async function waitOn(conn: any, key: PublicKey, label: string, ms = 60_000) {
   const strangerMarket = await strangerTee.getAccountInfo(market).catch(() => null);
   check(strangerMarket !== null, "a stranger CAN read the market — the game is public, the secret is not");
 
+  // A local validator has no hosted explorer, so point the link at it explicitly
+  // rather than at devnet, where these accounts do not exist.
+  const cluster = real
+    ? "cluster=devnet"
+    : `cluster=custom&customUrl=${encodeURIComponent(ENDPOINTS.base)}`;
   console.log("");
-  console.log(`market  https://explorer.solana.com/address/${market.toBase58()}?cluster=devnet`);
-  console.log(`secret  https://explorer.solana.com/address/${secret.toBase58()}?cluster=devnet`);
+  console.log(`market  https://explorer.solana.com/address/${market.toBase58()}?${cluster}`);
+  console.log(`secret  https://explorer.solana.com/address/${secret.toBase58()}?${cluster}`);
   console.log(
     `        try it yourself: the explorer shows an account owned by the delegation program with an empty body.`
   );
