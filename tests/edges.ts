@@ -199,6 +199,28 @@ describe("SINBAZAAR — refusals", function () {
     expect(err).to.match(/InvalidSession|6023|0x1787/);
   });
 
+  it("A17. the ninth bidder is turned away", async () => {
+    // MAX_BIDDERS is 8 and the bound is real: the market PDA floats the ER rent for
+    // every bid account and every bid permission it sponsors.
+    const crowd = await z.villagers(9, 1);
+    const m = await z.newMarket({ room: Room.GuiltMarket, durationSecs: 300 });
+
+    for (let i = 0; i < 8; i++) {
+      await z.bid(crowd[i], m.marketId, m.market, Side.Read, 0.05 * LAMPORTS);
+    }
+    expect((await z.marketState(m.market)).bidCount).to.equal(8);
+
+    const err = await rejects(
+      () => z.bid(crowd[8], m.marketId, m.market, Side.Read, 0.05 * LAMPORTS),
+      "a ninth bid"
+    );
+    expect(err).to.match(/TooManyBidders|6011|0x177b/);
+
+    const state = await z.marketState(m.market);
+    expect(state.bidCount, "the book is unchanged").to.equal(8);
+    expect(state.readPot.toNumber()).to.equal(0.4 * LAMPORTS);
+  });
+
   // =====================================================================
   // lifecycle guards
   // =====================================================================

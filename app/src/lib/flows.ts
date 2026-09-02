@@ -542,6 +542,22 @@ export async function resolveMarket(
   await step(report, "close_book", async () => {
     const current = await fetchMarket();
     if (variantOf(current.status) === "settled") return;
+
+    // Bids are private by design: their accounts sit behind a permission listing
+    // only the bidder, so no amount of scanning will enumerate them. This browser
+    // can only settle the bids it placed itself. If the market took bids from
+    // someone else, say so plainly rather than letting close_book come back with
+    // "not every bid has been settled and closed" and no way to act on it.
+    const total = toNumber(current.bidCount);
+    const closed = toNumber(current.closedBidCount);
+    if (closed < total) {
+      throw new Error(
+        `${total - closed} of this market's ${total} bids belong to other villagers. ` +
+          `Bids are private — only the wallet that placed one can settle it — so each ` +
+          `of them has to open this market and resolve it too before the book can close.`
+      );
+    }
+
     const ix = await methodsOf(pEr)
       .closeBook(marketId)
       .accountsPartial({ cranker: signer.publicKey, market })

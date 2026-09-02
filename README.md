@@ -486,7 +486,19 @@ moderate it. Content safety here is the front end, the seed data, and the social
 are rejected by `create_market`. They are in the enum to show the shape of the village, and they are
 shown in the UI as disabled.
 
-**10. The commitment hash proves consistency, not honesty.** `sha256(body || salt)` published at seal
+**10. A browser can only settle the bids it placed itself.**
+`settle_bid` is permissionless, but its bid PDA is seeded `[b"bid", market, bidder]`
+and bid accounts sit behind a permission listing only the bidder — so there is no way
+to *enumerate* a market's bidders. The web app keeps a `localStorage` list of the bids
+that browser placed and settles those; if another villager also bid, `close_book`
+correctly refuses until they open the market and resolve it too. The UI says so in
+those words rather than showing a raw `UnsettledBids`. This is a direct consequence of
+the privacy design, not an oversight: publishing a bidder roster on the public market
+would tell everyone who participated, and with a small book that is most of the secret.
+The scripts (`seed.ts`, `demo.ts`, the test suites) know every bidder they created, so
+they settle markets end to end.
+
+**11. The commitment hash proves consistency, not honesty.** `sha256(body || salt)` published at seal
 time lets anyone verify that a *revealed* body is the one that was sealed. It proves nothing about a
 `BURIED` market: the author could have sealed 180 bytes of noise, and no one will ever know.
 
