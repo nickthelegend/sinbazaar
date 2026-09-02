@@ -17,7 +17,7 @@ const WalletMultiButton = dynamic(
 );
 
 const NAV = [
-  { href: "/", label: "Village" },
+  { href: "/village", label: "Village" },
   { href: "/confess", label: "Confess" },
   { href: "/rooms", label: "Rooms" },
   { href: "/graveyard", label: "Graveyard" },

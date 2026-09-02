@@ -557,7 +557,6 @@ textarea {
  * ------------------------------------------------------------------------- */
 
 a.keycap,
-a.ghost,
 button.act,
 button.primary,
 .btn,
@@ -1747,4 +1746,371 @@ textarea {
 .sk-small {
   width: 62px;
   height: 12px;
+}
+
+/* =============================================================================
+ * The landing page
+ *
+ * Its own layout language, scoped under .landing so it never leaks into the app
+ * surfaces. The organising idea is the product's mechanic: scrolling is the
+ * countdown, and the page ends where a market ends, at a verdict.
+ *
+ * The one structural rule here that the app does not use: sections are full-
+ * bleed and asymmetric, with the pinned layer sequence taking the whole
+ * viewport, because a landing page is read once, top to bottom, and an app
+ * surface is returned to.
+ * ========================================================================== */
+
+.landing {
+  display: block;
+}
+
+/* --------------------------------------------------------------------- hero */
+
+.lp-hero {
+  min-height: 78dvh;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  gap: 24px;
+  padding: 40px 0 60px;
+}
+
+/* Each word sits in its own overflow-hidden mask so it can ride in from below.
+   That kills the whitespace between inline-blocks, so the gap has to be an
+   explicit flex gap rather than a space character. */
+.lp-h1 {
+  font-size: clamp(42px, 7vw, 92px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  max-width: 15ch;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 0.24em;
+  row-gap: 0.02em;
+}
+
+/* Each word rides in from behind its own mask, so the headline assembles
+   rather than fading. The mask is why overflow is hidden here. */
+.word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.06em;
+}
+
+.word-mask > span {
+  display: inline-block;
+}
+
+.lp-cta {
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.lp-pulse {
+  display: flex;
+  gap: 26px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 34px;
+  padding: 14px 22px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  box-shadow: var(--lift), var(--cast-sm);
+}
+
+.lp-pulse > div {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.lp-pulse .val {
+  font-family: var(--mono);
+  font-size: 15px;
+}
+
+/* ------------------------------------------------------- pinned layer journey */
+
+/* The sequence: a sticky stage over one tall sentinel per step. The stage stays
+   put while the reader scrolls the rail behind it. */
+.lp-pin {
+  position: relative;
+  margin: 40px 0;
+}
+
+/* The stage sticks and its own height is pulled back out of the flow, so the
+   rail below it supplies the entire scroll length. An absolutely positioned rail
+   contributes no height at all, which left the sequence with nothing to scroll
+   through and stranded it on step one. */
+.seq-stage {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: grid;
+  align-content: center;
+  z-index: 1;
+}
+
+.seq-rail {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.seq-mark {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+/* The rail supplies the scroll length, so the section itself must not add its
+   own viewport height on top. */
+.lp-layers {
+  min-height: auto;
+  padding: 0;
+}
+
+.lp-layers {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 210px) minmax(0, 1fr);
+  gap: 40px;
+  align-content: center;
+  padding: 60px 0;
+}
+
+.lp-layers-rail {
+  display: grid;
+  gap: 12px;
+  align-content: center;
+}
+
+.lp-rail-step {
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0.36;
+  transition: opacity 260ms var(--ease), transform 260ms var(--ease);
+}
+
+.lp-rail-step.on {
+  opacity: 1;
+  transform: translateX(5px);
+}
+
+.lp-layer-title {
+  font-size: clamp(28px, 3.4vw, 44px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  max-width: 19ch;
+  text-wrap: balance;
+}
+
+.lp-layer-body {
+  color: var(--muted);
+  font-size: 17px;
+  max-width: 62ch;
+  margin: 18px 0 0;
+  text-wrap: pretty;
+}
+
+.lp-ix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.lp-ix code {
+  font-size: 12.5px;
+  color: var(--muted);
+  background: var(--sunk);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+}
+
+/* The confession travelling down the three layers. */
+.lp-track {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 40px;
+  max-width: 620px;
+}
+
+.lp-track-slot {
+  min-height: 46px;
+  border-top: 1px solid var(--hair);
+  padding-top: 12px;
+}
+
+.lp-token {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: linear-gradient(96deg, var(--amber), var(--crimson));
+  color: #150806;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------------- sections */
+
+.lp-section {
+  padding: 96px 0;
+  border-top: 1px solid var(--hair);
+}
+
+.lp-h2 {
+  font-size: clamp(28px, 3.8vw, 48px);
+  font-weight: 600;
+  letter-spacing: -0.032em;
+  line-height: 1.06;
+  max-width: 18ch;
+  text-wrap: balance;
+}
+
+.lp-lead {
+  color: var(--muted);
+  font-size: 17px;
+  max-width: 64ch;
+  margin: 18px 0 0;
+  text-wrap: pretty;
+}
+
+.lp-grid {
+  margin-top: 34px;
+}
+
+.lp-verdicts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 34px;
+}
+
+.lp-verdict {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-lg);
+  box-shadow: var(--lift), var(--cast);
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.lp-when {
+  font-size: 12.5px;
+  color: var(--muted);
+  background: var(--sunk);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+}
+
+.lp-verdict p {
+  color: var(--muted);
+  font-size: 14.5px;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.lp-proof {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+  margin-top: 34px;
+}
+
+.lp-proof .tomb {
+  padding: 18px;
+}
+
+.lp-probe {
+  overflow: hidden;
+  display: grid;
+  gap: 14px;
+  margin-top: 26px;
+}
+
+.lp-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.lp-figures > div {
+  display: grid;
+  gap: 8px;
+}
+
+.lp-fig {
+  font-size: clamp(44px, 5.4vw, 68px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--white);
+  font-variant-numeric: tabular-nums;
+}
+
+.lp-close {
+  padding: 110px 0 40px;
+  border-top: 1px solid var(--hair);
+  display: grid;
+  justify-items: center;
+  gap: 28px;
+  text-align: center;
+}
+
+.lp-close .lp-h2 {
+  max-width: 16ch;
+}
+
+@media (max-width: 900px) {
+  .lp-layers {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    min-height: auto;
+    padding: 40px 0;
+  }
+
+  .lp-layers-rail {
+    grid-auto-flow: column;
+    justify-content: start;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .lp-track {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .lp-section {
+    padding: 64px 0;
+  }
+
+  .lp-hero {
+    min-height: auto;
+    padding: 20px 0 40px;
+  }
 }
