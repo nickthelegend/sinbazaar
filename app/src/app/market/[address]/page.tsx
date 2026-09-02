@@ -1,0 +1,397 @@
+"use client";
+
+/**
+ * One stall.
+ *
+ * Everything on this page except the tombstone link is read from, or written
+ * to, the Ephemeral Rollup: the timer, the pots, the bids. The base layer is
+ * not involved again until the market is finalised.
+ */
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BN } from "@coral-xyz/anchor";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { BookBar, Countdown, Empty, OutcomeBadge, PotBar, StatusPill, StepList } from "@/components/Bits";
+import { useVillageWallet } from "@/components/Providers";
+import { RuleBox } from "@/components/RuleBox";
+import { useMarket } from "@/hooks/useMarkets";
+import { useNow } from "@/hooks/useNow";
+import { explorerUrl } from "@/lib/config";
+import {
+  BID_STEPS,
+  errorText,
+  fundPurse,
+  placeBid,
+  readPurse,
+  RESOLVE_STEPS,
+  resolveMarket,
+  type PurseView,
+  type StepState,
+} from "@/lib/flows";
+import { fmtSol, fullHash, shortKey } from "@/lib/format";
+import { knownBidders } from "@/lib/registry";
+import { roomOf, SIDE_LABEL, type SideName } from "@/lib/rooms";
+
+const PURSE_STEPS = [
+  {
+    id: "deposit_purse",
+    label: "deposit_purse",
+    layer: "base" as const,
+    note: "real SOL into a purse PDA on Solana",
+  },
+  {
+    id: "delegate_purse",
+    label: "delegate_purse",
+    layer: "base" as const,
+    note: "delegated, so every later bid is an ER-native lamport move",
+  },
+];
+
+export default function MarketPage() {
+  const params = useParams<{ address: string }>();
+  const address = typeof params.address === "string" ? params.address : null;
+  const { data: market, error } = useMarket(address);
+  const wallet = useVillageWallet();
+  const now = useNow();
+
+  const [purse, setPurse] = useState<PurseView | null>(null);
+  const [amountSol, setAmountSol] = useState(0.1);
+  const [topUpSol, setTopUpSol] = useState(1);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [flowStates, setFlowStates] = useState<Record<string, StepState>>({});
+  const [flowDetails, setFlowDetails] = useState<Record<string, string>>({});
+  const [notice, setNotice] = useState<string | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const room = market ? roomOf({ [market.roomVariant]: {} }) : null;
+  const isIpo = market?.roomVariant === "whisperIpo";
+  const dead = market ? now > 0 && now >= market.expiresAt : false;
+  const decided = market ? market.status === "resolved" || market.status === "settled" : false;
+
+  const refreshPurse = useCallback(async () => {
+    if (!wallet.signer) {
+      setPurse(null);
+      return;
+    }
+    try {
+      setPurse(await readPurse(wallet.signer.publicKey));
+    } catch {
+      setPurse(null);
+    }
+  }, [wallet.signer]);
+
+  useEffect(() => {
+    void refreshPurse();
+    const id = setInterval(() => void refreshPurse(), 5000);
+    return () => clearInterval(id);
+  }, [refreshPurse]);
+
+  const report = useCallback((id: string, state: StepState, detail?: string) => {
+    setFlowStates((prev) => ({ ...prev, [id]: state }));
+    if (detail) setFlowDetails((prev) => ({ ...prev, [id]: detail }));
+  }, []);
+
+  const startFlow = useCallback(
+    async (label: string, run: () => Promise<void>) => {
+      setBusy(label);
+      setFailure(null);
+      setNotice(null);
+      setFlowStates({});
+      setFlowDetails({});
+      try {
+        await run();
+      } catch (err) {
+        setFailure(errorText(err));
+      } finally {
+        setBusy(null);
+        void refreshPurse();
+        void wallet.refresh();
+      }
+    },
+    [refreshPurse, wallet]
+  );
+
+  const onFundPurse = useCallback(() => {
+    if (!wallet.signer) return;
+    void startFlow("purse", async () => {
+      await fundPurse(wallet.signer!, new BN(Math.round(topUpSol * LAMPORTS_PER_SOL)), report);
+      setNotice(`purse funded with ${topUpSol} SOL and delegated to the rollup`);
+    });
+  }, [wallet.signer, topUpSol, startFlow, report]);
+
+  const onBid = useCallback(
+    (side: SideName) => {
+      if (!wallet.signer || !market) return;
+      void startFlow("bid", async () => {
+        const signature = await placeBid(
+          wallet.signer!,
+          new PublicKey(market.address),
+          new BN(market.marketId),
+          side,
+          new BN(Math.round(amountSol * LAMPORTS_PER_SOL)),
+          report
+        );
+        setNotice(`${SIDE_LABEL[side]} bid landed on the rollup — ${shortKey(signature, 8)}`);
+      });
+    },
+    [wallet.signer, market, amountSol, startFlow, report]
+  );
+
+  const onResolve = useCallback(() => {
+    if (!wallet.signer || !market) return;
+    const bidders = new Set(knownBidders(market.address));
+    bidders.add(wallet.signer.publicKey.toBase58());
+    void startFlow("resolve", async () => {
+      await resolveMarket(
+        wallet.signer!,
+        new PublicKey(market.address),
+        new BN(market.marketId),
+        [...bidders].map((b) => new PublicKey(b)),
+        report
+      );
+      setNotice("tombstone carved on Solana");
+    });
+  }, [wallet.signer, market, startFlow, report]);
+
+  const activeSteps = useMemo(() => {
+    if (busy === "purse") return PURSE_STEPS;
+    if (busy === "resolve" || flowStates.expire_market) return RESOLVE_STEPS;
+    if (busy === "bid" || flowStates.place_bid) return BID_STEPS;
+    return null;
+  }, [busy, flowStates]);
+
+  if (!address) return <Empty>no market address</Empty>;
+  if (error && !market) return <div className="err">{error}</div>;
+  if (!market || !room) return <Empty>reading the stall…</Empty>;
+
+  const purseReady = !!purse?.onRollup;
+  const canBid =
+    !!wallet.signer && market.status === "open" && !dead && purseReady && busy === null;
+
+  return (
+    <>
+      <div style={{ marginBottom: 14 }}>
+        <Link href="/" className="back">
+          ← the village
+        </Link>
+      </div>
+
+      <section className="page-head">
+        <div className="kicker">{room.label}</div>
+        <h1>
+          <span className="hash">{fullHash(market.commitment).slice(0, 24) || "unsealed"}</span>
+        </h1>
+        <div className="card-mid" style={{ marginTop: 12 }}>
+          <Countdown expiresAt={market.expiresAt} />
+          <StatusPill status={market.status} />
+          <OutcomeBadge outcome={market.outcome} />
+          <span className={`layer layer-${market.layer}`}>
+            {market.layer === "er" ? "on the rollup" : "on solana"}
+          </span>
+        </div>
+      </section>
+
+      <div className="two-col">
+        <div>
+          <div className="panel">
+            <h3>The book</h3>
+            {isIpo ? (
+              <BookBar yes={market.yesPot} no={market.noPot} />
+            ) : (
+              <PotBar seal={market.sealPot} read={market.readPot} />
+            )}
+
+            <div className="facts" style={{ marginTop: 16 }}>
+              <div className="fact">
+                <div className="lbl">bids</div>
+                <div className="val">{market.bidCount}</div>
+              </div>
+              <div className="fact">
+                <div className="lbl">read bids</div>
+                <div className="val">{market.readBidCount}</div>
+              </div>
+              <div className="fact">
+                <div className="lbl">escrow</div>
+                <div className="val">{fmtSol(market.escrowLamports)} SOL</div>
+              </div>
+              <div className="fact">
+                <div className="lbl">author</div>
+                <div className="val">{shortKey(market.author, 6)}</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 18 }}>
+              <div className="row">
+                <label className="field" style={{ marginBottom: 0 }}>
+                  <span className="lbl">bid size (SOL)</span>
+                  <input
+                    type="number"
+                    min={0.001}
+                    step={0.01}
+                    value={amountSol}
+                    onChange={(e) => setAmountSol(Number(e.target.value))}
+                    disabled={!canBid}
+                  />
+                </label>
+              </div>
+
+              <div className="actions" style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="act seal"
+                  onClick={() => onBid(room.sides[0])}
+                  disabled={!canBid}
+                >
+                  bid {SIDE_LABEL[room.sides[0]]}
+                </button>
+                <button
+                  type="button"
+                  className="act"
+                  onClick={() => onBid(room.sides[1])}
+                  disabled={!canBid}
+                >
+                  bid {SIDE_LABEL[room.sides[1]]}
+                </button>
+                {busy === "bid" ? <span className="spinner">signing…</span> : null}
+              </div>
+
+              <p className="hint" style={{ marginTop: 10 }}>
+                <code>place_bid</code> and <code>fund_bid</code> go out as two instructions in one
+                transaction. Lamports move purse PDA → market PDA inside the rollup; the side and
+                the amount sit behind a private permission listing only you.
+              </p>
+            </div>
+          </div>
+
+          {dead && !market.tombstoned ? (
+            <div className="panel">
+              <h3>The timer is dead</h3>
+              <p className="muted small">
+                Every step below is permissionless — expiry, the VRF request, settlement and the
+                tombstone. The one thing this browser cannot do is enumerate the book: bids are
+                private, so it settles the ones it placed itself.
+              </p>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="act danger"
+                  onClick={onResolve}
+                  disabled={!wallet.signer || busy !== null}
+                >
+                  {busy === "resolve" ? "resolving…" : "resolve the market"}
+                </button>
+                {decided ? (
+                  <Link href={`/market/${market.address}/result`} className="chip">
+                    see the verdict
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          {decided ? (
+            <div className="panel">
+              <h3>Verdict</h3>
+              <div className="actions">
+                <OutcomeBadge outcome={market.outcome} />
+                <Link href={`/market/${market.address}/result`} className="act">
+                  open the verdict
+                </Link>
+              </div>
+            </div>
+          ) : null}
+
+          {activeSteps ? (
+            <div className="panel">
+              <h3>{busy ?? "last run"}</h3>
+              <StepList steps={activeSteps} states={flowStates} details={flowDetails} />
+            </div>
+          ) : null}
+
+          {notice ? <div className="panel small muted">{notice}</div> : null}
+          {failure ? <div className="err">{failure}</div> : null}
+        </div>
+
+        <div>
+          <div className="panel">
+            <h3>Your purse</h3>
+            {!wallet.signer ? (
+              <p className="muted small">No key. Pick burner mode, or connect a wallet.</p>
+            ) : purseReady ? (
+              <>
+                <div className="facts">
+                  <div className="fact">
+                    <div className="lbl">available</div>
+                    <div className="val">{fmtSol(purse?.available)} SOL</div>
+                  </div>
+                  <div className="fact">
+                    <div className="lbl">locked in bids</div>
+                    <div className="val">{fmtSol(purse?.locked)} SOL</div>
+                  </div>
+                </div>
+                <p className="hint" style={{ marginTop: 10 }}>
+                  Delegated to the rollup, so a bid costs no wallet round trip.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="muted small">
+                  A purse is real SOL held on Solana and then delegated, so bidding never leaves
+                  the rollup. Fund it once.
+                </p>
+                <div className="row">
+                  <label className="field" style={{ marginBottom: 0 }}>
+                    <span className="lbl">amount (SOL)</span>
+                    <input
+                      type="number"
+                      min={0.05}
+                      step={0.1}
+                      value={topUpSol}
+                      onChange={(e) => setTopUpSol(Number(e.target.value))}
+                      disabled={busy !== null}
+                    />
+                  </label>
+                </div>
+                <div className="actions" style={{ marginTop: 12 }}>
+                  <button
+                    type="button"
+                    className="act"
+                    onClick={onFundPurse}
+                    disabled={busy !== null}
+                  >
+                    {busy === "purse" ? "funding…" : "fund the purse"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="panel">
+            <RuleBox market={market} />
+          </div>
+
+          <div className="panel">
+            <h3>Addresses</h3>
+            <div className="lbl">market</div>
+            <div className="mono-block">{market.address}</div>
+            <div className="lbl" style={{ marginTop: 10 }}>
+              commitment
+            </div>
+            <div className="mono-block">{fullHash(market.commitment)}</div>
+            <div className="actions" style={{ marginTop: 12 }}>
+              <a
+                className="explorer"
+                href={explorerUrl(market.address)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                view on solana explorer
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

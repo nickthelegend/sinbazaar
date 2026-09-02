@@ -1,0 +1,29 @@
+# rust / anchor
+target/
+**/target/
+Cargo.lock
+
+# node
+node_modules/
+app/node_modules/
+app/.next/
+*.tsbuildinfo
+
+# local cluster state
+magicblock-test-storage/
+test-ledger/
+.logs/
+.stack.pids
+mb-stack.log
+vrf-oracle*.log
+
+# secrets — never commit a funded key
+keys/
+.seed-village.json
+.env.devnet
+app/.env.local
+
+# vendored reference examples (cloned by scripts/setup.sh)
+vendor/
+
+.DS_Store

@@ -1,0 +1,25 @@
+import type { Metadata } from "next";
+import "./globals.css";
+import { Providers } from "@/components/Providers";
+import { EndpointFooter, FictionBanner, TopNav } from "@/components/Chrome";
+
+export const metadata: Metadata = {
+  title: "SINBAZAAR",
+  description:
+    "A private real-time market where the traded asset is a secret confession. Fiction mode: startup village sins only.",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>
+          <FictionBanner />
+          <TopNav />
+          <main className="shell">{children}</main>
+          <EndpointFooter />
+        </Providers>
+      </body>
+    </html>
+  );
+}

@@ -1,0 +1,4193 @@
+{
+  "address": "2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN",
+  "metadata": {
+    "name": "sinbazaar",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "SINBAZAAR - a private real-time market where the underlying asset is a secret"
+  },
+  "instructions": [
+    {
+      "name": "callback_resolve",
+      "docs": [
+        "The court delivers.",
+        "",
+        "`#[vrf_callback]` injects a `vrf_program_identity` signer constrained to",
+        "`scoped_vrf_identity(&crate::ID)`, a PDA only the VRF program can sign for —",
+        "so no user transaction can forge a verdict.",
+        "",
+        "The callback only records randomness and picks the outcome *class*. Which",
+        "specific villager wins is derived deterministically from that randomness in",
+        "`settle_bid`, which keeps this instruction small and its account list fixed."
+      ],
+      "discriminator": [
+        62,
+        48,
+        157,
+        206,
+        37,
+        5,
+        117,
+        131
+      ],
+      "accounts": [
+        {
+          "name": "vrf_program_identity",
+          "docs": [
+            "Scoped VRF identity PDA, bound to this program. Its presence as a signer proves",
+            "the callback was issued by the VRF program for this program."
+          ],
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "randomness",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "claim_author",
+      "docs": [
+        "Pay the author whatever the village forfeited to them, from the settled",
+        "(undelegated) market PDA."
+      ],
+      "discriminator": [
+        179,
+        29,
+        64,
+        235,
+        234,
+        107,
+        104,
+        109
+      ],
+      "accounts": [
+        {
+          "name": "author",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "close_book",
+      "docs": [
+        "Mark the market fully settled once every bid has been closed."
+      ],
+      "discriminator": [
+        216,
+        209,
+        72,
+        159,
+        209,
+        206,
+        135,
+        66
+      ],
+      "accounts": [
+        {
+          "name": "cranker",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "commit_market",
+      "docs": [
+        "Manual commit of live market state to Solana without ending the market."
+      ],
+      "discriminator": [
+        155,
+        54,
+        116,
+        248,
+        97,
+        212,
+        7,
+        212
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magic_context",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_market",
+      "docs": [
+        "Create the public half of a market: id, room, timer, pots, status.",
+        "",
+        "The market PDA is pre-funded so that once it reaches the ER it can sponsor",
+        "its own permission, the secret's permission, and every bid's ephemeral",
+        "account — none of which the bidders should have to pay for."
+      ],
+      "discriminator": [
+        103,
+        226,
+        97,
+        235,
+        200,
+        188,
+        251,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "author",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "village",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  105,
+                  108,
+                  108,
+                  97,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "village.authority",
+                "account": "Village"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "village"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        },
+        {
+          "name": "room",
+          "type": {
+            "defined": {
+              "name": "Room"
+            }
+          }
+        },
+        {
+          "name": "duration_secs",
+          "type": "i64"
+        },
+        {
+          "name": "ransom_floor",
+          "type": "u64"
+        },
+        {
+          "name": "ransom_slope",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_secret_shell",
+      "docs": [
+        "Allocate the secret account **empty**.",
+        "",
+        "This is the whole privacy trick: the account is created on L1 with a zeroed",
+        "body, delegated to the TEE, and only then filled in by `seal_secret` on the",
+        "ER. No confession byte is ever submitted in a base-layer transaction, so",
+        "there is no block, log, or explorer view in which it could appear."
+      ],
+      "discriminator": [
+        15,
+        54,
+        57,
+        30,
+        241,
+        240,
+        182,
+        213
+      ],
+      "accounts": [
+        {
+          "name": "author",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "secret",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  114,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "delegate_market",
+      "docs": [
+        "Delegate the market to the ER so bidding is real-time."
+      ],
+      "discriminator": [
+        223,
+        125,
+        110,
+        148,
+        99,
+        176,
+        143,
+        72
+      ],
+      "accounts": [
+        {
+          "name": "author",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "village",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  105,
+                  108,
+                  108,
+                  97,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "village.authority",
+                "account": "Village"
+              }
+            ]
+          }
+        },
+        {
+          "name": "buffer_market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                22,
+                89,
+                130,
+                92,
+                135,
+                30,
+                18,
+                1,
+                33,
+                217,
+                219,
+                172,
+                192,
+                9,
+                162,
+                126,
+                49,
+                20,
+                62,
+                36,
+                152,
+                60,
+                6,
+                53,
+                157,
+                255,
+                86,
+                133,
+                5,
+                199,
+                161,
+                147
+              ]
+            }
+          }
+        },
+        {
+          "name": "delegation_record_market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "delegation_metadata_market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "village"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "validator",
+          "optional": true
+        },
+        {
+          "name": "owner_program",
+          "address": "2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN"
+        },
+        {
+          "name": "delegation_program",
+          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "delegate_purse",
+      "docs": [
+        "Delegate the purse so its lamports can move at ER speed."
+      ],
+      "discriminator": [
+        83,
+        243,
+        254,
+        116,
+        64,
+        189,
+        253,
+        244
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "buffer_purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "purse"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                22,
+                89,
+                130,
+                92,
+                135,
+                30,
+                18,
+                1,
+                33,
+                217,
+                219,
+                172,
+                192,
+                9,
+                162,
+                126,
+                49,
+                20,
+                62,
+                36,
+                152,
+                60,
+                6,
+                53,
+                157,
+                255,
+                86,
+                133,
+                5,
+                199,
+                161,
+                147
+              ]
+            }
+          }
+        },
+        {
+          "name": "delegation_record_purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "purse"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "delegation_metadata_purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "purse"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "validator",
+          "optional": true
+        },
+        {
+          "name": "owner_program",
+          "address": "2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN"
+        },
+        {
+          "name": "delegation_program",
+          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "delegate_secret",
+      "docs": [
+        "Delegate the (still empty) secret to the TEE validator."
+      ],
+      "discriminator": [
+        150,
+        186,
+        222,
+        228,
+        205,
+        139,
+        146,
+        153
+      ],
+      "accounts": [
+        {
+          "name": "author",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "village",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  105,
+                  108,
+                  108,
+                  97,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "village.authority",
+                "account": "Village"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "docs": [
+            "owned by the delegation program and cannot be deserialized here. Only its",
+            "address is needed, and the seeds constraint pins that."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "village"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "buffer_secret",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "secret"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                22,
+                89,
+                130,
+                92,
+                135,
+                30,
+                18,
+                1,
+                33,
+                217,
+                219,
+                172,
+                192,
+                9,
+                162,
+                126,
+                49,
+                20,
+                62,
+                36,
+                152,
+                60,
+                6,
+                53,
+                157,
+                255,
+                86,
+                133,
+                5,
+                199,
+                161,
+                147
+              ]
+            }
+          }
+        },
+        {
+          "name": "delegation_record_secret",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "secret"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "delegation_metadata_secret",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "secret"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "secret",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  114,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "validator",
+          "optional": true
+        },
+        {
+          "name": "owner_program",
+          "address": "2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN"
+        },
+        {
+          "name": "delegation_program",
+          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "deposit_purse",
+      "docs": [
+        "Fund a villager's purse with real SOL on the base layer."
+      ],
+      "discriminator": [
+        145,
+        167,
+        233,
+        171,
+        211,
+        21,
+        234,
+        176
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "expire_market",
+      "docs": [
+        "Close the book. Permissionless: anyone may crank this once the timer is up,",
+        "so a market cannot be held open by an absent author."
+      ],
+      "discriminator": [
+        213,
+        191,
+        249,
+        51,
+        63,
+        168,
+        186,
+        180
+      ],
+      "accounts": [
+        {
+          "name": "cranker",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "finalize_market",
+      "docs": [
+        "The last act on the rollup.",
+        "",
+        "If — and only if — the verdict authorises text, copy it out of the private",
+        "secret into the market's public reveal buffer. Then commit and undelegate",
+        "the market so Solana receives the tombstone. The secret is never undelegated:",
+        "a buried confession stays inside the TEE for good."
+      ],
+      "discriminator": [
+        16,
+        225,
+        38,
+        28,
+        213,
+        217,
+        1,
+        247
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "secret",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  114,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magic_context",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "fund_bid",
+      "docs": [
+        "Move the money for a bid that `place_bid` just opened.",
+        "",
+        "Lamports go purse -> market between two program-owned delegated PDAs, so",
+        "there is no base-layer transaction and no wallet round trip. Sent in the",
+        "same transaction as `place_bid`; see that instruction for why they are split."
+      ],
+      "discriminator": [
+        254,
+        134,
+        219,
+        123,
+        159,
+        182,
+        128,
+        179
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bid",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  105,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "purse.owner",
+                "account": "Purse"
+              }
+            ]
+          }
+        },
+        {
+          "name": "purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "purse.owner",
+                "account": "Purse"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "grant_reader",
+      "docs": [
+        "Grant the VRF-selected reader membership of the secret's private permission.",
+        "",
+        "This is the moment the randomness becomes real: one key, and only one, gains",
+        "the ability to decrypt-by-authorisation. The author stays a member."
+      ],
+      "discriminator": [
+        156,
+        26,
+        143,
+        25,
+        106,
+        159,
+        26,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "secret",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  114,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "permission",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110,
+                  58
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "secret"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                136,
+                161,
+                10,
+                196,
+                33,
+                152,
+                1,
+                214,
+                246,
+                106,
+                29,
+                60,
+                6,
+                152,
+                192,
+                102,
+                169,
+                175,
+                212,
+                217,
+                180,
+                252,
+                231,
+                71,
+                151,
+                141,
+                209,
+                5,
+                168,
+                212,
+                103,
+                82
+              ]
+            }
+          }
+        },
+        {
+          "name": "permission_program",
+          "address": "ACLseoPoyC3cBqoUtkbjZ4aDrkurZW86v19pXz2XQnp1"
+        },
+        {
+          "name": "ephemeral_vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "init_bid_permission",
+      "docs": [
+        "Hide the bid behind a private permission listing only the bidder."
+      ],
+      "discriminator": [
+        36,
+        217,
+        208,
+        192,
+        111,
+        156,
+        135,
+        147
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bid",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  105,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "bid.bidder",
+                "account": "Bid"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bid_permission",
+          "writable": true
+        },
+        {
+          "name": "permission_program",
+          "address": "ACLseoPoyC3cBqoUtkbjZ4aDrkurZW86v19pXz2XQnp1"
+        },
+        {
+          "name": "ephemeral_vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "init_market_permission",
+      "docs": [
+        "The market's permission is deliberately PUBLIC. Hash, timer, pots and",
+        "status are supposed to be readable by anyone; that is the market."
+      ],
+      "discriminator": [
+        10,
+        148,
+        30,
+        42,
+        217,
+        223,
+        131,
+        139
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "permission",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110,
+                  58
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                136,
+                161,
+                10,
+                196,
+                33,
+                152,
+                1,
+                214,
+                246,
+                106,
+                29,
+                60,
+                6,
+                152,
+                192,
+                102,
+                169,
+                175,
+                212,
+                217,
+                180,
+                252,
+                231,
+                71,
+                151,
+                141,
+                209,
+                5,
+                168,
+                212,
+                103,
+                82
+              ]
+            }
+          }
+        },
+        {
+          "name": "permission_program",
+          "address": "ACLseoPoyC3cBqoUtkbjZ4aDrkurZW86v19pXz2XQnp1"
+        },
+        {
+          "name": "ephemeral_vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "init_secret_permission",
+      "docs": [
+        "The secret's permission. PRIVATE for confession rooms — member list is",
+        "`[author]`, so no other key can read the body over any RPC, TEE endpoint",
+        "included. Whisper IPO passes `is_private = false` because a rumor is meant",
+        "to be read; it is the positions that stay hidden."
+      ],
+      "discriminator": [
+        119,
+        255,
+        46,
+        25,
+        227,
+        234,
+        106,
+        24
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "secret",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  114,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "permission",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110,
+                  58
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "secret"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                136,
+                161,
+                10,
+                196,
+                33,
+                152,
+                1,
+                214,
+                246,
+                106,
+                29,
+                60,
+                6,
+                152,
+                192,
+                102,
+                169,
+                175,
+                212,
+                217,
+                180,
+                252,
+                231,
+                71,
+                151,
+                141,
+                209,
+                5,
+                168,
+                212,
+                103,
+                82
+              ]
+            }
+          }
+        },
+        {
+          "name": "permission_program",
+          "address": "ACLseoPoyC3cBqoUtkbjZ4aDrkurZW86v19pXz2XQnp1"
+        },
+        {
+          "name": "ephemeral_vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_village",
+      "docs": [
+        "Open the village. Fiction mode is on by default and is a product-level",
+        "declaration, not a security control."
+      ],
+      "discriminator": [
+        70,
+        38,
+        94,
+        146,
+        77,
+        69,
+        206,
+        86
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "village",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  105,
+                  108,
+                  108,
+                  97,
+                  103,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "fiction_mode",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "open_session",
+      "docs": [
+        "Mint a scoped session key so a villager can bid repeatedly without a wallet",
+        "popup per click. Scope is a single market, a spend ceiling, and an expiry —",
+        "all enforced by the program, not by the client."
+      ],
+      "discriminator": [
+        130,
+        54,
+        124,
+        7,
+        236,
+        20,
+        104,
+        104
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        },
+        {
+          "name": "ttl_secs",
+          "type": "i64"
+        },
+        {
+          "name": "max_spend",
+          "type": "u64"
+        },
+        {
+          "name": "session_key",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "place_bid",
+      "docs": [
+        "Open a bid. Runs entirely on the ER, signed by the villager's own wallet.",
+        "",
+        "This instruction only *creates and records* the bid; `fund_bid` moves the",
+        "money. They are deliberately separate instructions sent in ONE transaction:",
+        "creating an ephemeral account is a CPI to the magic program, and keeping the",
+        "program's own lamport arithmetic in its own instruction makes each",
+        "instruction's balance trivially auditable. The transaction stays atomic, so",
+        "a bid is still opened and funded together or not at all.",
+        "",
+        "A bid that is created but never funded counts for nothing: it stays",
+        "`funded = false`, contributes to no pot, and settles for zero."
+      ],
+      "discriminator": [
+        238,
+        77,
+        148,
+        91,
+        200,
+        151,
+        92,
+        146
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The villager, signing for themselves."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bidder",
+          "docs": [
+            "the bid PDA from the same seeds."
+          ]
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bid",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  105,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "bidder"
+              }
+            ]
+          }
+        },
+        {
+          "name": "purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bidder"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        },
+        {
+          "name": "side",
+          "type": {
+            "defined": {
+              "name": "BidSide"
+            }
+          }
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "place_bid_with_session",
+      "docs": [
+        "The same bid, signed by a scoped session key instead of the wallet.",
+        "",
+        "A separate instruction rather than an optional account, because the session",
+        "scope has to be *written* (to charge the bid against its ceiling) and the ER",
+        "rejects a writable account that is not delegated — so the wallet-signed path",
+        "must not carry a writable session account it never uses."
+      ],
+      "discriminator": [
+        227,
+        201,
+        137,
+        56,
+        114,
+        144,
+        40,
+        65
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The session key the villager's wallet authorised."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "bidder"
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bid",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  105,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "bidder"
+              }
+            ]
+          }
+        },
+        {
+          "name": "purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bidder"
+              }
+            ]
+          }
+        },
+        {
+          "name": "session",
+          "docs": [
+            "Writable because the bid is charged against its spend ceiling."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "bidder"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        },
+        {
+          "name": "side",
+          "type": {
+            "defined": {
+              "name": "BidSide"
+            }
+          }
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "process_undelegation",
+      "discriminator": [
+        196,
+        28,
+        41,
+        206,
+        48,
+        37,
+        51,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "base_account",
+          "writable": true
+        },
+        {
+          "name": "buffer",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  110,
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  101,
+                  45,
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_account"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                181,
+                183,
+                0,
+                225,
+                242,
+                87,
+                58,
+                192,
+                204,
+                6,
+                34,
+                1,
+                52,
+                74,
+                207,
+                151,
+                184,
+                53,
+                6,
+                235,
+                140,
+                229,
+                25,
+                152,
+                204,
+                98,
+                126,
+                24,
+                147,
+                128,
+                167,
+                62
+              ]
+            }
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "account_seeds",
+          "type": {
+            "vec": "bytes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request_resolution_vrf",
+      "docs": [
+        "Ask MagicBlock VRF for the randomness that decides this market.",
+        "",
+        "Requested from the ER against the ephemeral queue, so the request and the",
+        "callback both land at rollup speed while the market is still delegated."
+      ],
+      "discriminator": [
+        159,
+        75,
+        105,
+        0,
+        4,
+        30,
+        4,
+        111
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "oracle_queue",
+          "writable": true
+        },
+        {
+          "name": "program_identity",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  100,
+                  101,
+                  110,
+                  116,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vrf_program",
+          "address": "Vrf1RNUjXmQGjmQrQLvJHs9SNkvDJEsRVFPkfSQUwGz"
+        },
+        {
+          "name": "slot_hashes",
+          "address": "SysvarS1otHashes111111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        },
+        {
+          "name": "client_seed",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "resolve_rumor",
+      "docs": [
+        "Whisper IPO settlement.",
+        "",
+        "Week-1 uses a village-authority attestation. The signature check is the only",
+        "thing that would change to swap in an oracle: the payout path below reads",
+        "`rumor_result` and nothing else."
+      ],
+      "discriminator": [
+        65,
+        20,
+        153,
+        179,
+        93,
+        41,
+        178,
+        202
+      ],
+      "accounts": [
+        {
+          "name": "resolver",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        },
+        {
+          "name": "result",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "retry_vrf",
+      "docs": [
+        "Release a market whose randomness never arrived.",
+        "",
+        "Permissionless, and only after a grace period, so a stalled oracle cannot",
+        "strand escrow. It puts the market back to `Expired` where anyone can request",
+        "randomness again — it never decides an outcome itself."
+      ],
+      "discriminator": [
+        247,
+        198,
+        70,
+        200,
+        136,
+        177,
+        124,
+        197
+      ],
+      "accounts": [
+        {
+          "name": "cranker",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "revoke_session",
+      "docs": [
+        "Revoke a session key immediately."
+      ],
+      "discriminator": [
+        86,
+        92,
+        198,
+        120,
+        144,
+        2,
+        7,
+        194
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "seal_secret",
+      "docs": [
+        "Write the confession into the TEE.",
+        "",
+        "Runs on the ER only. `commitment_hash = sha256(body || salt)` is published",
+        "to the public market so any later reveal is verifiable, while the body and",
+        "the salt never leave the private account."
+      ],
+      "discriminator": [
+        229,
+        126,
+        135,
+        42,
+        209,
+        78,
+        71,
+        185
+      ],
+      "accounts": [
+        {
+          "name": "author",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "secret",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  99,
+                  114,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        },
+        {
+          "name": "body",
+          "type": "bytes"
+        },
+        {
+          "name": "salt",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "redacted",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "settle_bid",
+      "docs": [
+        "Settle one bid: pay it, refund it, or forfeit it, then close the ephemeral",
+        "account and its permission.",
+        "",
+        "Permissionless — anyone can crank it — because the destination is pinned to",
+        "the bidder's own purse and the arithmetic is fixed by the recorded outcome."
+      ],
+      "discriminator": [
+        39,
+        141,
+        108,
+        215,
+        181,
+        98,
+        229,
+        171
+      ],
+      "accounts": [
+        {
+          "name": "cranker",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "account",
+                "path": "market.market_id",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bid",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  105,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "purse.owner",
+                "account": "Purse"
+              }
+            ]
+          }
+        },
+        {
+          "name": "purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "purse.owner",
+                "account": "Purse"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bid_permission",
+          "writable": true
+        },
+        {
+          "name": "permission_program",
+          "address": "ACLseoPoyC3cBqoUtkbjZ4aDrkurZW86v19pXz2XQnp1"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "address": "MagicVau1t999999999999999999999999999999999"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "undelegate_purse",
+      "docs": [
+        "Return a purse to the base layer so its owner can withdraw real SOL."
+      ],
+      "discriminator": [
+        182,
+        220,
+        226,
+        25,
+        3,
+        91,
+        190,
+        138
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "purse.owner",
+                "account": "Purse"
+              }
+            ]
+          }
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magic_context",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "withdraw_purse",
+      "docs": [
+        "Withdraw from an undelegated purse back to the wallet."
+      ],
+      "discriminator": [
+        111,
+        135,
+        49,
+        100,
+        222,
+        42,
+        78,
+        97
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "purse"
+          ]
+        },
+        {
+          "name": "purse",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "write_tombstone",
+      "docs": [
+        "Carve the verdict into the graveyard on Solana.",
+        "",
+        "Runs on the base layer against the committed, undelegated market. Plaintext",
+        "is copied out of `market.revealed`, which `finalize_market` only ever fills",
+        "when `outcome.reveals_text()` is true."
+      ],
+      "discriminator": [
+        240,
+        194,
+        198,
+        124,
+        177,
+        168,
+        35,
+        9
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tombstone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  109,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Bid",
+      "discriminator": [
+        143,
+        246,
+        48,
+        245,
+        42,
+        145,
+        180,
+        88
+      ]
+    },
+    {
+      "name": "Market",
+      "discriminator": [
+        219,
+        190,
+        213,
+        55,
+        0,
+        227,
+        198,
+        154
+      ]
+    },
+    {
+      "name": "Purse",
+      "discriminator": [
+        227,
+        125,
+        157,
+        224,
+        2,
+        72,
+        116,
+        91
+      ]
+    },
+    {
+      "name": "Secret",
+      "discriminator": [
+        17,
+        168,
+        51,
+        21,
+        155,
+        143,
+        2,
+        68
+      ]
+    },
+    {
+      "name": "Tombstone",
+      "discriminator": [
+        45,
+        187,
+        252,
+        155,
+        232,
+        114,
+        36,
+        22
+      ]
+    },
+    {
+      "name": "Village",
+      "discriminator": [
+        117,
+        65,
+        126,
+        60,
+        138,
+        109,
+        184,
+        193
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidAmount",
+      "msg": "amount must be greater than zero"
+    },
+    {
+      "code": 6001,
+      "name": "ExpiryInPast",
+      "msg": "expiry must be in the future"
+    },
+    {
+      "code": 6002,
+      "name": "RoomNotLive",
+      "msg": "this room is enumerated but not enabled in this build"
+    },
+    {
+      "code": 6003,
+      "name": "WrongRoom",
+      "msg": "wrong room for this instruction"
+    },
+    {
+      "code": 6004,
+      "name": "MarketNotOpen",
+      "msg": "market is not open for bidding"
+    },
+    {
+      "code": 6005,
+      "name": "MarketStillOpen",
+      "msg": "market has not expired yet"
+    },
+    {
+      "code": 6006,
+      "name": "MarketNotExpired",
+      "msg": "market is not expired"
+    },
+    {
+      "code": 6007,
+      "name": "NotResolved",
+      "msg": "market outcome is not resolved yet"
+    },
+    {
+      "code": 6008,
+      "name": "AlreadyResolved",
+      "msg": "market is already resolved"
+    },
+    {
+      "code": 6009,
+      "name": "NotSettled",
+      "msg": "market escrow is not fully settled"
+    },
+    {
+      "code": 6010,
+      "name": "UnsettledBids",
+      "msg": "not every bid has been settled and closed"
+    },
+    {
+      "code": 6011,
+      "name": "TooManyBidders",
+      "msg": "too many bidders for this market"
+    },
+    {
+      "code": 6012,
+      "name": "MissingBid",
+      "msg": "bid account is missing from remaining_accounts"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidBid",
+      "msg": "bid account does not belong to this market"
+    },
+    {
+      "code": 6014,
+      "name": "DuplicateBid",
+      "msg": "duplicate bid account supplied"
+    },
+    {
+      "code": 6015,
+      "name": "BidAlreadySettled",
+      "msg": "bid was already settled"
+    },
+    {
+      "code": 6016,
+      "name": "InvalidBidSide",
+      "msg": "bid side is not valid for this room"
+    },
+    {
+      "code": 6017,
+      "name": "InsufficientFunds",
+      "msg": "purse has insufficient available lamports"
+    },
+    {
+      "code": 6018,
+      "name": "PurseLocked",
+      "msg": "purse still has lamports locked in open bids"
+    },
+    {
+      "code": 6019,
+      "name": "InvalidBodyLength",
+      "msg": "confession body is empty or exceeds the maximum length"
+    },
+    {
+      "code": 6020,
+      "name": "InvalidRedactionLength",
+      "msg": "redacted sentence exceeds the maximum length"
+    },
+    {
+      "code": 6021,
+      "name": "CommitmentMismatch",
+      "msg": "commitment hash does not match the supplied body and salt"
+    },
+    {
+      "code": 6022,
+      "name": "NotAuthor",
+      "msg": "caller is not the author of this secret"
+    },
+    {
+      "code": 6023,
+      "name": "InvalidSession",
+      "msg": "session key is expired, revoked, or out of scope"
+    },
+    {
+      "code": 6024,
+      "name": "SessionLimitExceeded",
+      "msg": "session spend limit exceeded"
+    },
+    {
+      "code": 6025,
+      "name": "VrfAlreadyRequested",
+      "msg": "randomness has already been requested for this market"
+    },
+    {
+      "code": 6026,
+      "name": "VrfNotDelivered",
+      "msg": "randomness has not been delivered yet"
+    },
+    {
+      "code": 6027,
+      "name": "RevealNotAuthorised",
+      "msg": "this outcome does not authorise publishing plaintext"
+    },
+    {
+      "code": 6028,
+      "name": "AlreadyTombstoned",
+      "msg": "tombstone already written for this market"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidRumorResult",
+      "msg": "rumor result must be 1 (YES) or 2 (NO)"
+    },
+    {
+      "code": 6030,
+      "name": "NotVillageAuthority",
+      "msg": "caller is not the village authority"
+    },
+    {
+      "code": 6031,
+      "name": "MathOverflow",
+      "msg": "arithmetic overflow"
+    },
+    {
+      "code": 6032,
+      "name": "NothingToClaim",
+      "msg": "nothing to claim"
+    },
+    {
+      "code": 6033,
+      "name": "EscrowNotEmpty",
+      "msg": "market still holds escrowed lamports"
+    }
+  ],
+  "types": [
+    {
+      "name": "Bid",
+      "docs": [
+        "A bid. Created as an ER-only ephemeral account, sponsored by the market PDA,",
+        "and gated by a private permission listing only the bidder — so the amount and",
+        "the side stay hidden from everyone, the author included."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "bidder",
+            "type": "pubkey"
+          },
+          {
+            "name": "side",
+            "type": {
+              "defined": {
+                "name": "BidSide"
+              }
+            }
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "index",
+            "docs": [
+              "Arrival order across all bids on this market."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "read_rank",
+            "docs": [
+              "Arrival order among READ bids only. Lets any cranker derive the VRF-selected",
+              "reader without holding every bid account in one transaction."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "funded",
+            "docs": [
+              "Set by `fund_bid`. An unfunded bid holds no money and settles for zero."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "settled",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BidSide",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Seal"
+          },
+          {
+            "name": "Read"
+          },
+          {
+            "name": "Yes"
+          },
+          {
+            "name": "No"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Market",
+      "docs": [
+        "Public market state. Delegated to the ER so bidding is real-time, but its",
+        "ephemeral permission is deliberately NON-private: hash, timer, pots and status",
+        "are meant to be readable by anyone. The body never lives here."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "village",
+            "type": "pubkey"
+          },
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "author",
+            "type": "pubkey"
+          },
+          {
+            "name": "room",
+            "type": {
+              "defined": {
+                "name": "Room"
+              }
+            }
+          },
+          {
+            "name": "commitment_hash",
+            "docs": [
+              "sha256(body || salt) — published at creation, verifiable after any reveal."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "type": "i64"
+          },
+          {
+            "name": "seal_pot",
+            "type": "u64"
+          },
+          {
+            "name": "read_pot",
+            "type": "u64"
+          },
+          {
+            "name": "yes_pot",
+            "docs": [
+              "Whisper IPO books."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "no_pot",
+            "type": "u64"
+          },
+          {
+            "name": "ransom_floor",
+            "docs": [
+              "Blackmail escrow ransom curve: floor + slope * seconds_elapsed."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "ransom_slope",
+            "type": "u64"
+          },
+          {
+            "name": "bid_count",
+            "type": "u8"
+          },
+          {
+            "name": "closed_bid_count",
+            "type": "u8"
+          },
+          {
+            "name": "read_bid_count",
+            "type": "u8"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "MarketStatus"
+              }
+            }
+          },
+          {
+            "name": "outcome",
+            "type": {
+              "defined": {
+                "name": "Outcome"
+              }
+            }
+          },
+          {
+            "name": "sole_reader",
+            "docs": [
+              "Set by the VRF callback for SoleReader / Inherited outcomes."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "randomness",
+            "docs": [
+              "Raw randomness the oracle delivered, kept for auditability."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "resolved_at",
+            "type": "i64"
+          },
+          {
+            "name": "escrow_lamports",
+            "docs": [
+              "Lamports this PDA holds on behalf of bidders (excludes rent + sponsor float)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "author_payout",
+            "docs": [
+              "Forfeited stakes owed to the author, claimable on L1 after settlement."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "rumor_result",
+            "docs": [
+              "Whisper IPO attested result: 0 unresolved, 1 YES, 2 NO."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "tombstoned",
+            "type": "bool"
+          },
+          {
+            "name": "revealed_len",
+            "docs": [
+              "Reveal buffer. Stays all-zero unless `outcome.reveals_text()`. Filled on the",
+              "ER at finalize time by copying out of the private `Secret`, immediately",
+              "before the market is committed to L1 — so plaintext reaches the base layer",
+              "only when the verdict authorised it."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "revealed",
+            "type": {
+              "array": [
+                "u8",
+                180
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Open"
+          },
+          {
+            "name": "Expired"
+          },
+          {
+            "name": "VrfPending"
+          },
+          {
+            "name": "Resolved"
+          },
+          {
+            "name": "Settled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Outcome",
+      "docs": [
+        "The verdict of the village. Written on-chain and carved into the L1 tombstone."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pending"
+          },
+          {
+            "name": "Buried"
+          },
+          {
+            "name": "SoleReader"
+          },
+          {
+            "name": "RandomReveal"
+          },
+          {
+            "name": "PublicLeak"
+          },
+          {
+            "name": "Inherited"
+          },
+          {
+            "name": "Forgiven"
+          },
+          {
+            "name": "Slashed"
+          },
+          {
+            "name": "ExportWinner"
+          },
+          {
+            "name": "CurseHit"
+          },
+          {
+            "name": "CurseMiss"
+          },
+          {
+            "name": "Cancelled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Purse",
+      "docs": [
+        "A villager's spending purse. Funded with real SOL on the base layer, then",
+        "delegated to the ER so every bid is an ER-native lamport move with no wallet",
+        "round trip and no base-layer transaction per click."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "available",
+            "docs": [
+              "Lamports available to bid, tracked separately from the account's rent."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "locked",
+            "docs": [
+              "Lamports currently locked in open bids."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Room",
+      "docs": [
+        "Which room of the bazaar a market belongs to.",
+        "",
+        "The first four are LIVE. Everything after `MirrorConfession` is typed into the",
+        "program deliberately but rejected by `create_market` — they are Phase 7 rooms",
+        "shown as disabled cards in the UI, not half-built code paths."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "GuiltMarket"
+          },
+          {
+            "name": "BlackmailEscrow"
+          },
+          {
+            "name": "WhisperIpo"
+          },
+          {
+            "name": "MirrorConfession"
+          },
+          {
+            "name": "ApologyBonds"
+          },
+          {
+            "name": "InheritanceOfSin"
+          },
+          {
+            "name": "ScapegoatAuction"
+          },
+          {
+            "name": "LastMessageWins"
+          },
+          {
+            "name": "CursePool"
+          },
+          {
+            "name": "ConfessionBondingCurve"
+          },
+          {
+            "name": "AbsolutionAmm"
+          },
+          {
+            "name": "AnonymousPatron"
+          },
+          {
+            "name": "RedactionRoulette"
+          },
+          {
+            "name": "DeadMansTweet"
+          },
+          {
+            "name": "JuryOfSeven"
+          },
+          {
+            "name": "Stain"
+          },
+          {
+            "name": "ConfessorsBooth"
+          },
+          {
+            "name": "SinFutures"
+          },
+          {
+            "name": "ReputationHostage"
+          },
+          {
+            "name": "VillageWill"
+          },
+          {
+            "name": "SinOracle"
+          },
+          {
+            "name": "CloneConfession"
+          },
+          {
+            "name": "CowardsInsurance"
+          },
+          {
+            "name": "PublicPenance"
+          },
+          {
+            "name": "ForgettingAnnex"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Secret",
+      "docs": [
+        "The confession itself. Delegated to the TEE validator and gated by an ephemeral",
+        "permission whose member list starts as `[author]`.",
+        "",
+        "For confession rooms the permission is PRIVATE, so the body is unreadable over",
+        "any RPC by anyone but the author. For Whisper IPO the same account holds the",
+        "rumor headline with a PUBLIC permission — the rumor is meant to be read; it is",
+        "the positions that stay hidden. Nothing here is ever copied to the base layer",
+        "unless `Outcome::reveals_text()`."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "author",
+            "type": "pubkey"
+          },
+          {
+            "name": "salt",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "body_len",
+            "type": "u16"
+          },
+          {
+            "name": "body",
+            "type": {
+              "array": [
+                "u8",
+                180
+              ]
+            }
+          },
+          {
+            "name": "redacted_len",
+            "docs": [
+              "Author-supplied single sentence, the only thing a RandomReveal may publish."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "redacted",
+            "type": {
+              "array": [
+                "u8",
+                96
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tombstone",
+      "docs": [
+        "The graveyard entry. Written on the BASE layer after settlement and never",
+        "deleted. Carries plaintext only when the outcome authorised it."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "author",
+            "type": "pubkey"
+          },
+          {
+            "name": "room",
+            "type": {
+              "defined": {
+                "name": "Room"
+              }
+            }
+          },
+          {
+            "name": "commitment_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "outcome",
+            "type": {
+              "defined": {
+                "name": "Outcome"
+              }
+            }
+          },
+          {
+            "name": "seal_pot",
+            "type": "u64"
+          },
+          {
+            "name": "read_pot",
+            "type": "u64"
+          },
+          {
+            "name": "sole_reader",
+            "type": "pubkey"
+          },
+          {
+            "name": "randomness",
+            "type": "u64"
+          },
+          {
+            "name": "buried_at",
+            "type": "i64"
+          },
+          {
+            "name": "revealed_len",
+            "type": "u16"
+          },
+          {
+            "name": "revealed",
+            "type": {
+              "array": [
+                "u8",
+                180
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Village",
+      "docs": [
+        "The village: one per authority, lives on the base layer, never delegated."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "market_count",
+            "type": "u64"
+          },
+          {
+            "name": "fiction_mode",
+            "docs": [
+              "Fiction mode is ON by default. Seeded content is startup-village satire only."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

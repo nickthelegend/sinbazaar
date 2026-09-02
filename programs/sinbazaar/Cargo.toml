@@ -1,0 +1,29 @@
+[package]
+name = "sinbazaar"
+version = "0.1.0"
+description = "SINBAZAAR - a private real-time market where the underlying asset is a secret"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "sinbazaar"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+custom-heap = []
+custom-panic = []
+anchor-debug = []
+
+[dependencies]
+anchor-lang = { version = "=1.0.2", features = ["init-if-needed"] }
+ephemeral-rollups-sdk = { version = "0.16.2", features = [
+    "anchor",
+    "access-control",
+    "vrf",
+] }
+solana-sha256-hasher = { version = "3.1.0", features = ["sha2"] }
