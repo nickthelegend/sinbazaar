@@ -64,43 +64,35 @@ believe the rest.
 
 ## Visual point of view
 
-**A ledger kept by candlelight in a market that trades in other people's secrets.**
+**A property and evidence form.** A confession is evidence; the permission member
+list is a chain of custody; the tombstone is the final property record. See
+[DESIGN.md](DESIGN.md) for the system.
 
-Committed to, and consistent everywhere:
-
-- **Ground:** near-black with a warm cast (`--ink #0b0806`), lit by two soft radial
-  pools as if from a lamp above the stall. Never flat grey, never blue-black.
-- **Ember** (`#e0a33f`) is the light source: the brand, the live state, the
-  countdown. **Oxblood** (`#b03d31`) is consequence — leaks, errors, the fiction
-  banner. **Moss** (`#6f9a83`) is the only cool note, reserved for "settled" and
-  "verified". **Parchment** (`#ece3d3`) is the page.
-- **Type** — three self-hosted variable faces, no CDN:
-  - *Fraunces* for display, with `opsz` pushed high and `WONK` on. Engraved,
-    editorial, faintly uncanny. Deliberately not Playfair.
-  - *Archivo* for interface. A grotesk that reads as posted rather than designed.
-    Deliberately not Inter.
-  - *JetBrains Mono* for hashes, keys and lamports, with tabular figures and slashed
-    zero. Half this UI is a digest; it earns a real mono.
-- **Edges:** 3px radius. Hairline borders in `--edge`. This is a ledger, not a card
-  UI — corners are cut, not rounded.
-- **Motion:** almost none, except the countdown. The one thing that moves is the
-  thing that is running out.
+The short version: cool photocopy stock, heavy black rules, square fields, and
+colour spent only on the classification band that says what may be seen. Archivo
+(one variable file, width + weight axes) and JetBrains Mono, both self-hosted.
+The redaction bar is the signature graphic.
 
 ## Anti-references
 
-Explicitly what this product must never look like:
+What this product must never look like. The first two are here because the project
+shipped them and had to be dug back out:
 
-- A gradient-on-purple SaaS landing page.
-- Glassmorphism, frosted panels, blurred translucent cards.
-- An italic serif hero over a stock photograph.
-- Inter + Playfair Display. The two most predictable webfonts in the model's default
-  taste; both are banned here.
-- Pulsing coloured status dots, generic drop shadows, nested cards inside cards.
-- Numbered section labels ("01 — Features").
-- Emoji as iconography.
-- A dark theme that is really just grey-on-grey with one accent blue.
-- Torture-porn or true-crime staging. The register is a market stall, not a
-  basement. Fiction mode is a product commitment, and the design carries it.
+- **Near-black ground with one warm accent and glowing edges.** This was the
+  original look. It is one of the two aesthetics generated interfaces converge on
+  regardless of subject, and it arrived by default rather than by decision.
+- **Candlelight, parchment, cream, ivory, lamplight, wax.** The literal reading of
+  the product's name, which is the least interesting thing about it.
+- Fraunces, Playfair, Cormorant, Newsreader, Inter-as-display, Space Grotesk, DM
+  Sans, Instrument Sans, and the rest of the faces that signal a model stopped
+  looking. Two of these were in the project and both were caught.
+- **Side-tab accent borders** — a coloured stripe down one edge of a card. There
+  were six; they are now classification bands across the head of the box.
+- Glassmorphism, frosted panels, gradients on purple, rounded cards floating on
+  drop shadows, pulsing status dots, nested cards, numbered section labels
+  ("01 — Features"), emoji as iconography, skeleton shimmer.
+- True-crime or basement staging. The register is institutional paperwork: the
+  chill comes from a form being indifferent, not from the interface being lurid.
 
 ## Constraints
 

@@ -107,3 +107,34 @@ export function StepList({
 export function Empty({ children }: { children: React.ReactNode }) {
   return <div className="empty">{children}</div>;
 }
+
+/**
+ * A redaction bar.
+ *
+ * The signature graphic of this product. Where a confession exists but the
+ * verdict did not authorise publishing it, the page shows the shape of the
+ * withheld text rather than a sentence explaining that it is withheld. The
+ * widths are fixed and deliberately arbitrary: nothing here encodes the real
+ * length of the body, because the real length is itself private and leaking it
+ * would be a small, stupid leak.
+ */
+export function Redaction({ label }: { label?: string }) {
+  const bars = [
+    [62, 26],
+    [38, 44, 12],
+    [22, 54],
+  ];
+  return (
+    <div className="redaction-block" role="img" aria-label={label ?? "Redacted. The confession was not authorised for publication."}>
+      <div className="redaction-rows">
+      {bars.map((row, i) => (
+        <div className="redaction-row" key={i}>
+          {row.map((w, j) => (
+            <span className="redaction" key={j} style={{ width: `${w}%` }} />
+          ))}
+        </div>
+      ))}
+      </div>
+    </div>
+  );
+}

@@ -1,104 +1,124 @@
 # SINBAZAAR — design system
 
-The visual world this project committed to, written down so that any later change —
-by a person or an agent — inherits it instead of drifting back to generic defaults.
-
-Product truth lives in [PRODUCT.md](PRODUCT.md). This file is only about how it looks
-and why. The implementation is one stylesheet: `app/src/app/globals.css`.
+Written from the built world, not before it. Product truth lives in
+[PRODUCT.md](PRODUCT.md); this file is only how it looks and why. The whole
+implementation is one stylesheet: `app/src/app/globals.css`.
 
 ---
 
-## The idea
+## The world: property & evidence
 
-**A ledger kept by candlelight in a market that trades other people's secrets.**
+**A confession is evidence. The permission member list is a chain of custody. The
+tombstone is the final property record.** So the interface is the paperwork an
+institution uses when it takes something off you and promises to account for it
+later: cool photocopy stock, heavy black rules, square fields, a case number on
+everything, and colour spent only on the band that says what may be seen.
 
-Two things follow from that and everything else is downstream:
+This replaced a candlelit-ledger world — near-black ground, warm ember accent,
+glowing edges, serif display. That world was not chosen; it was defaulted into. It
+is one of the two looks generated interfaces converge on regardless of subject, and
+its display faces (Fraunces, then Newsreader) are both on the list of faces that
+signal a model stopped looking. The current world was reached by ranking seven
+grounded candidates from the audience's real cultural home — classified markings,
+betting exchanges, evidence and custody, actuarial slips, numbers stations,
+pharmaceutical print, tote boards — and building the one the roll assigned rather
+than the one that ranked first.
 
-1. **There is one light source.** The page is lit from above-left by a lamp over a
-   stall, not by a uniform UI grey. Warmth falls off toward the edges.
-2. **It is a record, not an app.** Ledgers have hairlines and cut corners, not
-   rounded cards and drop shadows. Nothing decorative moves.
+### Disciplines borrowed, and from where
+
+Each was taken from a direction that lost, and each is a system discipline, not a
+motif:
+
+- **From a monochrome op-art gallery — state rides rule weight, not colour.** A
+  live market is drawn with a heavier bottom rule; a market inside its final minute
+  thickens further and turns its rule to seal red. Nothing gets a brighter accent
+  to mean "important".
+- **From a coiled earthen tower — process stays visible.** Every instruction stamps
+  a line into the custody log and none are removed, so the walk accumulates the way
+  a custody sheet does rather than replacing itself with a spinner.
+- **From paper automata — exactly one thing moves.** The countdown, and only inside
+  the last minute. Stillness everywhere else is what makes a running clock
+  frightening.
+
+---
 
 ## Colour
 
-Defined once as tokens on `:root`. Never hard-code a hex outside that block.
+Defined once on `:root`. Never hard-code a hex outside that block. Every value below
+passes WCAG AA against the ground it is used on, measured in the live page.
 
-| Token | Value | What it is for |
+| Token | Value | Role |
 |---|---|---|
-| `--ink` | `#0b0806` | The ground. Near-black with a warm cast — never blue-black, never `#111`. |
-| `--ink-2` `--ink-3` | `#12100c` `#1a1710` | Card and panel grounds, one and two steps up from the page. |
-| `--edge` `--edge-hot` | `#2b2419` `#46381f` | Hairline borders. `-hot` marks a live or focused edge. |
-| `--ember` | `#e0a33f` | **The light.** Brand, live state, the running countdown, links. |
-| `--flame` | `#f2c874` | Ember at higher intensity — hover, the one thing being pointed at. |
-| `--ember-dim` | `#8a6626` | Ember receded: inactive chips, rules, quiet borders. |
-| `--oxblood` | `#b03d31` | **Consequence.** Leaks, errors, the fiction banner. Never decorative. |
-| `--moss` | `#6f9a83` | The only cool note. Reserved for *settled* and *verified* — a thing that is finished and checkable. |
-| `--parchment` | `#ece3d3` | Body text. |
-| `--parchment-2` `--parchment-3` | `#b9ac97` `#7d7261` | Secondary and tertiary text. |
+| `--paper` | `#e6e9e6` | Page ground. Cool, photocopied. **Never cream, never parchment.** |
+| `--form` | `#fbfcfb` | The record itself — card and panel ground. |
+| `--form-2` | `#eff1ee` | Header bands, alternating fields. |
+| `--field` | `#ffffff` | An input, or a box holding evidence. |
+| `--ink` | `#16181a` | Rules *and* text. One black for both, because a form has no elevation. |
+| `--ink-2` | `#545a5c` | Secondary text. 6.8:1 on form. |
+| `--ink-3` | `#6f7574` | Muted — a dead clock, an unrun step. 4.6:1 on form. |
+| `--void` | `#c3c8c5` | Hairlines, hatching, out-of-service rules. |
+| `--seal` | `#c8102e` | **Evidence tape.** The secret, a broken seal, a released body, an error. |
+| `--custody` | `#17457f` | **Numbered seal.** Chain-of-custody entries, the rollup, links. |
+| `--cleared` | `#1c6b41` | Released, settled, verified, in service. |
+| `--marker` | `#ffe94d` | Highlighter. A running step, an active rule branch, a hover. |
 
-The background is two radial pools over `--ink` — one large warm one behind the
-headline, one small oxblood one upper-right. That is the lamp. Do not replace it
-with a linear gradient; a linear gradient reads as a SaaS hero, a radial pool reads
-as light in a room.
+Colour is **only** spent on classification. A card's room, author, pots and hash are
+all black on white; the only coloured things on it are the band saying which layer
+holds it and the band saying what the verdict was.
 
 ## Type
 
-Three self-hosted variable faces in `app/public/fonts/`, latin subset, ~198 KB total.
-**Nothing loads from a CDN.** A webfont that fails silently downgrades every headline,
-and this product has to work against a local validator with no internet.
+Two self-hosted variable faces, latin subset, 121 KB total. Nothing reaches a CDN —
+a webfont that fails silently downgrades the whole page, and this has to work
+against a validator on localhost with no internet.
 
-| Role | Face | Why this one |
-|---|---|---|
-| `--display` | **Newsreader** | A newspaper serif with an `opsz` axis 6→72 — the face obituaries are set in. That is literally what the graveyard is. It also holds its strokes on a near-black ground, where a didone's hairlines would break up. |
-| `--sans` | **Archivo** | A grotesk with tight apertures and a public-notice flatness. It reads as *posted*, not designed. |
-| `--mono` | **JetBrains Mono** | Half this UI is a commitment digest or a pubkey. Tabular figures and a slashed zero are not a nicety here. |
+- **Archivo**, one file carrying **both** a width axis (62–125) and a weight axis.
+  Condensed caps at `wdth 68–80` stamp every header, label and band; normal width
+  sets body copy. A grotesk, because forms are set in grotesks — a serif display
+  here would be a book pretending to be a document.
+- **JetBrains Mono** for case numbers, digests, pubkeys and lamports, with tabular
+  figures and a slashed zero. Half this interface is a value that must be compared
+  character by character.
 
-Rules:
+**Digests are never case-transformed.** The stamped-caps treatment on headings would
+otherwise print the same hash uppercase on one page and lowercase on another, which
+reads as two different values.
 
-- Headlines drive `opsz` up (`72` on `h1`, `40` on `h2`/`h3`). Left at default,
-  Newsreader is merely a competent body serif; the display character only appears
-  when the optical size is pushed. This is the whole reason to ship the variable file.
-- Body sets `"wght" 420` — a grotesk at 400 goes thin against a dark ground.
-- Anything monospaced gets `font-variant-numeric: tabular-nums` and `"zero" 1`, so
-  columns of digests line up and a changed character is obvious.
-- **Banned:** Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, Space Grotesk,
-  Playfair Display. Every one of them is an AI-default; Fraunces was in this project
-  for an hour and the detector was right to flag it.
+Banned display faces, and the reason the ban exists: Fraunces, Playfair, Cormorant,
+Lora, Crimson, Newsreader, Syne, Space Grotesk, Space Mono, IBM Plex, Inter-as-display,
+DM Sans/Serif, Outfit, Plus Jakarta, Instrument Sans. Two of them were in this project
+and the detector was right both times.
 
 ## Form
 
-- **Radius `3px`.** Everywhere. A ledger's corners are cut, not rounded.
-- **Hairline borders**, never shadows. There is no elevation model in this product;
-  there is only ink on a page and one lamp.
-- **No nested cards.** A card contains facts, not other cards.
-- Pot bars are a 2px rule split by proportion — the only chart in the product, and
-  it is a line, not a donut.
+- **Square corners. No radius anywhere.** Forms are cut, not rounded.
+- **Rules, never shadows.** There is no elevation model; there is ink on stock.
+- **No side-tab accent borders.** A coloured stripe down one edge of a card is the
+  single most recognisable tell of a generated interface, and this project had six
+  of them. They were replaced with **classification bands** — a full-width strip
+  across the head of the box, which is what evidence paperwork actually does:
+  `RELEASED — AUTHORISED FOR PUBLICATION` in seal red over a leaked confession,
+  `WITHHELD — THE VERDICT DID NOT AUTHORISE PUBLICATION` in black over a redaction.
+- **The redaction bar is the signature graphic.** Where a confession exists but may
+  not be shown, the page draws its withheld shape rather than a sentence explaining
+  that it is withheld. The bar widths are fixed and arbitrary on purpose: the real
+  length of the body is itself private.
+- An empty book is drawn as **hatching**, not a false 50/50 split.
 
 ## Motion
 
-Almost none, deliberately. The countdown is the only thing that moves, because it is
-the only thing that is running out. No pulsing dots, no skeleton shimmer, no
-entrance animations on cards. When something is loading, it says so in words.
+One thing moves: the countdown, and only under a minute, ticking once a second at
+`steps(1)`. No shimmer, no skeletons, no entrance animations, no pulsing dots. When
+something is loading it says so in words. `prefers-reduced-motion` disables even the
+tick.
 
-## Voice in the interface
+## Accessibility
 
-Sentences that could be carved. See PRODUCT.md for the register. Two interface-specific
-rules:
-
-- **Name the real instruction.** `place_bid`, `Outcome::reveals_text()`,
-  `market.revealed`. A judge believes the privacy claim because the UI is willing to
-  say exactly which line does it.
-- **State the rule before money moves.** The market page's "what happens at zero"
-  block is not help text; it is the product. Never hide it behind a tooltip.
-
-## Anti-references
-
-Never, under any instruction short of an explicit rebrand:
-
-gradients on purple · glassmorphism · italic serif hero over a photo ·
-Inter + Playfair · pulsing status dots · generic drop shadows · nested cards ·
-numbered section labels · emoji as iconography · grey-on-grey dark mode with one
-accent blue · true-crime or torture staging.
+AA contrast on every text/ground pair, measured in the browser rather than eyeballed.
+A 3px `--custody` focus ring on every interactive element, suppressed for pointer
+clicks. Full keyboard operability, a skip link, and `role="img"` with a real label on
+the redaction block so a screen reader is told the material is withheld rather than
+finding three empty spans.
 
 ## How to check
 
@@ -106,4 +126,5 @@ accent blue · true-crime or torture staging.
 node ~/.claude/skills/impeccable/scripts/detect.mjs --json app/src
 ```
 
-Must return `[]`. It currently does. Anything it flags gets fixed, never suppressed.
+Must return `[]`. It currently does. Anything it flags gets fixed, never suppressed —
+it has caught a real defect in this project twice.

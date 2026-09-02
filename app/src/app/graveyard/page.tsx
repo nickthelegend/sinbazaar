@@ -9,7 +9,7 @@
  */
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Empty, OutcomeBadge } from "@/components/Bits";
+import { Empty, OutcomeBadge, Redaction } from "@/components/Bits";
 import { useTombstones } from "@/hooks/useMarkets";
 import { explorerUrl } from "@/lib/config";
 import { fmtSol, fullHash, OUTCOME_LABEL, revealsText, shortHash, shortKey } from "@/lib/format";
@@ -128,13 +128,16 @@ export default function GraveyardPage() {
                     />
                   </>
                 ) : (
-                  <p className="epitaph">
+                  <>
+                    <Redaction />
+                    <p className="epitaph">
                     {tomb.outcome === "buried"
                       ? "Someone paid for the silence. The body never left the rollup."
                       : tomb.outcome === "soleReader"
                         ? `One key was admitted: ${shortKey(tomb.soleReader, 5)}. The village got the hash.`
                         : `${OUTCOME_LABEL[tomb.outcome] ?? tomb.outcome} — no text was authorised.`}
-                  </p>
+                    </p>
+                  </>
                 )}
 
                 <div className="facts" style={{ marginTop: 12 }}>
