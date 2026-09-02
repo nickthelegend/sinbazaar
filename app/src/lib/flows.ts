@@ -3,7 +3,7 @@
  *
  * Nothing here is a shortcut: creation walks base -> delegate -> ER exactly as
  * scripts/smoke.ts does, and the confession body is only ever an argument to an
- * ER transaction — it never appears in a base-layer instruction.
+ * ER transaction, it never appears in a base-layer instruction.
  */
 import { Buffer } from "buffer";
 import { BN } from "@coral-xyz/anchor";
@@ -50,7 +50,7 @@ export const CREATE_STEPS: FlowStep[] = [
     id: "village",
     label: "open the village",
     layer: "base",
-    note: "initialize_village — idempotent, skipped when it already exists",
+    note: "initialize_village, idempotent, skipped when it already exists",
   },
   {
     id: "create_market",
@@ -86,7 +86,7 @@ export const CREATE_STEPS: FlowStep[] = [
     id: "init_market_permission",
     label: "init_market_permission",
     layer: "er",
-    note: "PUBLIC by design — hash, timer, pots and status are the market",
+    note: "PUBLIC by design, hash, timer, pots and status are the market",
   },
   {
     id: "init_secret_permission",
@@ -317,7 +317,7 @@ export async function fundPurse(
   const alreadyDelegated = !!(await er.getAccountInfo(purse));
   if (alreadyDelegated) {
     throw new Error(
-      "the purse is already on the rollup — undelegate it before topping up on L1"
+      "the purse is already on the rollup, undelegate it before topping up on L1"
     );
   }
 
@@ -464,7 +464,7 @@ export const RESOLVE_STEPS: FlowStep[] = [
  * Walk a market from a dead timer to a tombstone on Solana.
  *
  * Every step is permissionless, so anyone looking at the market can run it. The
- * only part the browser cannot do alone is enumerate the private book — it
+ * only part the browser cannot do alone is enumerate the private book, it
  * settles the bids it knows it placed (see lib/registry.ts).
  */
 export async function resolveMarket(
@@ -519,7 +519,7 @@ export async function resolveMarket(
       const bid = bidPda(market, bidder);
       if (!(await er.getAccountInfo(bid))) continue; // already settled and closed
       // settle_bid moves the money; close_bid CPIs the magic program to reclaim the
-      // ephemeral account. One transaction, two instructions — the runtime refuses
+      // ephemeral account. One transaction, two instructions, the runtime refuses
       // to see a lamport transfer and that CPI in the same instruction.
       const settle = await methodsOf(pEr)
         .settleBid(marketId)
@@ -553,7 +553,7 @@ export async function resolveMarket(
     if (closed < total) {
       throw new Error(
         `${total - closed} of this market's ${total} bids belong to other villagers. ` +
-          `Bids are private — only the wallet that placed one can settle it — so each ` +
+          `Bids are private, only the wallet that placed one can settle it, so each ` +
           `of them has to open this market and resolve it too before the book can close.`
       );
     }
@@ -621,7 +621,7 @@ export interface SecretRead {
  * Open the confession over the authenticated TEE path.
  *
  * The token identifies the key; the permission member list decides whether the
- * validator answers. A key that is not a member gets nothing back — not a
+ * validator answers. A key that is not a member gets nothing back, not a
  * ciphertext, not an empty account, nothing.
  */
 export async function readSecret(

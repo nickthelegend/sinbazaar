@@ -2,7 +2,7 @@
  * Endpoints and fixed addresses.
  *
  * Every value is a build-time inline (`NEXT_PUBLIC_*`), so the references below
- * must stay literal — a computed `process.env[name]` is not replaced by Next.
+ * must stay literal, a computed `process.env[name]` is not replaced by Next.
  * Defaults mirror scripts/local-env.sh.
  */
 import { PublicKey } from "@solana/web3.js";
@@ -43,6 +43,12 @@ export function defaultWsUrl(httpUrl: string): string {
   const url = new URL(httpUrl);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
   if (url.port) url.port = String(Number(url.port) + 1);
+  // The ephemeral validator and the query-filtering service bind 127.0.0.1 only.
+  // A browser resolves "localhost" to ::1 first; fetch quietly falls back to
+  // IPv4 after the refusal, but a WebSocket does not retry, so every
+  // subscription died with ERR_CONNECTION_REFUSED while HTTP looked fine.
+  // Pinning the loopback literal is what makes live updates work locally.
+  if (url.hostname === "localhost") url.hostname = "127.0.0.1";
   return url.toString().replace(/\/$/, "");
 }
 

@@ -4,7 +4,7 @@
  * The graveyard.
  *
  * Read from the BASE layer only. A tombstone is the entire footprint SINBAZAAR
- * leaves on Solana: hash, room, verdict, pots — and plaintext exactly when
+ * leaves on Solana: hash, room, verdict, pots, and plaintext exactly when
  * `Outcome::reveals_text()` was true and never otherwise.
  */
 import Link from "next/link";
@@ -23,10 +23,29 @@ import { roomOf } from "@/lib/rooms";
  * trust from us and becomes something the base layer proves on its own. Nothing
  * here touches the rollup.
  */
-function CommitmentCheck({ text, salt, commitment }: { text: string; salt: number[]; commitment: number[] }) {
+function CommitmentCheck({
+  text,
+  salt,
+  commitment,
+  outcome,
+}: {
+  text: string;
+  salt: number[];
+  commitment: number[];
+  outcome: string;
+}) {
   const [state, setState] = useState<"checking" | "ok" | "mismatch" | "nosalt">("checking");
 
+  // Only a PublicLeak publishes the body itself, so only a PublicLeak can be
+  // checked against the commitment. A RandomReveal publishes the author's
+  // redacted sentence, which was never what the hash covered, and the salt is
+  // deliberately withheld there so the still-secret body cannot be guessed
+  // offline. Running the check on that outcome would print MISMATCH for a
+  // market that behaved perfectly.
+  const verifiable = outcome === "publicLeak";
+
   useEffect(() => {
+    if (!verifiable) return;
     let live = true;
     if (salt.every((b) => b === 0)) {
       setState("nosalt");
@@ -47,16 +66,34 @@ function CommitmentCheck({ text, salt, commitment }: { text: string; salt: numbe
     return () => {
       live = false;
     };
-  }, [text, salt, commitment]);
+  }, [text, salt, commitment, verifiable]);
 
-  if (state === "nosalt") return null;
+  if (!verifiable) {
+    return (
+      <p className="epitaph small">
+        This is the author&rsquo;s redacted line, not the sealed body. The commitment still
+        covers the confession itself, which stayed in the rollup, so there is nothing here to
+        check it against.
+      </p>
+    );
+  }
+
+  if (state === "nosalt") {
+    return (
+      <p className="epitaph small">
+        The salt was not published with this entry, so the commitment cannot be reproduced
+        from the base layer alone.
+      </p>
+    );
+  }
+
   return (
     <p className={state === "mismatch" ? "err small" : "epitaph small"}>
       {state === "checking"
-        ? "checking the commitment…"
+        ? "checking the commitment"
         : state === "ok"
-          ? "sha256(sentence ‖ salt) matches the commitment sealed before any bid was placed — verified in your browser, from the base layer alone."
-          : "commitment MISMATCH — this text is not what was sealed."}
+          ? "sha256(sentence \u2016 salt) matches the commitment sealed before any bid was placed, verified in your browser, from the base layer alone."
+          : "commitment MISMATCH, this text is not what was sealed."}
     </p>
   );
 }
@@ -72,7 +109,7 @@ export default function GraveyardPage() {
         <p className="lede">
           Every entry here is a base-layer account. The hash is always present; the sentence is
           present only when the verdict authorised it. Nothing on this page was ever read out of
-          the private rollup — the program copied it in at finalize time, under the rule.
+          the private rollup, the program copied it in at finalize time, under the rule.
         </p>
       </section>
 
@@ -125,6 +162,7 @@ export default function GraveyardPage() {
                       text={tomb.revealed}
                       salt={tomb.salt}
                       commitment={tomb.commitment}
+                      outcome={tomb.outcome}
                     />
                   </>
                 ) : (
@@ -135,7 +173,7 @@ export default function GraveyardPage() {
                       ? "Someone paid for the silence. The body never left the rollup."
                       : tomb.outcome === "soleReader"
                         ? `One key was admitted: ${shortKey(tomb.soleReader, 5)}. The village got the hash.`
-                        : `${OUTCOME_LABEL[tomb.outcome] ?? tomb.outcome} — no text was authorised.`}
+                        : `${OUTCOME_LABEL[tomb.outcome] ?? tomb.outcome}, no text was authorised.`}
                     </p>
                   </>
                 )}
@@ -151,7 +189,7 @@ export default function GraveyardPage() {
                   </div>
                   <div className="fact">
                     <div className="lbl">randomness</div>
-                    <div className="val">{tomb.randomness === "0" ? "—" : tomb.randomness}</div>
+                    <div className="val">{tomb.randomness === "0" ? ", " : tomb.randomness}</div>
                   </div>
                 </div>
 

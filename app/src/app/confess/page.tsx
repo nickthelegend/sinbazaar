@@ -129,7 +129,7 @@ export default function ConfessPage() {
         <h1>Write it once. It never touches Solana.</h1>
         <p className="lede">
           The secret account is allocated <strong>empty</strong> on the base layer, delegated,
-          and only then filled in — inside the rollup, under a private permission whose member
+          and only then filled in, inside the rollup, under a private permission whose member
           list is just you. Solana learns sha256(body ‖ salt) and nothing else.
         </p>
       </section>

@@ -113,7 +113,7 @@ async function marketsOn(layer: Layer): Promise<MarketView[]> {
 /**
  * Read one market, and be careful about which copy is the live one.
  *
- * A delegated market still has an account on L1 — owned by the delegation program,
+ * A delegated market still has an account on L1, owned by the delegation program,
  * holding a pre-delegation snapshot. Anchor will decode that snapshot perfectly
  * happily (it does not enforce the owner on `fetch`), so "try base, fall back to the
  * rollup" silently serves a market with zero bids and an empty book.
@@ -145,7 +145,7 @@ export async function fetchMarket(address: string): Promise<MarketView | null> {
   }
 
   // Last resort: a market caught mid-delegation, where the rollup has not cloned it
-  // yet. Render the snapshot rather than a blank page, and label it as delegated —
+  // yet. Render the snapshot rather than a blank page, and label it as delegated,
   // because it is.
   if (onBase) {
     try {
@@ -165,7 +165,7 @@ export async function fetchMarkets(): Promise<MarketView[]> {
   for (const m of er) byAddress.set(m.address, m);
   // Base-layer `market.all()` only returns markets this program still owns, i.e.
   // the ones that are NOT delegated. Anything it returns has come home, so it wins
-  // over the rollup's stale copy — both for the data and for the layer badge.
+  // over the rollup's stale copy, both for the data and for the layer badge.
   for (const m of base) byAddress.set(m.address, m);
 
   if (byAddress.size === 0) {

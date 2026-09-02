@@ -5,13 +5,13 @@
  *
  * A villager approves once with their wallet and opens a session scoped to one
  * market, one spend ceiling and one expiry. Every bid after that is signed by a
- * throwaway keypair living in this browser — no wallet popup, no base-layer
+ * throwaway keypair living in this browser, no wallet popup, no base-layer
  * transaction, and nothing the key can do beyond the scope it was granted.
  *
  * The scope is enforced by the program, not by this file: `place_bid_with_session`
  * checks the session's market, its ceiling and its expiry, and `open_session`
  * binds the key to exactly one market. A leaked session key can bid up to the
- * ceiling on that one market and nothing else — it cannot withdraw the purse,
+ * ceiling on that one market and nothing else, it cannot withdraw the purse,
  * cannot reach another market, and dies on its own.
  *
  * That is why the key is allowed to sit in localStorage. It is not a wallet.
@@ -97,7 +97,7 @@ export function forgetSession(market: string) {
 /**
  * One wallet approval: fund a fresh key and grant it a scope on the rollup.
  *
- * The transfer is a real base-layer transaction — the session key has to be able
+ * The transfer is a real base-layer transaction, the session key has to be able
  * to pay its own ER fees, because it is the fee payer on every bid it signs.
  */
 export async function openSession(

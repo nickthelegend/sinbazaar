@@ -2,7 +2,7 @@
  * The rooms of the bazaar, in the order they appear in the `Room` enum in
  * programs/sinbazaar/src/state.rs.
  *
- * Three are LIVE — they have a full create -> bid -> VRF -> settle -> tombstone
+ * Three are LIVE, they have a full create -> bid -> VRF -> settle -> tombstone
  * loop. The rest are enumerated in the program deliberately and rejected by
  * `create_market` (`Room::is_live()`), so the UI shows them as disabled cards
  * rather than half-built code paths.
@@ -15,13 +15,13 @@ export type SideName = "seal" | "read" | "yes" | "no";
 export interface RoomMeta {
   /** Rust variant name. */
   name: string;
-  /** Anchor's camelCase key — both the argument shape and the fetched value. */
+  /** Anchor's camelCase key, both the argument shape and the fetched value. */
   variant: string;
   label: string;
   /** Two lines. The card shows both; nothing else fits a stall sign. */
   rule: [string, string];
   live: boolean;
-  /** `Room::is_confession_market()` — payoff decided by SEAL/READ bidding. */
+  /** `Room::is_confession_market()`, payoff decided by SEAL/READ bidding. */
   confessionMarket: boolean;
   sides: [SideName, SideName];
 }
@@ -70,7 +70,6 @@ export const ROOMS: RoomMeta[] = [
     ],
     { live: true, sides: ["yes", "no"] }
   ),
-
   // ---- phase 2: enumerated, disabled ----
   room("MirrorConfession", "Mirror Confession", [
     "Two villagers open at the same instant and each is shown only the other's.",
@@ -106,7 +105,7 @@ export const ROOMS: RoomMeta[] = [
   ]),
   room("AnonymousPatron", "Anonymous Patron", [
     "One benefactor quietly funds the seal pot to the ceiling.",
-    "Nobody learns who paid — the author least of all.",
+    "Nobody learns who paid, the author least of all.",
   ]),
   room("RedactionRoulette", "Redaction Roulette", [
     "The randomness chooses which single sentence stays blacked out.",

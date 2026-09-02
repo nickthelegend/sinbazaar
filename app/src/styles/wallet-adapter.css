@@ -1,8 +1,8 @@
 /* Vendored from @solana/wallet-adapter-react-ui/styles.css.
  *
- * Identical except that its first line —
+ * Identical except that its first line,
  *   @import url('https://fonts.googleapis.com/css2?family=DM+Sans...')
- * — is removed. That import is a hard dependency on Google's CDN: it fails with
+ *, is removed. That import is a hard dependency on Google's CDN: it fails with
  * ERR_CONNECTION_REFUSED anywhere the network is restricted, puts three errors in
  * the console on every page load, and pulls in a typeface this project does not
  * use. SINBAZAAR self-hosts its own fonts; see globals.css.

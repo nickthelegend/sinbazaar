@@ -1,8 +1,8 @@
 /**
- * Three connections, three jobs — the same split the SDK draws:
- *   base — Solana. Creation, delegation, tombstones, real SOL.
- *   er   — Ephemeral Rollup. Bidding, expiry, VRF, settlement.
- *   tee  — the same rollup read through an authenticated endpoint (see
+ * Three connections, three jobs, the same split the SDK draws:
+ *   base, Solana. Creation, delegation, tombstones, real SOL.
+ *   er , Ephemeral Rollup. Bidding, expiry, VRF, settlement.
+ *   tee, the same rollup read through an authenticated endpoint (see
  *          lib/magicblock.ts). The only place a private account can be fetched,
  *          and only by a key on that account's permission member list.
  */
@@ -14,14 +14,14 @@ import {
   type TransactionInstruction,
 } from "@solana/web3.js";
 import idlJson from "@/idl/sinbazaar.json";
-import { BASE_RPC, ER_RPC } from "./config";
+import { BASE_RPC, defaultWsUrl, ER_RPC } from "./config";
 
 export const IDL = idlJson as unknown as Idl;
 
 /**
  * Read-only provider. Every transaction in this app is built with
  * `.instruction()` and sent through `sendIxs`, so the provider never needs to
- * sign — it only carries the connection Anchor fetches accounts over.
+ * sign, it only carries the connection Anchor fetches accounts over.
  */
 export class ReadonlyProvider implements Provider {
   constructor(
@@ -34,12 +34,24 @@ let baseConn: Connection | null = null;
 let erConn: Connection | null = null;
 
 export function baseConnection(): Connection {
-  if (!baseConn) baseConn = new Connection(BASE_RPC, "confirmed");
+  if (!baseConn) {
+    baseConn = new Connection(BASE_RPC, {
+      commitment: "confirmed",
+      wsEndpoint: defaultWsUrl(BASE_RPC),
+    });
+  }
   return baseConn;
 }
 
 export function erConnection(): Connection {
-  if (!erConn) erConn = new Connection(ER_RPC, "confirmed");
+  if (!erConn) {
+    // The websocket endpoint is passed explicitly rather than left to web3.js to
+    // derive, so the IPv4 pinning in `defaultWsUrl` actually applies.
+    erConn = new Connection(ER_RPC, {
+      commitment: "confirmed",
+      wsEndpoint: defaultWsUrl(ER_RPC),
+    });
+  }
   return erConn;
 }
 
@@ -47,7 +59,7 @@ export function programFor(connection: Connection, publicKey?: PublicKey): Progr
   return new Program(IDL, new ReadonlyProvider(connection, publicKey));
 }
 
-/** Anchor's account namespace, untyped — the IDL is loaded at runtime. */
+/** Anchor's account namespace, untyped, the IDL is loaded at runtime. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const accountsOf = (program: Program<Idl>): any => program.account as any;
 
@@ -57,7 +69,7 @@ export const methodsOf = (program: Program<Idl>): any => program.methods as any;
 
 /**
  * A key that can sign. Either the burner keypair kept in localStorage or the
- * connected browser wallet — the flows below do not care which.
+ * connected browser wallet, the flows below do not care which.
  */
 export interface VillageSigner {
   kind: "burner" | "wallet";
@@ -73,7 +85,7 @@ export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * Build, sign and send a transaction on an arbitrary connection.
  *
  * `skipPreflight` defaults to true because the ER simulates against its own
- * bank and preflight against a delegated account is noise, not signal — the
+ * bank and preflight against a delegated account is noise, not signal, the
  * same choice sdk/src/index.ts `send()` makes.
  */
 export async function sendIxs(
@@ -93,7 +105,7 @@ export async function sendIxs(
   const result = await connection.confirmTransaction({ signature, ...bh }, "confirmed");
 
   // `confirmTransaction` resolves for a transaction that LANDED, whether or not it
-  // succeeded — a reverted instruction comes back in `value.err` rather than being
+  // succeeded, a reverted instruction comes back in `value.err` rather than being
   // thrown. Ignoring it makes every on-chain failure render as a green tick, which
   // is exactly what it did here: a bid larger than the purse "succeeded" in the UI
   // while the market recorded no bid at all.
@@ -155,7 +167,7 @@ export function randomSalt(): Uint8Array {
   return salt;
 }
 
-/** sha256(body || salt) — recomputed by the program when the secret is sealed. */
+/** sha256(body || salt), recomputed by the program when the secret is sealed. */
 export async function commitmentHash(body: Uint8Array, salt: Uint8Array): Promise<Uint8Array> {
   const joined = new Uint8Array(body.length + salt.length);
   joined.set(body, 0);

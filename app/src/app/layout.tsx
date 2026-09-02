@@ -14,9 +14,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Providers>
+          <a className="skip-link" href="#content">
+            Skip to content
+          </a>
           <FictionBanner />
           <TopNav />
-          <main className="shell">{children}</main>
+          <main className="shell" id="content">
+            {children}
+          </main>
           <EndpointFooter />
         </Providers>
       </body>

@@ -84,7 +84,7 @@ export default function VillageFeed() {
           <Empty>reading the stalls…</Empty>
         ) : (
           <Empty>
-            No markets standing. <Link href="/confess" className="explorer">Open one</Link> — the
+            No markets standing. <Link href="/confess" className="explorer">Open one</Link>, the
             village is only interesting when somebody has something to lose.
           </Empty>
         )

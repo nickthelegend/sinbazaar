@@ -6,7 +6,7 @@
  * Polling a rollup is a waste of the rollup. These helpers open real websocket
  * subscriptions against the ephemeral validator so the book moves on screen at
  * the moment a transaction lands, and measure what that actually costs in
- * milliseconds against both layers — because "10–50ms" is a claim until there is
+ * milliseconds against both layers, because "10-50ms" is a claim until there is
  * a number on the page that the viewer watched appear.
  *
  * `@solana/web3.js` derives a websocket endpoint by switching the scheme and

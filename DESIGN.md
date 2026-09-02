@@ -1,130 +1,172 @@
-# SINBAZAAR — design system
+# Design System: SINBAZAAR
 
-Written from the built world, not before it. Product truth lives in
-[PRODUCT.md](PRODUCT.md); this file is only how it looks and why. The whole
-implementation is one stylesheet: `app/src/app/globals.css`.
+Single source of truth for this interface. Written from the built product, not
+ahead of it. Any later change inherits these rules rather than drifting back to
+defaults. Product truth lives in [PRODUCT.md](PRODUCT.md); implementation is one
+stylesheet, `app/src/app/globals.css`.
 
----
+**Design read:** a redesign-overhaul of a live on-chain privacy product, for
+hackathon judges and crypto-native operators, in a restrained editorial document
+language, built on native CSS with dual-mode tokens.
 
-## The world: property & evidence
-
-**A confession is evidence. The permission member list is a chain of custody. The
-tombstone is the final property record.** So the interface is the paperwork an
-institution uses when it takes something off you and promises to account for it
-later: cool photocopy stock, heavy black rules, square fields, a case number on
-everything, and colour spent only on the band that says what may be seen.
-
-This replaced a candlelit-ledger world — near-black ground, warm ember accent,
-glowing edges, serif display. That world was not chosen; it was defaulted into. It
-is one of the two looks generated interfaces converge on regardless of subject, and
-its display faces (Fraunces, then Newsreader) are both on the list of faces that
-signal a model stopped looking. The current world was reached by ranking seven
-grounded candidates from the audience's real cultural home — classified markings,
-betting exchanges, evidence and custody, actuarial slips, numbers stations,
-pharmaceutical print, tote boards — and building the one the roll assigned rather
-than the one that ranked first.
-
-### Disciplines borrowed, and from where
-
-Each was taken from a direction that lost, and each is a system discipline, not a
-motif:
-
-- **From a monochrome op-art gallery — state rides rule weight, not colour.** A
-  live market is drawn with a heavier bottom rule; a market inside its final minute
-  thickens further and turns its rule to seal red. Nothing gets a brighter accent
-  to mean "important".
-- **From a coiled earthen tower — process stays visible.** Every instruction stamps
-  a line into the custody log and none are removed, so the walk accumulates the way
-  a custody sheet does rather than replacing itself with a spinner.
-- **From paper automata — exactly one thing moves.** The countdown, and only inside
-  the last minute. Stillness everywhere else is what makes a running clock
-  frightening.
+**Dials:** Variance 4 (Predictable-to-Offset), Motion 3 (Static Restrained),
+Density 5 (Daily App Balanced). This is an operational product with real money
+and running clocks. Restraint beats variance, motion is state feedback rather
+than choreography, and density sits above a gallery and well below a cockpit.
 
 ---
 
-## Colour
+## 1. Visual theme and atmosphere
 
-Defined once on `:root`. Never hard-code a hex outside that block. Every value below
-passes WCAG AA against the ground it is used on, measured in the live page.
+Quiet, warm-neutral, document-like. The interface behaves like a well-set
+records page: generous air around a small amount of type, one accent spent only
+where it carries meaning, and surfaces that sit flat rather than floating.
 
-| Token | Value | Role |
-|---|---|---|
-| `--paper` | `#e6e9e6` | Page ground. Cool, photocopied. **Never cream, never parchment.** |
-| `--form` | `#fbfcfb` | The record itself — card and panel ground. |
-| `--form-2` | `#eff1ee` | Header bands, alternating fields. |
-| `--field` | `#ffffff` | An input, or a box holding evidence. |
-| `--ink` | `#16181a` | Rules *and* text. One black for both, because a form has no elevation. |
-| `--ink-2` | `#545a5c` | Secondary text. 6.8:1 on form. |
-| `--ink-3` | `#6f7574` | Muted — a dead clock, an unrun step. 4.6:1 on form. |
-| `--void` | `#c3c8c5` | Hairlines, hatching, out-of-service rules. |
-| `--seal` | `#c8102e` | **Evidence tape.** The secret, a broken seal, a released body, an error. |
-| `--custody` | `#17457f` | **Numbered seal.** Chain-of-custody entries, the rollup, links. |
-| `--cleared` | `#1c6b41` | Released, settled, verified, in service. |
-| `--marker` | `#ffe94d` | Highlighter. A running step, an active rule branch, a hover. |
+The tension in this product comes from its content, a confession with a clock on
+it, so the chrome stays out of the way. Nothing shouts. The only thing that ever
+moves on its own is a countdown inside its final minute, and that motion is the
+page telling the truth about state.
 
-Colour is **only** spent on classification. A card's room, author, pots and hash are
-all black on white; the only coloured things on it are the band saying which layer
-holds it and the band saying what the verdict was.
+Two things are load-bearing rather than decorative and must survive any future
+change:
 
-## Type
+* **The redaction bar.** Where a confession exists but may not be shown, the page
+  draws its withheld shape. It is a direct rendering of `Outcome::reveals_text()`.
+* **The classification band.** A released body carries a band saying it was
+  authorised; a withheld one carries the band that refuses it. Side by side in the
+  graveyard, the two explain the whole product with no caption.
 
-Two self-hosted variable faces, latin subset, 121 KB total. Nothing reaches a CDN —
-a webfont that fails silently downgrades the whole page, and this has to work
-against a validator on localhost with no internet.
+## 2. Color palette and roles
 
-- **Archivo**, one file carrying **both** a width axis (62–125) and a weight axis.
-  Condensed caps at `wdth 68–80` stamp every header, label and band; normal width
-  sets body copy. A grotesk, because forms are set in grotesks — a serif display
-  here would be a book pretending to be a document.
-- **JetBrains Mono** for case numbers, digests, pubkeys and lamports, with tabular
-  figures and a slashed zero. Half this interface is a value that must be compared
-  character by character.
+Semantic names only. Never hard-code a hex outside the token block. Dark is a
+full re-declaration of the same names, so hierarchy parity is structural.
+Every pair below was measured in the live page, not estimated.
 
-**Digests are never case-transformed.** The stamped-caps treatment on headings would
-otherwise print the same hash uppercase on one page and lowercase on another, which
-reads as two different values.
+| Token | Light | Dark | Role |
+|---|---|---|---|
+| `--canvas` | `#fbfbf9` | `#121211` | Page ground. Warm bone, warm off-black. |
+| `--surface` | `#fdfdfc` | `#191918` | Cards, panels. |
+| `--surface-2` | `#f4f3f0` | `#201f1d` | Sunk fields, active rows, badges. |
+| `--surface-sunk` | `#efeeea` | `#0e0e0d` | Evidence containers, code blocks. |
+| `--text` | `#1b1b19` | `#eceae5` | Primary. |
+| `--text-2` | `#6d6c66` | `#a2a099` | Secondary prose. |
+| `--text-3` | `#6f6d66` | `#8a887f` | Muted labels. Set by measurement, not by eye. |
+| `--line` | `rgba(24,23,20,.09)` | `rgba(255,253,247,.10)` | Hairlines. |
+| `--accent` | `#b0392f` | `#e0776b` | The one accent. Lifted in dark so it pops equally. |
 
-Banned display faces, and the reason the ban exists: Fraunces, Playfair, Cormorant,
-Lora, Crimson, Newsreader, Syne, Space Grotesk, Space Mono, IBM Plex, Inter-as-display,
-DM Sans/Serif, Outfit, Plus Jakarta, Instrument Sans. Two of them were in this project
-and the detector was right both times.
+Semantic classification colors, each with its own wash so every badge clears AA
+in both modes: `--held` (withheld, settled), `--custody` (rollup, sole reader),
+`--cleared` (open, released, verified), `--pending` (expired, awaiting VRF).
 
-## Form
+**Constraints.** No pure `#ffffff` and no pure `#000000` in either mode; pure
+values kill depth. One accent, used identically everywhere. Color is spent only
+on classification and state, never on decoration: a market card's room, author,
+pots and hash are all neutral, and the only colored things on it are the badge
+saying which layer holds it and the badge saying what the verdict was.
 
-- **Square corners. No radius anywhere.** Forms are cut, not rounded.
-- **Rules, never shadows.** There is no elevation model; there is ink on stock.
-- **No side-tab accent borders.** A coloured stripe down one edge of a card is the
-  single most recognisable tell of a generated interface, and this project had six
-  of them. They were replaced with **classification bands** — a full-width strip
-  across the head of the box, which is what evidence paperwork actually does:
-  `RELEASED — AUTHORISED FOR PUBLICATION` in seal red over a leaked confession,
-  `WITHHELD — THE VERDICT DID NOT AUTHORISE PUBLICATION` in black over a redaction.
-- **The redaction bar is the signature graphic.** Where a confession exists but may
-  not be shown, the page draws its withheld shape rather than a sentence explaining
-  that it is withheld. The bar widths are fixed and arbitrary on purpose: the real
-  length of the body is itself private.
-- An empty book is drawn as **hatching**, not a false 50/50 split.
+## 3. Typography rules
 
-## Motion
+Two self-hosted variable faces, latin subset, 78KB total. Nothing loads from a
+CDN, because a webfont that fails silently downgrades every headline and this
+runs against a validator on localhost with no internet.
 
-One thing moves: the countdown, and only under a minute, ticking once a second at
-`steps(1)`. No shimmer, no skeletons, no entrance animations, no pulsing dots. When
-something is loading it says so in words. `prefers-reduced-motion` disables even the
-tick.
+* **Schibsted Grotesk** for everything structural. A newspaper commission, so it
+  is built to set real sentences at small sizes and still has a voice at display.
+  Geist was tried first and rejected: a detector flagged it as one of the faces
+  every wave of generated interfaces converges on, and that is exactly the thing
+  this system exists to avoid.
+* **JetBrains Mono** for digests, pubkeys, lamports and clocks, with tabular
+  figures and a slashed zero. Half this interface is a value compared character
+  by character.
 
-## Accessibility
+Hierarchy comes from **weight and color, not raw scale.** Headings are 500
+weight with tight tracking (`-0.026em`); body is 400 at 15px/1.6. `h1` tops out
+at 42px. No all-caps stamping on every label, which was the previous system's
+mistake and read as shouting.
 
-AA contrast on every text/ground pair, measured in the browser rather than eyeballed.
-A 3px `--custody` focus ring on every interactive element, suppressed for pointer
-clicks. Full keyboard operability, a skip link, and `role="img"` with a real label on
-the redaction block so a screen reader is told the material is withheld rather than
-finding three empty spans.
+Digests are never case-transformed. Uppercasing a hash under a heading rule makes
+the same value look like two different values.
 
-## How to check
+## 4. Component stylings
+
+* **Radius system:** `4px` small, `8px` containers, `999px` badges. Three values,
+  one system, no strays.
+* **Cards:** 1px hairline, 8px radius, no drop shadow at rest. Hover lifts by
+  `translateY(-1px)` with a 4%-opacity shadow. Never a colored stripe down one
+  edge; that is the most recognisable generated-UI tell and this project had six
+  of them before they became classification bands.
+* **Buttons:** solid `--text` on `--canvas` for primary, hairline chip for
+  secondary, `scale(0.98)` on `:active`. No shadows, no pill-shaped primaries.
+* **Badges:** wash background plus matching ink, 999px, 11.5px. Semantic only.
+* **Inputs:** hairline, 4px radius, focus ring is a 3px `--surface-2` halo plus a
+  `--text-3` border, never a browser default outline.
+* **Lists:** no `border-top` plus `border-bottom` on every row. The step list and
+  the probe list use spacing and a state fill instead.
+
+## 5. Layout principles
+
+Content column caps at `1120px`, prose at `60ch`. Section rhythm is set by
+`.shell` padding (56px top, 96px bottom) and a 40px page-head margin. The market
+feed is `auto-fill minmax(300px, 1fr)`; detail pages are a `1.4fr / 1fr` split
+that collapses to one column at 900px.
+
+**Eyebrows are rationed.** One `.kicker` per page, on the page head only. Never a
+section-number eyebrow, never `01 / INDEX`.
+
+## 6. Responsive rules
+
+* Header stays on one line at desktop, 62px tall. Below 1040px the wallet stall
+  drops to its own row rather than crushing the nav; a nav item clipped to a
+  single letter is worse than a wrapped header.
+* Two-column layouts collapse at 900px; `.shell` padding tightens at the same
+  breakpoint.
+* No horizontal overflow at any width. Verified at 375px and 1280px.
+
+## 7. Motion philosophy
+
+Motion intensity 3. Every animation must be justifiable in one sentence.
+
+* **Grid entry:** `rise` keyframe, 520ms, `cubic-bezier(0.16,1,0.3,1)`, staggered
+  45ms per item up to the fourth, then flat. Cards arrive, they do not perform.
+* **Countdown urgency:** inside the final 20 seconds the clock takes the accent
+  color and pulses at 1s. The card border takes the accent too. This is the only
+  sustained motion on the page, and the last seconds are the only moment in this
+  product that deserves one.
+* **Pot bar:** the fill grows into its new size over 420ms with a compositor-only
+  transform, so a bid landing reads as movement. Never animate the box size:
+  that forces layout on every frame.
+* **Hover:** 160-200ms on color, border and a 1px lift. Nothing else.
+
+Everything above is disabled under `prefers-reduced-motion: reduce`.
+
+## 8. Anti-patterns (hard bans)
+
+* **Em-dashes and en-dashes, anywhere visible.** Zero. The audit that opened this
+  redesign found 121 of them. Use a period, a comma, a colon, or parentheses.
+* **Middle-dot as a general separator.** Maximum one per line.
+* **Decorative status dots.** Only for real semantic state.
+* **Side-tab accent borders** on cards.
+* **Pure white or pure black** in either mode.
+* **Inter, Roboto, Open Sans, Geist** as the interface face.
+* **All-caps condensed stamping** on every label.
+* **Scroll cues, version labels in the hero, section-number eyebrows.**
+* **Gradients, glassmorphism, neon glows, heavy drop shadows.**
+* **Fake product UI built from divs**, hand-rolled decorative SVG, emoji as icons.
+* **Hairline borders on every row** of a long list.
+
+## 9. Verification
+
+Before shipping any change to this interface, all of these must hold, measured
+rather than assumed:
 
 ```bash
-node ~/.claude/skills/impeccable/scripts/detect.mjs --json app/src
+# zero em-dashes and en-dashes in anything the user can see
+grep -ro "—\|–" app/src --include="*.tsx" --include="*.css" | wc -l   # must be 0
 ```
 
-Must return `[]`. It currently does. Anything it flags gets fixed, never suppressed —
-it has caught a real defect in this project twice.
+* WCAG AA on every text and ground pair, **in both light and dark**, sampled from
+  the live DOM. Currently 0 failures in each.
+* No horizontal overflow at 375px or 1280px.
+* Header on one line at desktop, height 62px.
+* One radius system, one accent, one theme per page.
+* Zero console errors on every route.

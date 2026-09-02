@@ -3,7 +3,7 @@
 /**
  * What happens at zero.
  *
- * The branches are the ones the program actually takes — `expire_market` for the
+ * The branches are the ones the program actually takes, `expire_market` for the
  * unpaid case, `callback_resolve` for everything else. The live branch is the
  * one the current pots would select if the timer died this second.
  */
@@ -57,7 +57,7 @@ function branchesFor(market: MarketView, now: number): Branch[] {
           when: "ransom unmet, the coin lands heads",
           then: "RANDOM REVEAL",
           detail:
-            "one redacted sentence — the single line the author wrote for exactly this — reaches the tombstone. Nothing else does.",
+            "one redacted sentence, the single line the author wrote for exactly this, reaches the tombstone. Nothing else does.",
           active: market.sealPot < due,
         },
         {

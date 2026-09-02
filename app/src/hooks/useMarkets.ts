@@ -55,7 +55,7 @@ function usePolled<T>(load: () => Promise<T>, initial: T, intervalMs: number): F
 /**
  * Subscribe to the rollup and reload on every change, coalescing bursts.
  *
- * One bid touches three accounts — the market, the purse and the new bid — and
+ * One bid touches three accounts, the market, the purse and the new bid, and
  * would otherwise fire three reloads for one user action. A short trailing
  * window collapses that into a single fetch while still landing well inside the
  * time it takes a person to look up.

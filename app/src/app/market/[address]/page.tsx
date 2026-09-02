@@ -148,7 +148,7 @@ export default function MarketPage() {
       );
       setSession(view);
       setNotice(
-        `session open — ${shortKey(view.publicKey)} may spend up to ${ceilingSol} SOL on this market and nothing else`
+        `session open, ${shortKey(view.publicKey)} may spend up to ${ceilingSol} SOL on this market and nothing else`
       );
     });
   }, [wallet.signer, market, ceilingSol, startFlow]);
@@ -158,7 +158,7 @@ export default function MarketPage() {
     void startFlow("session", async () => {
       await revokeSession(wallet.signer!, new PublicKey(market.address), new BN(market.marketId));
       setSession(null);
-      setNotice("session revoked on the rollup — that key can no longer bid");
+      setNotice("session revoked on the rollup, that key can no longer bid");
     });
   }, [wallet.signer, market, startFlow]);
 
@@ -180,7 +180,7 @@ export default function MarketPage() {
               amount
             );
             setNotice(
-              `${SIDE_LABEL[side]} bid signed by the session key — no wallet popup — ${shortKey(signature, 8)}`
+              `${SIDE_LABEL[side]} bid signed by the session key, no wallet popup, ${shortKey(signature, 8)}`
             );
             return;
           } catch (err) {
@@ -200,7 +200,7 @@ export default function MarketPage() {
           amount,
           report
         );
-        setNotice(`${SIDE_LABEL[side]} bid landed on the rollup — ${shortKey(signature, 8)}`);
+        setNotice(`${SIDE_LABEL[side]} bid landed on the rollup, ${shortKey(signature, 8)}`);
       });
     },
     [wallet.signer, market, amountSol, session, startFlow, report]
@@ -316,7 +316,7 @@ export default function MarketPage() {
                     <p className="hint">
                       <code>{shortKey(session.publicKey)}</code> may spend up to{" "}
                       <strong>{(session.maxSpend / LAMPORTS_PER_SOL).toFixed(2)} SOL</strong> on
-                      this market and nothing else. Bids below are signed by it — no wallet
+                      this market and nothing else. Bids below are signed by it, no wallet
                       popup, no base-layer transaction.
                     </p>
                   </>
@@ -386,7 +386,7 @@ export default function MarketPage() {
             <div className="panel">
               <h3>The timer is dead</h3>
               <p className="muted small">
-                Every step below is permissionless — expiry, the VRF request, settlement and the
+                Every step below is permissionless, expiry, the VRF request, settlement and the
                 tombstone. The one thing this browser cannot do is enumerate the book: bids are
                 private, so it settles the ones it placed itself.
               </p>

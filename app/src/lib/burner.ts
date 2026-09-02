@@ -4,7 +4,7 @@
  * The demo runs against a local validator, which a browser extension cannot
  * reach. A burner keypair lives in localStorage, gets airdropped on localnet,
  * and signs exactly like a wallet from the flows' point of view. It is a
- * throwaway key for a fictional market — never use it for anything else.
+ * throwaway key for a fictional market, never use it for anything else.
  */
 import { Keypair, Transaction } from "@solana/web3.js";
 import bs58 from "bs58";

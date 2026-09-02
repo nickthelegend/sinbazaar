@@ -1201,7 +1201,14 @@ pub mod sinbazaar {
                 market.revealed = [0u8; MAX_TOMB_BODY];
                 market.revealed[..len].copy_from_slice(&red[..len]);
                 market.revealed_len = len as u16;
-                market.revealed_salt = salt;
+                // NOT the salt. Only the author's redacted line is published here,
+                // never the body, so the commitment stays closed. Publishing the
+                // salt beside a still-secret body would hand an attacker an
+                // offline dictionary attack: a 180-byte confession is short
+                // enough to guess, and sha256(guess || salt) == commitment_hash
+                // is checkable by anyone. The salt is disclosed only when the
+                // body itself is already public.
+                market.revealed_salt = [0u8; 32];
                 msg!("RANDOM_REVEAL: {} redacted bytes released", len);
             }
             _ => {

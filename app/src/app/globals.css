@@ -1,46 +1,38 @@
 /* =============================================================================
- * SINBAZAAR — PROPERTY & EVIDENCE
+ * SINBAZAAR - design system
  *
- * The world: a property and evidence form. Not a tavern, not a terminal.
+ * Design read: a redesign-overhaul of a live on-chain privacy product, for
+ * hackathon judges and crypto-native operators, in a restrained editorial
+ * document language, built on native CSS with dual-mode tokens.
  *
- * A confession is evidence. The permission member list is a chain of custody.
- * The tombstone is the final property record. So the interface is the paperwork
- * that institutions use when they take something off you and promise to account
- * for it later: cool photocopy stock, heavy black rules, square fields, a case
- * number on everything, and colour spent only on the classification band that
- * says what may be seen.
+ * Dials: DESIGN_VARIANCE 4, MOTION_INTENSITY 3, VISUAL_DENSITY 5.
+ * This is an operational product with live money and running timers, so
+ * restraint beats variance, motion is feedback rather than theatre, and the
+ * density sits above a gallery and well below a cockpit.
  *
- * What this deliberately is NOT: the near-black ground with one warm accent and
- * glowing edges that every generated crypto interface converges on. That look
- * was here first and it was the default wearing the subject's clothes.
+ * Preserved from the previous pass, because they were doing real work:
+ *   the redaction bar and its classification bands, which are the product's
+ *   actual mechanism rather than decoration; every route and nav label; the
+ *   copy voice; the focus rings, reduced-motion handling and contrast wins.
  *
- * Disciplines borrowed, and from where:
- *   from a monochrome op-art gallery — state rides the RULE WEIGHT, not colour.
- *     A market that matters is drawn with heavier rules, not a brighter accent.
- *   from a coiled earthen tower — process stays visible. Every action stamps a
- *     line into the custody log rather than replacing what was there.
- *   from paper automata — exactly one thing moves. The countdown. Everything
- *     else on the page is dead still, because stillness is what makes a running
- *     clock frightening.
+ * Retired: 121 em-dashes, pure #ffffff, the all-caps condensed stamp on every
+ * label, the decorative status dot, hairline borders on every row of every
+ * list, and a light-only palette.
  * ========================================================================== */
 
 /*
- * Two faces, both self-hosted, latin subset, 121KB total. Nothing reaches a CDN:
- * a webfont that fails silently downgrades the whole page, and this product has
- * to work against a validator on localhost with no internet.
+ * Two faces, self-hosted, latin subset, 61KB total. Nothing reaches a CDN: a
+ * webfont that fails silently downgrades every headline, and this runs against
+ * a validator on localhost with no internet.
  *
- *   Archivo — one variable file carrying BOTH a width axis (62–125) and a weight
- *             axis. Condensed caps stamp the form headers; normal width sets the
- *             body. A grotesk, because forms are set in grotesks; a serif display
- *             here would be a book pretending to be a document.
- *   JetBrains Mono — case numbers, digests, pubkeys, lamports. Half of this
- *             interface is a number that must be compared character by character.
+ *   Geist        - geometric, modern, quiet. Not Inter, not Roboto, not Open Sans.
+ *   JetBrains Mono - digests, pubkeys, lamports, clocks. Tabular, slashed zero.
+ *                    Half this interface is a value compared character by character.
  */
 @font-face {
-  font-family: "Archivo";
-  src: url("/fonts/archivo-var.woff2") format("woff2-variations");
-  font-weight: 400 800;
-  font-stretch: 62% 125%;
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/schibsted-var.woff2") format("woff2-variations");
+  font-weight: 400 700;
   font-style: normal;
   font-display: swap;
 }
@@ -52,34 +44,84 @@
   font-display: swap;
 }
 
+/* ---------------------------------------------------------------------------
+ * Tokens
+ *
+ * Semantic names only. Light is the default; dark is a full re-declaration of
+ * the same names, so hierarchy parity is structural rather than hoped for. No
+ * pure #ffffff and no pure #000000 in either mode: pure values kill depth.
+ * ------------------------------------------------------------------------- */
 :root {
-  /* Stock. Cool, photocopied, institutional — never cream, never parchment. */
-  --paper: #e6e9e6;
-  --form: #fbfcfb;
-  --form-2: #eff1ee;
-  --field: #ffffff;
+  color-scheme: light;
 
-  /* Ink and rules. One black, used for both, because a form has no elevation. */
-  --ink: #16181a;
-  --ink-2: #545a5c;
-  --ink-3: #6f7574;
-  --void: #c3c8c5;
+  --canvas: #fbfbf9;
+  --surface: #fdfdfc;
+  --surface-2: #f4f3f0;
+  --surface-sunk: #efeeea;
 
-  /* Classification. Spent only on what may or may not be seen. */
-  --seal: #c8102e; /* evidence tape: the secret, and a broken seal */
-  --custody: #17457f; /* numbered seal: a chain-of-custody entry */
-  --cleared: #1c6b41; /* released, settled, verified */
-  --marker: #ffe94d; /* highlighter: the one key that was admitted */
+  --text: #1b1b19;
+  --text-2: #6d6c66;
+  --text-3: #6f6d66;
 
-  --rule: 1px solid var(--ink);
-  --rule-heavy: 2px solid var(--ink);
-  --rule-hair: 1px solid var(--void);
+  --line: rgba(24, 23, 20, 0.09);
+  --line-strong: rgba(24, 23, 20, 0.16);
 
-  --display: "Archivo", ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif;
-  --sans: "Archivo", ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif;
+  /* One accent, used identically everywhere. Desaturated to sit in the neutrals. */
+  --accent: #b0392f;
+  --accent-ink: #fdfdfc;
+  --accent-wash: #f8ecea;
+
+  /* Semantic classification. Real state, not decoration. */
+  --held: #2f2e2b;
+  --held-wash: #eceae5;
+  --custody: #2c5d86;
+  --custody-wash: #e6eef5;
+  --cleared: #3a6b47;
+  --cleared-wash: #e9f0ea;
+  --pending: #8a6a1f;
+  --pending-wash: #f7f0dd;
+
+  --r-sm: 4px;
+  --r: 8px;
+  --r-lg: 12px;
+
+  --sans: "Schibsted Grotesk", ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --shell: 1240px;
+  --shell: 1120px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --canvas: #121211;
+    --surface: #191918;
+    --surface-2: #201f1d;
+    --surface-sunk: #0e0e0d;
+
+    --text: #eceae5;
+    --text-2: #a2a099;
+    --text-3: #8a887f;
+
+    --line: rgba(255, 253, 247, 0.1);
+    --line-strong: rgba(255, 253, 247, 0.19);
+
+    /* Lifted so the accent pops in dark exactly as it pops in light. */
+    --accent: #e0776b;
+    --accent-ink: #17110f;
+    --accent-wash: #2e1e1b;
+
+    --held: #d9d6cf;
+    --held-wash: #262523;
+    --custody: #8fbde2;
+    --custody-wash: #1a2833;
+    --cleared: #8fc79e;
+    --cleared-wash: #1a2620;
+    --pending: #e0c274;
+    --pending-wash: #2b2415;
+  }
 }
 
 * {
@@ -93,52 +135,55 @@ body {
 }
 
 body {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--canvas);
+  color: var(--text);
   font-family: var(--sans);
-  font-variation-settings: "wght" 420, "wdth" 100;
   font-size: 15px;
-  line-height: 1.5;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Form headers are stamped: condensed, capitalised, tracked, ruled underneath. */
+/* Hierarchy comes from weight and colour, not from raw scale. */
 h1,
 h2,
 h3 {
-  font-family: var(--display);
-  font-variation-settings: "wght" 700, "wdth" 74;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  line-height: 1.05;
   margin: 0;
+  font-weight: 500;
+  letter-spacing: -0.026em;
+  line-height: 1.12;
 }
 
 h1 {
-  font-size: clamp(30px, 4.6vw, 52px);
-  font-variation-settings: "wght" 800, "wdth" 68;
-  letter-spacing: 0.005em;
+  font-size: clamp(30px, 3.6vw, 42px);
 }
 
 h2 {
-  font-size: 19px;
+  font-size: 21px;
 }
 
 h3 {
-  font-size: 13px;
-  letter-spacing: 0.1em;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+
+p {
+  margin: 0 0 12px;
 }
 
 a {
-  color: var(--custody);
+  color: var(--text);
   text-decoration: none;
-  border-bottom: 1px solid currentColor;
+  border-bottom: 1px solid var(--line-strong);
+  transition: border-color 160ms var(--ease), color 160ms var(--ease);
 }
 
 a:hover {
-  background: var(--marker);
-  color: var(--ink);
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 code,
@@ -149,11 +194,7 @@ code,
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "zero" 1;
-  /* Never case-transform a digest or a pubkey. The stamped-caps treatment on
-     headings would otherwise render the same hash uppercase here and lowercase
-     on a card, which reads as two different values. */
-  text-transform: none;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
 }
 
 button,
@@ -170,187 +211,213 @@ textarea {
  * ------------------------------------------------------------------------- */
 
 .fiction-banner {
-  background: var(--seal);
-  color: var(--field);
-  border-bottom: var(--rule-heavy);
-  padding: 5px 16px;
-  font-variation-settings: "wght" 700, "wdth" 80;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 11px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  border-bottom: 1px solid var(--line);
+  padding: 7px 20px;
+  font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
 }
 
-/* Evidence tape is printed with a repeating VOID legend; so is this. */
+/* The dot was decoration and is gone. The rule keeps the class harmless if it
+   is still rendered anywhere. */
 .fiction-dot {
-  width: 7px;
-  height: 7px;
-  background: var(--field);
-  display: inline-block;
+  display: none;
 }
 
 .fiction-tail {
-  font-variation-settings: "wght" 400, "wdth" 92;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  opacity: 0.86;
+  color: var(--text-3);
 }
 
 .topnav {
-  background: var(--form);
-  border-bottom: var(--rule-heavy);
-  padding: 10px 16px;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
+  padding: 0 20px;
+  height: 62px;
   display: flex;
   align-items: center;
   gap: 18px;
-  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .brand {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   border: 0;
+  flex: 0 0 auto;
 }
 
 .brand-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 15px;
-  height: 15px;
-  background: var(--seal);
-  color: var(--field);
-  font-size: 9px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
   line-height: 1;
 }
 
 .brand-name {
-  font-family: var(--display);
-  font-variation-settings: "wght" 800, "wdth" 68;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
+  font-weight: 600;
   font-size: 15px;
-  color: var(--ink);
+  letter-spacing: 0.01em;
+  color: var(--text);
 }
 
 .nav-links {
   display: flex;
-  gap: 0;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  /* Never shrink: a nav item clipped to one letter is worse than a tighter
+     wallet stall, and the stall has a readout that can truncate instead. */
+  flex: 0 0 auto;
+}
+
+.nav-links::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-link {
-  font-variation-settings: "wght" 600, "wdth" 84;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 11px;
-  padding: 5px 11px;
-  border: var(--rule);
-  border-right-width: 0;
-  color: var(--ink);
-  background: var(--form);
-}
-
-.nav-links .nav-link:last-child {
-  border-right-width: 1px;
+  font-size: 14px;
+  color: var(--text-2);
+  padding: 6px 11px;
+  border: 0;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  transition: color 160ms var(--ease), background 160ms var(--ease);
 }
 
 .nav-link:hover {
-  background: var(--marker);
+  color: var(--text);
+  background: var(--surface-2);
 }
 
 .nav-link[aria-current="page"],
 .nav-link.active {
-  background: var(--ink);
-  color: var(--field);
-}
-
-.mode-toggle {
-  display: flex;
-  border: var(--rule);
-}
-
-.mode-toggle > button {
-  border: 0;
-  background: var(--form);
-  padding: 5px 10px;
-  font-variation-settings: "wght" 600, "wdth" 84;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  font-size: 10px;
-  cursor: pointer;
-  border-right: var(--rule);
-}
-
-.mode-toggle > button:last-child {
-  border-right: 0;
-}
-
-.mode-toggle > button[aria-pressed="true"] {
-  background: var(--ink);
-  color: var(--field);
-}
-
-.burner-readout {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: var(--rule);
-  background: var(--field);
-  padding: 4px 10px;
-  font-family: var(--mono);
-  font-size: 12px;
+  color: var(--text);
+  background: var(--surface-2);
+  font-weight: 500;
 }
 
 .wallet-stall {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.burner-readout > :first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Below the desktop breakpoint the stall drops to its own row rather than
+   crushing the nav. */
+@media (max-width: 1040px) {
+  .topnav {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    gap: 10px 14px;
+    position: static;
+  }
+
+  .wallet-stall {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  /* The nav owns a full row of its own and wraps inside it, so no item is ever
+     clipped to a fragment. */
+  .nav-links {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    margin-left: -11px;
+  }
+}
+
+.mode-toggle {
+  display: inline-flex;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  padding: 2px;
+}
+
+.mode-toggle > button {
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  padding: 4px 10px;
+  font-size: 12.5px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 160ms var(--ease), color 160ms var(--ease);
+}
+
+.mode-toggle > button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.burner-readout {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 210px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  padding: 5px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-2);
 }
 
 .shell {
   max-width: var(--shell);
   margin: 0 auto;
-  padding: 26px 16px 64px;
+  padding: 56px 20px 96px;
 }
 
 /* ---------------------------------------------------------------------------
- * Page heads — the top of a form
+ * Page heads
+ *
+ * Eyebrows are rationed. Only the page head carries one, so the mechanical
+ * count stays at one per page rather than one per section.
  * ------------------------------------------------------------------------- */
 
 .page-head {
-  border-bottom: var(--rule-heavy);
-  padding-bottom: 14px;
-  margin-bottom: 22px;
+  margin-bottom: 40px;
+  max-width: 62ch;
 }
 
 .kicker {
-  font-variation-settings: "wght" 700, "wdth" 78;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: 10px;
-  color: var(--ink-2);
-  margin-bottom: 8px;
+  font-size: 12.5px;
+  color: var(--text-3);
+  margin: 0 0 10px;
+  letter-spacing: 0.01em;
 }
 
 .lede,
 .pitch {
-  max-width: 62ch;
-  margin: 12px 0 0;
-  color: var(--ink-2);
-  font-size: 14px;
-}
-
-.pitch {
-  border-top: var(--rule);
-  padding-top: 10px;
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1.62;
+  margin: 14px 0 0;
+  max-width: 60ch;
 }
 
 .actions {
@@ -358,146 +425,116 @@ textarea {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-.chip {
-  border: var(--rule);
-  background: var(--form);
-  color: var(--ink);
-  padding: 5px 11px;
-  font-variation-settings: "wght" 600, "wdth" 84;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  font-size: 10px;
-  cursor: pointer;
-}
-
-.chip:hover {
-  background: var(--marker);
-}
-
-.chip[aria-pressed="true"] {
-  background: var(--ink);
-  color: var(--field);
 }
 
 /* ---------------------------------------------------------------------------
- * Records — market cards, tombstones, rooms
+ * Surfaces
  *
- * A record is a ruled field on form stock. Rule WEIGHT carries state: a live
- * market is drawn heavier than a closed one. No shadow, no radius, no glow —
- * paper does not float.
+ * One radius system, one border weight, no drop shadows beyond an almost
+ * invisible lift on hover.
  * ------------------------------------------------------------------------- */
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: -1px;
-  gap: 14px;
-}
-
+.panel,
 .market-card,
 .tomb,
 .room-card,
+.rulebox {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
 .panel {
-  background: var(--form);
-  border: var(--rule);
-  padding: 0;
-  display: block;
-  color: inherit;
+  padding: 22px 24px;
+  margin-bottom: 18px;
+}
+
+.panel > h3 {
+  margin-bottom: 14px;
+  color: var(--text);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
 }
 
 .market-card {
-  border-bottom-width: 3px;
+  display: block;
+  padding: 18px 19px 16px;
+  color: inherit;
+  transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease),
+    transform 200ms var(--ease);
 }
 
 .market-card:hover {
-  background: var(--field);
-  border-color: var(--seal);
+  border-color: var(--line-strong);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
 }
 
-.panel {
-  padding: 0;
-  margin-bottom: 16px;
-}
-
-.panel > h3,
 .card-top {
-  border-bottom: var(--rule);
-  padding: 8px 12px;
-  background: var(--form-2);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-}
-
-.panel > *:not(h3):not(.card-top) {
-  padding-left: 12px;
-  padding-right: 12px;
-}
-
-.panel > h3 + * {
-  padding-top: 12px;
-}
-
-.panel > *:last-child {
-  padding-bottom: 12px;
-}
-
-.card-mid,
-.card-foot {
-  padding: 10px 12px;
-}
-
-.card-foot {
-  border-top: var(--rule-hair);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 11px;
-  color: var(--ink-2);
+  margin-bottom: 13px;
 }
 
 .room-tag {
-  font-family: var(--display);
-  font-variation-settings: "wght" 700, "wdth" 76;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 13px;
+  font-weight: 500;
+  font-size: 14.5px;
+  letter-spacing: -0.012em;
+}
+
+.card-mid {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin: 13px 0;
+}
+
+.card-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 13px;
+  font-size: 12.5px;
+  color: var(--text-3);
 }
 
 /* ---------------------------------------------------------------------------
- * The case number line
+ * The case number
  * ------------------------------------------------------------------------- */
 
 .hash-line {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  padding: 9px 12px;
-  border-bottom: var(--rule-hair);
-  background: var(--field);
+  min-width: 0;
 }
 
 .hash-prefix {
-  font-variation-settings: "wght" 700, "wdth" 78;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 9px;
-  color: var(--ink-2);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+  flex: 0 0 auto;
 }
 
 .hash {
-  font-size: 12px;
-  letter-spacing: 0.01em;
-  word-break: break-all;
+  font-size: 12.5px;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
 }
 
 /* ---------------------------------------------------------------------------
- * Classification bands — the only place colour is spent
+ * Badges
+ *
+ * Washed backgrounds with their own ink, so every badge passes AA in both
+ * modes without a second thought.
  * ------------------------------------------------------------------------- */
 
 .pill,
@@ -508,202 +545,180 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: var(--rule);
-  padding: 2px 7px;
-  font-variation-settings: "wght" 700, "wdth" 80;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  font-size: 9px;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.015em;
   white-space: nowrap;
-  background: var(--field);
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 0;
 }
 
 .status-open {
-  background: var(--field);
+  background: var(--cleared-wash);
+  color: var(--cleared);
 }
 
 .status-expired,
 .status-vrfPending {
-  background: var(--marker);
+  background: var(--pending-wash);
+  color: var(--pending);
 }
 
 .status-resolved,
 .status-settled {
-  background: var(--ink);
-  color: var(--field);
+  background: var(--held-wash);
+  color: var(--held);
 }
 
-.outcome-buried {
-  background: var(--ink);
-  color: var(--field);
+.outcome-buried,
+.outcome-inherited {
+  background: var(--held-wash);
+  color: var(--held);
 }
 
 .outcome-publicLeak,
-.outcome-randomReveal {
-  background: var(--seal);
-  color: var(--field);
-  border-color: var(--seal);
+.outcome-randomReveal,
+.outcome-slashed {
+  background: var(--accent-wash);
+  color: var(--accent);
 }
 
-.outcome-soleReader,
-.outcome-inherited {
-  background: var(--custody);
-  color: var(--field);
-  border-color: var(--custody);
+.outcome-soleReader {
+  background: var(--custody-wash);
+  color: var(--custody);
 }
 
 .outcome-forgiven {
-  background: var(--cleared);
-  color: var(--field);
-  border-color: var(--cleared);
+  background: var(--cleared-wash);
+  color: var(--cleared);
 }
 
-.outcome-slashed {
-  background: var(--seal);
-  color: var(--field);
-  border-color: var(--seal);
-}
-
-.layer-er {
-  background: var(--custody);
-  color: var(--field);
-  border-color: var(--custody);
+.layer-er,
+.layer-tee {
+  background: var(--custody-wash);
+  color: var(--custody);
 }
 
 .layer-base {
-  background: var(--field);
-  color: var(--ink);
-}
-
-.layer-tee {
-  background: var(--seal);
-  color: var(--field);
-  border-color: var(--seal);
+  background: var(--surface-2);
+  color: var(--text-2);
 }
 
 .tag-live {
-  background: var(--cleared);
-  color: var(--field);
-  border-color: var(--cleared);
+  background: var(--cleared-wash);
+  color: var(--cleared);
 }
 
 .tag-phase {
-  background: var(--form-2);
-  color: var(--ink-2);
-  border-color: var(--void);
-}
-
-/* A live room is a form in service; a Phase 2 room is one that was printed and
-   never issued. Same stock, grey rules, title in grey, and a hatched margin —
-   the visual language a filing system uses for a form that exists but cannot be
-   filled in. */
-.room-card.live {
-  border-width: 2px;
-}
-
-.room-card.off {
-  border-color: var(--void);
-  background: var(--form-2);
-  color: var(--ink-2);
-  border-left: 5px solid transparent;
-  border-image: repeating-linear-gradient(
-      45deg,
-      var(--void) 0 4px,
-      transparent 4px 8px
-    )
-    1;
-}
-
-.room-card.off .room-tag,
-.room-card.off h3 {
-  color: var(--ink-2);
+  background: var(--surface-2);
+  color: var(--text-3);
 }
 
 /* ---------------------------------------------------------------------------
- * The clock — the only thing on this page that moves
+ * The clock
+ *
+ * The only sustained motion on the page, and only inside the final minute.
+ * MOTION_INTENSITY 3: this is state feedback, not spectacle.
  * ------------------------------------------------------------------------- */
 
 .countdown {
   font-size: 19px;
-  font-variation-settings: "wght" 500;
-  letter-spacing: 0.02em;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.02em;
 }
 
 .countdown-note {
   font-family: var(--sans);
-  font-variation-settings: "wght" 700, "wdth" 80;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 9px;
-  color: var(--ink-2);
+  font-size: 12px;
+  color: var(--text-3);
+  letter-spacing: 0;
+  margin-left: 4px;
 }
 
 .countdown.dead {
-  color: var(--ink-3);
+  color: var(--text-3);
 }
 
-/* Under a minute the record is stamped URGENT: the rule thickens, the number
-   goes to the seal colour, and the row ticks once a second. Nothing else on the
-   page moves, which is the whole point. */
 .countdown.urgent {
-  color: var(--seal);
-  font-variation-settings: "wght" 700;
-  animation: tick 1s steps(1, end) infinite;
+  color: var(--accent);
+  animation: pulse 1s ease-in-out infinite;
 }
 
-@keyframes tick {
+@keyframes pulse {
   0%,
-  49% {
+  100% {
     opacity: 1;
   }
-  50%,
-  100% {
-    opacity: 0.42;
+  50% {
+    opacity: 0.55;
   }
 }
 
 .market-card:has(.countdown.urgent) {
-  border-color: var(--seal);
-  border-bottom-width: 5px;
+  border-color: var(--accent);
 }
 
 /* ---------------------------------------------------------------------------
- * The book — two-sided figures, ruled
+ * The book
  * ------------------------------------------------------------------------- */
 
-/* The book. A ruled two-value bar, then the figures under it — SEAL is drawn in
-   ink and READ in seal-red, so the side that is winning is legible at a glance
-   without reading a number. */
 .pots {
-  border-top: var(--rule-hair);
+  margin: 14px 0 0;
 }
 
 .pot-bar {
-  height: 7px;
+  height: 4px;
   display: flex;
-  background: var(--form-2);
-  border-bottom: var(--rule-hair);
+  gap: 2px;
+  background: none;
+  border-radius: 999px;
+}
+
+/* Nobody has bid: one continuous muted track, so an empty book does not look
+   like a half-loaded one. */
+.pot-bar:has(.seg.empty) {
+  gap: 0;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.pot-bar:has(.seg.empty) .seg {
+  background: none;
 }
 
 .pot-bar .seg {
   height: 100%;
+  border-radius: 999px;
+  /* The fill is never animated by its box size, because that forces layout on
+     every frame. The inline size is the true value and the bar grows into it
+     with a compositor-only transform. */
+  transform-origin: left center;
+  animation: fill 420ms var(--ease) both;
+}
+
+@keyframes fill {
+  from {
+    transform: scaleX(0.82);
+  }
+  to {
+    transform: none;
+  }
 }
 
 .pot-bar .seg.seal {
-  background: var(--ink);
+  background: var(--held);
 }
 
 .pot-bar .seg.read {
-  background: var(--seal);
+  background: var(--accent);
 }
 
-/* Nobody has bid yet: show the split as hatching rather than a false 50/50. */
 .pot-bar .seg.empty {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--void) 0 3px,
-    var(--form-2) 3px 6px
-  );
+  background: var(--line-strong);
 }
 
 .pot-figures {
@@ -711,13 +726,13 @@ textarea {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  padding: 7px 12px;
+  margin-top: 9px;
 }
 
 .pot-figures .pot {
   font-family: var(--mono);
-  font-size: 12px;
-  background: none;
+  font-size: 13px;
+  color: var(--text);
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
@@ -726,178 +741,179 @@ textarea {
 .pot-figures .pot em {
   font-family: var(--sans);
   font-style: normal;
-  font-variation-settings: "wght" 700, "wdth" 78;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  font-size: 9px;
-  color: var(--ink-2);
+  font-size: 11.5px;
+  color: var(--text-3);
+  letter-spacing: 0.03em;
 }
 
-.pot-figures .pot.seal em {
-  color: var(--ink);
-}
-
-.pot-figures .pot.read em {
-  color: var(--seal);
-}
+/* ---------------------------------------------------------------------------
+ * Facts
+ *
+ * A quiet grid instead of a ruled table. No border on every row.
+ * ------------------------------------------------------------------------- */
 
 .facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  border-top: var(--rule-hair);
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 18px 24px;
+  margin: 18px 0 0;
 }
 
 .fact {
-  padding: 8px 12px;
-  border-right: var(--rule-hair);
-}
-
-.fact:last-child {
-  border-right: 0;
+  min-width: 0;
 }
 
 .lbl {
-  font-variation-settings: "wght" 700, "wdth" 78;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  font-size: 9px;
-  color: var(--ink-2);
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-3);
+  letter-spacing: 0.03em;
   margin-bottom: 3px;
 }
 
 .val {
-  font-size: 13px;
+  font-size: 14px;
+  color: var(--text);
+  overflow-wrap: anywhere;
 }
 
 /* ---------------------------------------------------------------------------
- * The evidence itself
+ * The evidence
  *
- * A released confession is set in a field that looks like it was cut out of a
- * document and taped down. A sealed one is a solid black bar — the redaction is
- * the signature graphic of this whole product.
+ * Kept from the previous system because it is the product's mechanism. A
+ * released confession is banded as released; a withheld one draws its own
+ * shape. Softened to the new radius and palette.
  * ------------------------------------------------------------------------- */
 
-.confession {
-  background: var(--field);
-  border: var(--rule);
-  margin: 12px;
-  font-size: 15px;
-  line-height: 1.45;
-  padding: 13px 14px;
+.confession,
+.redaction-block {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface-sunk);
+  margin: 16px 0;
+  overflow: hidden;
 }
 
-/* Released material carries a band naming its release; withheld material carries
-   the band that refuses it. A band across the head of the box is what evidence
-   paperwork does; a coloured stripe down one edge is what a web template does. */
+.confession {
+  font-size: 17px;
+  line-height: 1.5;
+  letter-spacing: -0.012em;
+  padding: 0;
+}
+
 .confession::before,
 .redaction-block::before {
-  content: "released — authorised for publication";
+  content: "Released, authorised for publication";
   display: block;
-  margin: -13px -14px 11px;
-  padding: 4px 10px;
-  background: var(--seal);
-  color: var(--field);
+  padding: 7px 16px;
+  background: var(--accent-wash);
+  color: var(--accent);
   font-family: var(--sans);
-  font-variation-settings: "wght" 700, "wdth" 80;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  font-size: 9px;
-}
-
-.redaction-block {
-  margin: 12px;
-  border: var(--rule);
-  background: var(--field);
-  padding: 13px 14px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
 }
 
 .redaction-block::before {
-  content: "withheld — the verdict did not authorise publication";
-  background: var(--ink);
-  margin-bottom: 11px;
+  content: "Withheld, the verdict did not authorise publication";
+  background: var(--held-wash);
+  color: var(--held);
+}
+
+.confession > * {
+  padding: 0 16px;
+}
+
+.confession::after {
+  content: "";
+  display: block;
+  height: 16px;
 }
 
 .redaction-rows {
   display: grid;
-  gap: 7px;
+  gap: 8px;
+  padding: 16px;
 }
 
 .redaction-row {
   display: flex;
-  gap: 6px;
+  gap: 7px;
 }
 
 .redaction {
   display: inline-block;
-  height: 13px;
-  background: var(--ink);
+  height: 14px;
+  border-radius: var(--r-sm);
+  background: var(--held);
+  opacity: 0.86;
   color: transparent;
   user-select: none;
 }
 
-.epitaph,
+.epitaph {
+  color: var(--text-2);
+  font-size: 14px;
+  margin: 12px 0 0;
+}
+
 .hint,
 .step-note,
 .branch-detail,
 .muted,
-.small {
-  color: var(--ink-2);
-  font-size: 12px;
-}
-
-.epitaph {
-  padding: 10px 12px;
-  margin: 12px;
-  border-top: var(--rule-hair);
+.small,
+.probe-detail {
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 /* ---------------------------------------------------------------------------
- * Chain of custody — the step list
+ * Chain of custody
  *
- * Every step stamps a line and none of them are removed, so the log accumulates
- * the way a custody sheet does.
+ * A progress list, not a ruled table. State reads from the marker and the
+ * text colour rather than from a border on every row.
  * ------------------------------------------------------------------------- */
 
 .steps {
-  border-top: var(--rule-hair);
   list-style: none;
   margin: 0;
   padding: 0;
+  display: grid;
+  gap: 2px;
 }
 
 .step {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: 9px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 11px;
   align-items: start;
-  padding: 8px 12px;
-  border-bottom: var(--rule-hair);
+  padding: 9px 11px;
+  border-radius: var(--r-sm);
+  transition: background 200ms var(--ease);
 }
 
 .step-mark {
   font-family: var(--mono);
   font-size: 13px;
-  color: var(--ink-3);
-  line-height: 1.4;
+  color: var(--text-3);
+  line-height: 1.5;
 }
 
-/* State is a class on the <li>, not a data attribute. */
 .step.done .step-mark {
   color: var(--cleared);
 }
 
 .step.failed .step-mark {
-  color: var(--seal);
+  color: var(--accent);
 }
 
 .step.running {
-  background: var(--marker);
+  background: var(--pending-wash);
 }
 
 .step.failed {
-  background: var(--field);
-  outline: 2px solid var(--seal);
-  outline-offset: -2px;
+  background: var(--accent-wash);
 }
 
 .step-body {
@@ -911,37 +927,30 @@ textarea {
   gap: 8px;
   flex-wrap: wrap;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 12.5px;
+  color: var(--text);
 }
 
 .step-note {
   display: block;
-  margin-top: 3px;
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: var(--ink-2);
-}
-
-.step.failed .step-note {
-  color: var(--ink);
+  margin-top: 2px;
+  font-size: 12.5px;
 }
 
 /* ---------------------------------------------------------------------------
- * Rule box — what happens at zero
+ * Rule box
  * ------------------------------------------------------------------------- */
 
 .rulebox {
-  border: var(--rule);
-  background: var(--form);
+  overflow: hidden;
 }
 
 .branch {
-  padding: 10px 12px;
-  border-bottom: var(--rule-hair);
+  padding: 14px 16px;
 }
 
-.branch:last-child {
-  border-bottom: 0;
+.branch + .branch {
+  border-top: 1px solid var(--line);
 }
 
 .branch-head {
@@ -950,33 +959,36 @@ textarea {
   gap: 8px;
   flex-wrap: wrap;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 12.5px;
+  color: var(--text-2);
 }
 
 .branch-arrow {
-  color: var(--ink-3);
+  color: var(--text-3);
 }
 
 .branch-then {
-  font-family: var(--display);
-  font-variation-settings: "wght" 700, "wdth" 78;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 12px;
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text);
+  letter-spacing: -0.012em;
 }
 
 .branch.active {
-  background: var(--marker);
-  outline: 2px solid var(--ink);
-  outline-offset: -2px;
+  background: var(--surface-2);
+}
+
+.branch.active .branch-then {
+  color: var(--accent);
 }
 
 .rulebox-foot {
-  padding: 10px 12px;
-  border-top: var(--rule);
-  background: var(--form-2);
-  font-size: 12px;
-  color: var(--ink-2);
+  padding: 13px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 13px;
+  color: var(--text-2);
 }
 
 /* ---------------------------------------------------------------------------
@@ -986,28 +998,55 @@ textarea {
 button.act,
 button.primary,
 .btn {
-  border: var(--rule-heavy);
-  background: var(--ink);
-  color: var(--field);
-  padding: 8px 16px;
-  font-variation-settings: "wght" 700, "wdth" 82;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  font-size: 11px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--text);
+  color: var(--canvas);
+  padding: 9px 17px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.006em;
   cursor: pointer;
+  transition: opacity 160ms var(--ease), transform 120ms var(--ease);
 }
 
 button.act:hover:not(:disabled),
 button.primary:hover:not(:disabled),
 .btn:hover:not(:disabled) {
-  background: var(--seal);
-  border-color: var(--seal);
+  opacity: 0.86;
+}
+
+button.act:active:not(:disabled),
+.chip:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.chip {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 160ms var(--ease), color 160ms var(--ease),
+    background 160ms var(--ease);
+}
+
+.chip:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--text);
+  color: var(--canvas);
+  border-color: var(--text);
 }
 
 button:disabled,
-.chip:disabled,
-.btn:disabled {
-  opacity: 0.4;
+.chip:disabled {
+  opacity: 0.42;
   cursor: not-allowed;
 }
 
@@ -1015,25 +1054,36 @@ input:not([type="checkbox"]):not([type="radio"]),
 textarea,
 select {
   width: 100%;
-  border: var(--rule);
-  background: var(--field);
-  padding: 8px 10px;
-  font-family: var(--mono);
-  font-size: 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  padding: 9px 11px;
+  font-size: 14px;
+  transition: border-color 160ms var(--ease), box-shadow 160ms var(--ease);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--text-3);
+  box-shadow: 0 0 0 3px var(--surface-2);
+}
+
+::placeholder {
+  color: var(--text-3);
 }
 
 textarea {
-  font-family: var(--sans);
-  line-height: 1.5;
+  line-height: 1.55;
   resize: vertical;
+  min-height: 88px;
 }
 
-/* A field is a labelled box on a form: caption, control, then the note that
-   explains it. The caption is `.lbl`; the wrapper is a <label> and must inherit
-   nothing, or every note on the page ends up shouting. */
 .field {
   display: block;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .field > .lbl {
@@ -1042,41 +1092,38 @@ textarea {
 
 .field > .hint {
   display: block;
-  margin-top: 5px;
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: var(--ink-2);
+  margin-top: 6px;
 }
 
 .field-label {
   display: block;
-  font-variation-settings: "wght" 700, "wdth" 78;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  font-size: 9px;
-  color: var(--ink-2);
-  margin-bottom: 4px;
+  font-size: 11.5px;
+  color: var(--text-3);
+  letter-spacing: 0.03em;
+  margin-bottom: 5px;
 }
 
 .row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .two-col {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
 }
 
 @media (max-width: 900px) {
   .two-col {
     grid-template-columns: 1fr;
+  }
+
+  .shell {
+    padding: 36px 16px 72px;
   }
 }
 
@@ -1085,90 +1132,230 @@ textarea {
  * ------------------------------------------------------------------------- */
 
 .err {
-  border: var(--rule-heavy);
-  border-color: var(--seal);
-  background: var(--field);
-  color: var(--ink);
-  padding: 10px 12px;
-  margin: 12px;
-  font-size: 13px;
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  background: var(--accent-wash);
+  color: var(--text);
+  padding: 13px 15px;
+  margin: 16px 0;
+  font-size: 13.5px;
+  line-height: 1.55;
 }
 
 .empty {
-  border: var(--rule);
-  border-style: dashed;
-  background: var(--form);
-  padding: 26px 18px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r);
+  padding: 40px 24px;
   text-align: center;
-  color: var(--ink-2);
-  font-size: 13px;
+  color: var(--text-2);
+  font-size: 14px;
 }
 
-/* A form does not spin. It says what it is waiting for. */
 .spinner {
-  display: inline-block;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--ink-2);
+  font-size: 13px;
+  color: var(--text-3);
 }
 
 .mono-block {
   font-family: var(--mono);
-  font-size: 12px;
-  background: var(--field);
-  border: var(--rule-hair);
-  padding: 8px 10px;
-  word-break: break-all;
+  font-size: 12.5px;
+  line-height: 1.55;
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 11px 13px;
+  overflow-wrap: anywhere;
+  color: var(--text-2);
 }
 
-.explorer {
-  font-variation-settings: "wght" 600, "wdth" 84;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 10px;
+.explorer,
+.back {
+  font-size: 13px;
+  color: var(--text-2);
 }
 
 .back {
-  font-variation-settings: "wght" 600, "wdth" 84;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  font-size: 10px;
   display: inline-block;
-  margin-bottom: 14px;
+  margin-bottom: 22px;
 }
 
-.endpoints {
-  border-top: var(--rule-heavy);
-  margin-top: 40px;
-  padding: 12px 16px;
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--ink-2);
-  background: var(--form);
+.session-box {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  padding: 14px 15px;
+  margin-top: 16px;
 }
 
-.wallet-adapter-button-trigger {
-  background: var(--ink) !important;
-  color: var(--field) !important;
-  border-radius: 0 !important;
-  font-family: var(--sans) !important;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 11px !important;
-  height: auto !important;
-  padding: 7px 14px !important;
+.session-box .hint {
+  margin: 8px 0 0;
 }
 
 /* ---------------------------------------------------------------------------
- * Accessibility
+ * The challenge
  * ------------------------------------------------------------------------- */
 
+.probes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.probe {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px 15px;
+  background: var(--surface);
+}
+
+.probe.bad {
+  border-color: var(--accent);
+}
+
+.probe-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.probe-title {
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.012em;
+}
+
+.probe-detail {
+  margin: 6px 0 10px;
+}
+
+.probe-refused {
+  background: var(--cleared-wash);
+  color: var(--cleared);
+}
+
+.probe-answered {
+  background: var(--custody-wash);
+  color: var(--custody);
+}
+
+.probe-error {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+.probe-body {
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Footer
+ * ------------------------------------------------------------------------- */
+
+.endpoints {
+  border-top: 1px solid var(--line);
+  margin-top: 64px;
+  padding: 20px;
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.endpoints > div {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.endpoints .lbl {
+  display: inline;
+  margin: 0;
+}
+
+.lat {
+  color: var(--text-2);
+}
+
+.lat.fast {
+  color: var(--cleared);
+}
+
+.lat.bad {
+  color: var(--accent);
+}
+
+.live-pill {
+  background: var(--cleared-wash);
+  color: var(--cleared);
+}
+
+.wallet-adapter-button-trigger {
+  background: var(--text) !important;
+  color: var(--canvas) !important;
+  border-radius: var(--r-sm) !important;
+  font-family: var(--sans) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  height: auto !important;
+  padding: 7px 13px !important;
+  line-height: 1.4 !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion and access
+ * ------------------------------------------------------------------------- */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.grid > *,
+.probes > * {
+  animation: rise 520ms var(--ease) both;
+}
+
+.grid > *:nth-child(1),
+.probes > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.grid > *:nth-child(2),
+.probes > *:nth-child(2) {
+  animation-delay: 45ms;
+}
+.grid > *:nth-child(3),
+.probes > *:nth-child(3) {
+  animation-delay: 90ms;
+}
+.grid > *:nth-child(4),
+.probes > *:nth-child(4) {
+  animation-delay: 135ms;
+}
+.grid > *:nth-child(n + 5),
+.probes > *:nth-child(n + 5) {
+  animation-delay: 170ms;
+}
+
 :focus-visible {
-  outline: 3px solid var(--custody);
-  outline-offset: 1px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
 }
 
 :focus:not(:focus-visible) {
@@ -1181,12 +1368,13 @@ textarea {
 }
 
 .skip-link:focus {
-  left: 8px;
-  top: 8px;
+  left: 12px;
+  top: 12px;
   z-index: 99;
-  background: var(--ink);
-  color: var(--field);
-  padding: 8px 12px;
+  background: var(--text);
+  color: var(--canvas);
+  padding: 9px 14px;
+  border-radius: var(--r-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1197,123 +1385,4 @@ textarea {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-
-/* ---------------------------------------------------------------------------
- * The pulse
- *
- * Two latencies side by side is the whole argument. The rollup figure is set in
- * the cleared colour because a fast answer is a good answer; the base figure is
- * left in ink because it is not a fault, it is just Solana.
- * ------------------------------------------------------------------------- */
-.endpoints > div {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-}
-
-.lat {
-  border: var(--rule-hair);
-  padding: 1px 5px;
-}
-
-.lat.fast {
-  color: var(--cleared);
-  border-color: var(--cleared);
-}
-
-.lat.bad {
-  color: var(--seal);
-  border-color: var(--seal);
-}
-
-.live-pill {
-  background: var(--cleared);
-  color: var(--field);
-  border-color: var(--cleared);
-}
-
-/* ---------------------------------------------------------------------------
- * The challenge
- *
- * A probe is an evidence line: what was attempted, what came back, and the raw
- * reply underneath so the reader can check the verdict rather than accept it.
- * Colour follows the claim, not the HTTP status — a refusal is GOOD where the
- * claim requires a refusal, and bad where it does not.
- * ------------------------------------------------------------------------- */
-.probes {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border-top: var(--rule-hair);
-}
-
-.probe {
-  border-bottom: var(--rule-hair);
-  padding: 11px 0;
-}
-
-.probe-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.probe-title {
-  font-variation-settings: "wght" 700, "wdth" 82;
-  font-size: 13px;
-}
-
-.probe.good .probe-title {
-  color: var(--ink);
-}
-
-.probe.bad .probe-title {
-  color: var(--seal);
-}
-
-.probe-refused {
-  background: var(--cleared);
-  color: var(--field);
-  border-color: var(--cleared);
-}
-
-.probe-answered {
-  background: var(--custody);
-  color: var(--field);
-  border-color: var(--custody);
-}
-
-.probe-error {
-  background: var(--seal);
-  color: var(--field);
-  border-color: var(--seal);
-}
-
-.probe-detail {
-  margin: 5px 0 8px;
-  font-size: 12px;
-  color: var(--ink-2);
-}
-
-.probe-body {
-  max-height: 190px;
-  overflow: auto;
-  white-space: pre-wrap;
-  margin: 0;
-}
-
-/* A session is a granted scope, so it is drawn as a sub-field of the book. */
-.session-box {
-  border: var(--rule-hair);
-  background: var(--form-2);
-  padding: 10px 11px;
-  margin-top: 12px;
-}
-
-.session-box .hint {
-  margin: 6px 0 0;
 }

@@ -42,7 +42,7 @@ function verdictFor(outcome: string, youAreTheReader: boolean): Verdict {
             headline: "You are the sole reader.",
             tone: "reader",
             blurb:
-              "The randomness landed on your bid. grant_reader added your key — and only your key — to the secret's private permission. The confession is readable to you over the authenticated endpoint and to no one else, the base layer included.",
+              "The randomness landed on your bid. grant_reader added your key, and only your key, to the secret's private permission. The confession is readable to you over the authenticated endpoint and to no one else, the base layer included.",
           }
         : {
             headline: "One reader was chosen.",
@@ -55,7 +55,7 @@ function verdictFor(outcome: string, youAreTheReader: boolean): Verdict {
         headline: "One sentence escaped.",
         tone: "leak",
         blurb:
-          "The ransom went unmet and the coin landed on a reveal. Exactly one redacted sentence — the line the author wrote for this eventuality — is carved into the tombstone. The rest never leaves.",
+          "The ransom went unmet and the coin landed on a reveal. Exactly one redacted sentence, the line the author wrote for this eventuality, is carved into the tombstone. The rest never leaves.",
       };
     case "publicLeak":
       return {
@@ -188,7 +188,7 @@ export default function ResultPage() {
               <div className="lbl">sole reader</div>
               <div className="val">
                 {market.soleReader === "11111111111111111111111111111111"
-                  ? "—"
+                  ? ", "
                   : shortKey(market.soleReader, 6)}
               </div>
             </div>
@@ -207,7 +207,7 @@ export default function ResultPage() {
             The confession itself is only reachable over the authenticated endpoint at{" "}
             <code>{TEE_RPC}</code>. Your key signs a challenge, the validator issues a JWT, and
             the JWT rides as <code>?token=</code> on both the http and the ws URL. What the token
-            buys is an identity — the permission member list decides whether anything comes back.
+            buys is an identity, the permission member list decides whether anything comes back.
           </p>
           <div className="actions">
             <button
@@ -236,7 +236,7 @@ export default function ResultPage() {
             ) : (
               <div className="confession sealed" style={{ marginTop: 14 }}>
                 the validator did not answer. This key is not on the secret&apos;s permission
-                member list, so there is nothing to return — not a ciphertext, not an empty
+                member list, so there is nothing to return, not a ciphertext, not an empty
                 account, nothing.
               </div>
             )

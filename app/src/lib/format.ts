@@ -54,7 +54,7 @@ export const solToLamports = (sol: number): BN =>
 
 /** `0x` + first bytes of the commitment. The market's public name. */
 export function shortHash(bytes: number[] | Uint8Array | undefined, take = 6): string {
-  if (!bytes || bytes.length === 0) return "—";
+  if (!bytes || bytes.length === 0) return ", ";
   const arr = Array.from(bytes);
   if (arr.every((b) => b === 0)) return "unsealed";
   return arr
@@ -71,7 +71,7 @@ export function fullHash(bytes: number[] | Uint8Array | undefined): string {
 }
 
 export const shortKey = (key: string | undefined, take = 4): string =>
-  key ? `${key.slice(0, take)}…${key.slice(-take)}` : "—";
+  key ? `${key.slice(0, take)}…${key.slice(-take)}` : ", ";
 
 /** Decode the on-chain reveal buffer. Empty unless the verdict authorised it. */
 export function decodeRevealed(

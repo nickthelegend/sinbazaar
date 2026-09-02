@@ -4,7 +4,7 @@
  * Bids are hidden behind a private permission listing only the bidder, so the
  * browser cannot enumerate a market's book by asking the rollup. What it can do
  * is remember the bids it placed itself, which is enough for the settlement
- * crank in the demo — and honest about why: the book is private by design.
+ * crank in the demo, and honest about why: the book is private by design.
  */
 const MARKETS_KEY = "sinbazaar.markets.v1";
 const BIDDERS_KEY = "sinbazaar.bidders.v1";

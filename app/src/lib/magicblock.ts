@@ -1,7 +1,7 @@
 /**
  * The handful of MagicBlock values and calls the browser needs.
  *
- * These mirror `@magicblock-labs/ephemeral-rollups-sdk` exactly — same program
+ * These mirror `@magicblock-labs/ephemeral-rollups-sdk` exactly, same program
  * ids, same `permission:` PDA, same two-step `/auth/challenge` + `/auth/login`
  * handshake. They are restated here rather than imported because the SDK's entry
  * point re-exports its TEE quote verifier, which pulls a wasm module into the
@@ -34,7 +34,7 @@ export function permissionPdaFromAccount(account: PublicKey): PublicKey {
  * Ask the validator for a JWT.
  *
  * Any keypair can obtain one. What the token buys is the *identity* the
- * validator checks against each account's permission member list — which is why
+ * validator checks against each account's permission member list, which is why
  * a token for the wrong key opens nothing.
  */
 export async function getAuthToken(

@@ -4,8 +4,8 @@
  * Wallet plumbing.
  *
  * Two ways to hold a key:
- *   wallet — @solana/wallet-adapter, for devnet.
- *   burner — a keypair in localStorage, airdropped on localnet. The demo runs
+ *   wallet, @solana/wallet-adapter, for devnet.
+ *   burner, a keypair in localStorage, airdropped on localnet. The demo runs
  *            against a local validator, which a browser extension cannot reach,
  *            so this is the default there.
  */

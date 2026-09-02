@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * THE CHALLENGE — try to read a secret you are not allowed to read.
+ * THE CHALLENGE, try to read a secret you are not allowed to read.
  *
  * Every other page in this product asserts that a confession is unreadable by
  * anyone outside its permission member list. This page hands the visitor the
@@ -12,7 +12,7 @@
  * The page reports what actually happened rather than what we would like to
  * have happened. On devnet the TEE refuses probes 1 and 2 and the page says
  * REFUSED. On a local cluster the query-filtering service is NOT a TEE, answers
- * both, and the page says so in as many words — claiming a refusal we did not
+ * both, and the page says so in as many words, claiming a refusal we did not
  * observe would be exactly the kind of unverified assertion this page exists to
  * attack.
  */
@@ -80,7 +80,7 @@ export default function ChallengePage() {
   /**
    * Only a sealed, still-private secret is worth attacking. A resolved market's
    * secret may legitimately have a second member on its list, and a Whisper IPO
-   * secret is public by design — neither would prove anything.
+   * secret is public by design, neither would prove anything.
    */
   const candidates = useMemo(
     () =>
@@ -105,7 +105,7 @@ export default function ChallengePage() {
       setProbes([...out]);
     };
 
-    // 0 — what the permission itself says. Not an attack; the ground truth the
+    // 0, what the permission itself says. Not an attack; the ground truth the
     //     other three probes are measured against.
     try {
       const anon = new Connection(TEE_RPC, "confirmed");
@@ -131,7 +131,7 @@ export default function ChallengePage() {
       });
     }
 
-    // 1 — no credential at all.
+    // 1, no credential at all.
     const anonBody = await rawGetAccountInfo(TEE_RPC, secret.toBase58());
     push({
       id: "anon",
@@ -142,7 +142,7 @@ export default function ChallengePage() {
       body: anonBody,
     });
 
-    // 2 — a real, valid credential belonging to the wrong person. This is the
+    // 2, a real, valid credential belonging to the wrong person. This is the
     //     probe that matters: it proves the member list is what gates the read,
     //     not merely the presence of a token.
     try {
@@ -158,19 +158,19 @@ export default function ChallengePage() {
       push({
         id: "stranger",
         title: "Read it with a freshly minted, perfectly valid token",
-        detail: `a brand-new keypair signed the validator's challenge and holds a real JWT — it is simply not on the member list`,
+        detail: `a brand-new keypair signed the validator's challenge and holds a real JWT, it is simply not on the member list`,
         expected: "refuse",
         verdict: answered(strangerBody) ? "answered" : "refused",
         body: strangerBody,
       });
 
-      // 3 — the same stranger reading the MARKET. Must succeed: the game is
+      // 3, the same stranger reading the MARKET. Must succeed: the game is
       //     public, only the confession is not.
       const marketBody = await rawGetAccountInfo(`${TEE_RPC}?token=${token}`, chosen);
       push({
         id: "market",
         title: "The same stranger reads the market itself",
-        detail: "pots, timer and status are public by design — this one must succeed",
+        detail: "pots, timer and status are public by design, this one must succeed",
         expected: "answer",
         verdict: answered(marketBody) ? "answered" : "refused",
         body: marketBody,
@@ -186,7 +186,7 @@ export default function ChallengePage() {
       });
     }
 
-    // 4 — the control. Ask the UNFILTERED rollup for the same account at the
+    // 4, the control. Ask the UNFILTERED rollup for the same account at the
     //     same moment. Getting the bytes here is what proves the refusals above
     //     were a decision rather than a missing account.
     //
@@ -198,7 +198,7 @@ export default function ChallengePage() {
       push({
         id: "control",
         title: "Control: the same secret, read from the unfiltered rollup",
-        detail: `POST ${ER_RPC} — the validator behind the filter. If this returns bytes, the refusals above were a decision, not an empty account.`,
+        detail: `POST ${ER_RPC}, the validator behind the filter. If this returns bytes, the refusals above were a decision, not an empty account.`,
         expected: "answer",
         verdict: answered(unfiltered) ? "answered" : "refused",
         body: unfiltered,
@@ -231,7 +231,7 @@ export default function ChallengePage() {
       {IS_LOCALNET ? (
         <div className="err" role="note">
           <strong>You are on {CLUSTER}, and the refusals below are real.</strong> The local
-          query-filtering service does enforce the permission member list — probe 5 proves
+          query-filtering service does enforce the permission member list, probe 5 proves
           it by asking the unfiltered rollup for the same account at the same moment and
           getting the bytes back. What a local cluster cannot give you is{" "}
           <em>attestation</em>: the filter is ordinary software, so a dishonest operator
@@ -245,7 +245,7 @@ export default function ChallengePage() {
         <h3>Choose a target</h3>
         {candidates.length === 0 ? (
           <Empty>
-            No sealed secret is live right now. Write a confession and come back — the
+            No sealed secret is live right now. Write a confession and come back, the
             challenge needs something real to attack.
           </Empty>
         ) : (
@@ -261,7 +261,7 @@ export default function ChallengePage() {
               </select>
               <span className="hint">
                 Its secret lives at{" "}
-                <code>{chosen ? secretPda(new PublicKey(chosen)).toBase58() : "—"}</code>
+                <code>{chosen ? secretPda(new PublicKey(chosen)).toBase58() : ", "}</code>
               </span>
             </label>
             <div className="actions">
