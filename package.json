@@ -6,10 +6,12 @@
   "scripts": {
     "build": "anchor keys sync && anchor build",
     "stack": "bash scripts/local-stack.sh",
-    "test": ". ./scripts/local-env.sh && ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
+    "test": ". ./scripts/local-env.sh && ts-mocha -p ./tsconfig.json -t 1000000 --ignore tests/vrf-stall.ts tests/**/*.ts",
+    "test:vrf-stall": "bash scripts/test-vrf-stall.sh",
     "seed": ". ./scripts/local-env.sh && ts-node scripts/seed.ts",
     "demo": ". ./scripts/local-env.sh && ts-node scripts/demo.ts",
-    "keeper": ". ./scripts/local-env.sh && ts-node scripts/keeper.ts"
+    "keeper": ". ./scripts/local-env.sh && ts-node scripts/keeper.ts",
+    "prove:action": ". ./scripts/local-env.sh && ts-node scripts/prove-magic-action.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",

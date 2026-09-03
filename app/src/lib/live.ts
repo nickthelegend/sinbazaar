@@ -174,3 +174,44 @@ export function subscribeLogs(onEvent: (event: RollupEvent) => void): () => void
     if (id !== null) void er.removeOnLogsListener(id).catch(() => {});
   };
 }
+
+export interface Receipt {
+  signature: string;
+  slot: number;
+  /** Compute units the rollup actually charged. Null when the node omits it. */
+  computeUnits: number | null;
+  /** Fee in lamports. */
+  fee: number | null;
+  logs: string[];
+  err: string | null;
+}
+
+/**
+ * Pull one transaction back off the rollup for a receipt.
+ *
+ * Note what is deliberately absent: a latency. This transaction was observed,
+ * not sent, so there is no local start time to measure from, and a number
+ * derived from when a websocket happened to deliver the notification would be
+ * measuring this browser's socket rather than the chain. The pulse row already
+ * shows a real round trip; inventing a second one here would be worse than
+ * showing none.
+ */
+export async function fetchReceipt(signature: string): Promise<Receipt | null> {
+  try {
+    const tx = await erConnection().getTransaction(signature, {
+      maxSupportedTransactionVersion: 0,
+      commitment: "confirmed",
+    });
+    if (!tx) return null;
+    return {
+      signature,
+      slot: tx.slot,
+      computeUnits: tx.meta?.computeUnitsConsumed ?? null,
+      fee: tx.meta?.fee ?? null,
+      logs: tx.meta?.logMessages ?? [],
+      err: tx.meta?.err ? JSON.stringify(tx.meta.err) : null,
+    };
+  } catch {
+    return null;
+  }
+}

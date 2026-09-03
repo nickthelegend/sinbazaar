@@ -4,7 +4,7 @@
 > MagicBlock VRF picks the reader. Solana only receives a tombstone.**
 
 MagicBlock Solana Blitz v8 submission.
-Program: [`2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN`](programs/sinbazaar/src/lib.rs) — Anchor, 32 instructions,
+Program: [`2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN`](programs/sinbazaar/src/lib.rs) — Anchor, 34 instructions,
 [deployed to devnet](#proven-on-devnet).
 
 **FICTION MODE.** Every confession in this build is startup-village satire. No real secrets, no real
@@ -507,7 +507,7 @@ time lets anyone verify that a *revealed* body is the one that was sealed. It pr
 ## Repo map
 
 ```
-programs/sinbazaar/src/lib.rs     the Anchor program — 32 instructions
+programs/sinbazaar/src/lib.rs     the Anchor program — 34 instructions
 programs/sinbazaar/src/state.rs   accounts, Room / MarketStatus / Outcome / BidSide, the constants
 programs/sinbazaar/src/error.rs   SinError
 sdk/src/index.ts                  TypeScript client: PDAs, the three connections, ?token= auth,

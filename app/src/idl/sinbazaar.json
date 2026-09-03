@@ -2259,6 +2259,106 @@
       ]
     },
     {
+      "name": "open_tombstone",
+      "docs": [
+        "Allocate an empty headstone before the market ends.",
+        "",
+        "Permissionless, and deliberately separate from carving it. A Magic Action",
+        "scheduled from the rollup arrives on the base layer with the escrow as its",
+        "only signer, and an escrow is a fee account, not a rent payer. So the",
+        "account has to exist before the action runs, paid for by whoever is",
+        "already here and holding lamports. `init_if_needed` makes calling this",
+        "twice free rather than fatal, which matters because it is permissionless",
+        "and anyone may race to do the village a favour."
+      ],
+      "discriminator": [
+        192,
+        239,
+        124,
+        169,
+        145,
+        102,
+        147,
+        194
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "docs": [
+            "",
+            "A headstone has to be allocated while the market is still delegated, which",
+            "means the account is owned by the delegation program at this moment and",
+            "`Account<Market>` would refuse to load it. Deriving the address from",
+            "`village` and `market_id` proves it is the market it claims to be without",
+            "reading a byte of it, and nothing here depends on its contents."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "village"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tombstone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  109,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_market_id",
+          "type": "u64"
+        },
+        {
+          "name": "_village",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
       "name": "place_bid",
       "docs": [
         "Open a bid. Runs entirely on the ER, signed by the villager's own wallet.",
@@ -3087,6 +3187,97 @@
         {
           "name": "redacted",
           "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "seal_tombstone",
+      "docs": [
+        "Carve the headstone, executed on Solana as a Magic Action scheduled by",
+        "the rollup rather than by any client.",
+        "",
+        "This is the difference between a market that ends because somebody was",
+        "watching and one that ends because it said it would. `finalize_market`",
+        "schedules this as a post-undelegate action, so the tombstone lands on L1",
+        "in the same breath as the commit, with no crank in the loop.",
+        "",
+        "There is no signer here beyond the escrow the action framework injects.",
+        "That is the point, and it is also why every value written is taken from",
+        "the market account rather than from arguments: an action carries data",
+        "nobody re-checks at execution time, so the only safe payload is one that",
+        "says which market, and lets the chain look up the rest."
+      ],
+      "discriminator": [
+        95,
+        40,
+        1,
+        137,
+        85,
+        64,
+        237,
+        216
+      ],
+      "accounts": [
+        {
+          "name": "tombstone",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  109,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrow_auth"
+        },
+        {
+          "name": "escrow"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
         }
       ]
     },

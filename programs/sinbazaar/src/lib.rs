@@ -29,15 +29,16 @@ use ephemeral_rollups_sdk::{
             TX_BALANCES_FLAG, TX_LOGS_FLAG, TX_MESSAGE_FLAG,
         },
     },
-    anchor::{commit, delegate, ephemeral, ephemeral_accounts, vrf, vrf_callback},
+    anchor::{action, commit, delegate, ephemeral, ephemeral_accounts, vrf, vrf_callback},
     consts::{EPHEMERAL_VAULT_ID, MAGIC_PROGRAM_ID, PERMISSION_PROGRAM_ID},
     cpi::DelegateConfig,
-    ephem::MagicIntentBundleBuilder,
+    ephem::{CallHandler, MagicIntentBundleBuilder},
     vrf::{
         self as vrf_sdk,
         instructions::{create_request_scoped_randomness_ix, RequestRandomnessParams},
         types::SerializableAccountMeta,
     },
+    ActionArgs, ShortAccountMeta,
 };
 
 mod error;
@@ -293,36 +294,61 @@ pub mod sinbazaar {
         );
         require!(!market.tombstoned, SinError::AlreadyTombstoned);
 
-        let tomb = &mut ctx.accounts.tombstone;
-        tomb.market = market.key();
-        tomb.market_id = market.market_id;
-        tomb.author = market.author;
-        tomb.room = market.room;
-        tomb.commitment_hash = market.commitment_hash;
-        tomb.outcome = market.outcome;
-        tomb.seal_pot = market.seal_pot;
-        tomb.read_pot = market.read_pot;
-        tomb.sole_reader = market.sole_reader;
-        tomb.randomness = market.randomness;
-        tomb.buried_at = Clock::get()?.unix_timestamp;
-        tomb.bump = ctx.bumps.tombstone;
-
-        // Defense in depth: even if `revealed` were somehow non-empty, an outcome
-        // that does not authorise text publishes the hash alone.
-        if market.outcome.reveals_text() {
-            tomb.revealed_len = market.revealed_len;
-            tomb.revealed = market.revealed;
-            tomb.revealed_salt = market.revealed_salt;
-        } else {
-            tomb.revealed_len = 0;
-            tomb.revealed = [0u8; MAX_TOMB_BODY];
-            tomb.revealed_salt = [0u8; 32];
-        }
-
+        let bump = ctx.bumps.tombstone;
         let market_key = market.key();
-        let outcome = market.outcome;
+        carve_tombstone(&mut ctx.accounts.tombstone, market, market_key, bump)?;
         ctx.accounts.market.tombstoned = true;
-        msg!("Tombstone for market {} outcome {:?}", market_key, outcome);
+        Ok(())
+    }
+
+    /// Allocate an empty headstone before the market ends.
+    ///
+    /// Permissionless, and deliberately separate from carving it. A Magic Action
+    /// scheduled from the rollup arrives on the base layer with the escrow as its
+    /// only signer, and an escrow is a fee account, not a rent payer. So the
+    /// account has to exist before the action runs, paid for by whoever is
+    /// already here and holding lamports. `init_if_needed` makes calling this
+    /// twice free rather than fatal, which matters because it is permissionless
+    /// and anyone may race to do the village a favour.
+    pub fn open_tombstone(
+        ctx: Context<OpenTombstone>,
+        _market_id: u64,
+        _village: Pubkey,
+    ) -> Result<()> {
+        let tomb = &mut ctx.accounts.tombstone;
+        // Only ever stamp identity here. Every public fact is written when the
+        // market is actually settled, by `carve_tombstone`, so an opened but
+        // uncarved headstone can never be mistaken for a verdict: `buried_at`
+        // stays 0 until something is genuinely buried.
+        tomb.market = ctx.accounts.market.key();
+        tomb.bump = ctx.bumps.tombstone;
+        msg!("Headstone allocated for market {}", ctx.accounts.market.key());
+        Ok(())
+    }
+
+    /// Carve the headstone, executed on Solana as a Magic Action scheduled by
+    /// the rollup rather than by any client.
+    ///
+    /// This is the difference between a market that ends because somebody was
+    /// watching and one that ends because it said it would. `finalize_market`
+    /// schedules this as a post-undelegate action, so the tombstone lands on L1
+    /// in the same breath as the commit, with no crank in the loop.
+    ///
+    /// There is no signer here beyond the escrow the action framework injects.
+    /// That is the point, and it is also why every value written is taken from
+    /// the market account rather than from arguments: an action carries data
+    /// nobody re-checks at execution time, so the only safe payload is one that
+    /// says which market, and lets the chain look up the rest.
+    pub fn seal_tombstone(ctx: Context<SealTombstone>, market_id: u64) -> Result<()> {
+        let market = &ctx.accounts.market;
+        require_eq!(market.market_id, market_id);
+        require!(market.status == MarketStatus::Settled, SinError::NotSettled);
+        require!(!market.tombstoned, SinError::AlreadyTombstoned);
+
+        let bump = ctx.accounts.tombstone.bump;
+        let market_key = market.key();
+        carve_tombstone(&mut ctx.accounts.tombstone, market, market_key, bump)?;
+        ctx.accounts.market.tombstoned = true;
         Ok(())
     }
 
@@ -1225,12 +1251,49 @@ pub mod sinbazaar {
         // Flush before handing the account away.
         ctx.accounts.market.exit(&crate::ID)?;
 
+        // Schedule the headstone as a Magic Action, so Solana learns the verdict
+        // because the rollup said so and not because a client stayed awake.
+        //
+        // Post-*undelegate* rather than post-commit: `seal_tombstone` writes to
+        // the market to set `tombstoned`, and until the undelegation lands the
+        // market on the base layer is still owned by the delegation program.
+        // Ordered after it, the account is ours again and the write is legal.
+        //
+        // The tombstone address is derived rather than passed. An action names
+        // its accounts by pubkey with no signer among them, so anything a caller
+        // could substitute is something the chain has to re-derive anyway.
+        let market_key = ctx.accounts.market.key();
+        let (tombstone_key, _) =
+            Pubkey::find_program_address(&[TOMB_SEED, market_key.as_ref()], &crate::ID);
+
+        let seal = CallHandler {
+            destination_program: crate::ID,
+            // Same order as the `SealTombstone` accounts struct.
+            accounts: vec![
+                ShortAccountMeta {
+                    pubkey: tombstone_key.to_bytes().into(),
+                    is_writable: true,
+                },
+                ShortAccountMeta {
+                    pubkey: market_key.to_bytes().into(),
+                    is_writable: true,
+                },
+            ],
+            args: ActionArgs::new(anchor_lang::InstructionData::data(
+                &crate::instruction::SealTombstone { market_id },
+            )),
+            // Fees for the base-layer execution come from this payer's escrow.
+            escrow_authority: ctx.accounts.payer.to_account_info(),
+            compute_units: 200_000,
+        };
+
         MagicIntentBundleBuilder::new(
             ctx.accounts.payer.to_account_info(),
             ctx.accounts.magic_context.to_account_info(),
             ctx.accounts.magic_program.to_account_info(),
         )
         .commit_and_undelegate(&[ctx.accounts.market.to_account_info()])
+        .add_post_undelegate_actions([seal])
         .build_and_invoke()?;
         Ok(())
     }
@@ -1386,6 +1449,52 @@ fn charge_session<'info>(
     require!(spent <= scope.max_spend, SinError::SessionLimitExceeded);
     scope.spent = spent;
     write_account(&session.to_account_info(), &scope)?;
+    Ok(())
+}
+
+/// Copy a settled market's public facts onto its permanent L1 headstone.
+///
+/// Shared by the two ways a tombstone gets carved: `write_tombstone`, which a
+/// crank calls directly on the base layer, and `seal_tombstone`, which the
+/// rollup schedules as a Magic Action so no client has to be watching. Both must
+/// produce byte-identical headstones, which is why this is one function and not
+/// two copies that drift.
+fn carve_tombstone(
+    tomb: &mut Tombstone,
+    market: &Market,
+    market_key: Pubkey,
+    bump: u8,
+) -> Result<()> {
+    tomb.market = market_key;
+    tomb.market_id = market.market_id;
+    tomb.author = market.author;
+    tomb.room = market.room;
+    tomb.commitment_hash = market.commitment_hash;
+    tomb.outcome = market.outcome;
+    tomb.seal_pot = market.seal_pot;
+    tomb.read_pot = market.read_pot;
+    tomb.sole_reader = market.sole_reader;
+    tomb.randomness = market.randomness;
+    tomb.buried_at = Clock::get()?.unix_timestamp;
+    tomb.bump = bump;
+
+    // Defense in depth: even if `revealed` were somehow non-empty, an outcome
+    // that does not authorise text publishes the hash alone.
+    if market.outcome.reveals_text() {
+        tomb.revealed_len = market.revealed_len;
+        tomb.revealed = market.revealed;
+        tomb.revealed_salt = market.revealed_salt;
+    } else {
+        tomb.revealed_len = 0;
+        tomb.revealed = [0u8; MAX_TOMB_BODY];
+        tomb.revealed_salt = [0u8; 32];
+    }
+
+    msg!(
+        "Tombstone for market {} outcome {:?}",
+        market_key,
+        market.outcome
+    );
     Ok(())
 }
 
@@ -1645,6 +1754,59 @@ pub struct WriteTombstone<'info> {
     )]
     pub tombstone: Box<Account<'info, Tombstone>>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(market_id: u64, village: Pubkey)]
+pub struct OpenTombstone<'info> {
+    /// CHECK: permissionless; pays rent for an account whose contents it cannot choose
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    /// CHECK: never deserialized, only proved to be the right PDA.
+    ///
+    /// A headstone has to be allocated while the market is still delegated, which
+    /// means the account is owned by the delegation program at this moment and
+    /// `Account<Market>` would refuse to load it. Deriving the address from
+    /// `village` and `market_id` proves it is the market it claims to be without
+    /// reading a byte of it, and nothing here depends on its contents.
+    #[account(
+        seeds = [MARKET_SEED, village.as_ref(), &market_id.to_le_bytes()],
+        bump
+    )]
+    pub market: UncheckedAccount<'info>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        space = 8 + Tombstone::LEN,
+        seeds = [TOMB_SEED, market.key().as_ref()],
+        bump
+    )]
+    pub tombstone: Box<Account<'info, Tombstone>>,
+    pub system_program: Program<'info, System>,
+}
+
+/// Accounts for the scheduled L1 carve.
+///
+/// `#[action]` appends `escrow_auth` and `escrow`; the escrow is the signer the
+/// delegation program presents when it executes the action. Account order here
+/// is the contract with the `ShortAccountMeta` list built in `finalize_market`,
+/// so these two must be kept in step.
+#[action]
+#[derive(Accounts)]
+#[instruction(market_id: u64)]
+pub struct SealTombstone<'info> {
+    #[account(
+        mut,
+        seeds = [TOMB_SEED, market.key().as_ref()],
+        bump = tombstone.bump
+    )]
+    pub tombstone: Box<Account<'info, Tombstone>>,
+    #[account(
+        mut,
+        seeds = [MARKET_SEED, market.village.as_ref(), &market_id.to_le_bytes()],
+        bump = market.bump
+    )]
+    pub market: Box<Account<'info, Market>>,
 }
 
 #[derive(Accounts)]

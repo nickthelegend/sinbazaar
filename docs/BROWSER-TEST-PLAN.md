@@ -145,7 +145,7 @@ Legend — **L1** base Solana · **ER** ephemeral rollup · **PER** private roll
 | B11 | Verdict table | Three rules matching the program's own outcome table | ✅ PASS |
 | B12 | Graveyard proof | One released and one withheld tombstone, both real L1 accounts | ✅ PASS |
 | B13 | Inline probe | Runs a real handshake; prints a refusal and an unfiltered control | ✅ PASS |
-| B14 | Counters | 32 instructions, 32 tests, 3 of 25 rooms, 34 error codes; instructions and errors derived from the IDL, not hardcoded | ✅ PASS |
+| B14 | Counters | 34 instructions, 32 tests, 3 of 25 rooms, 34 error codes; instructions and errors derived from the IDL, not hardcoded. Was 32 instructions when this passed; `open_tombstone` and `seal_tombstone` were added for Magic Actions and the page reads the count from the IDL, so it followed on its own | ✅ PASS |
 | B15 | Counters without motion | Real figures still shown when the ticker never runs | ✅ PASS |
 | B16 | Close CTAs | Both navigate | ✅ PASS |
 
@@ -272,7 +272,7 @@ Legend — **L1** base Solana · **ER** ephemeral rollup · **PER** private roll
 ## L. On-chain coverage: every instruction in the deployed program
 
 The goal asks for every on-chain interaction, so this is explicit rather than
-folded into "the suite is green". All 32 instructions in the IDL, and where each
+folded into "the suite is green". All 34 instructions in the IDL, and where each
 one is actually executed against a live cluster.
 
 | # | Instruction | Exercised by | Status |
