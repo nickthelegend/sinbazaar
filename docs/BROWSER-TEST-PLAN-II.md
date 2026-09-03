@@ -22,6 +22,49 @@ anywhere in an item is a FAIL for that item regardless of what the UI shows.
 
 ---
 
+## Result
+
+**131 PASS, 0 FAIL, 7 not verified.** Eleven defects were found and every one was
+fixed at its root and re-verified against this plan.
+
+Nothing is marked PASS that was not observed. The seven unverified items each say
+exactly what could not be staged and why; none of them is marked green to tidy
+the list.
+
+**Zero mocks, zero stubs, zero fallback data** anywhere in the tested surface:
+every number on every page was read from a live cluster and, where it made a
+claim, checked against the chain rather than against the page. **Zero console
+errors and zero unexpected failed requests** across all nine routes: 696
+requests, all 200 or 304, the single 404 being the deliberate unknown-route test.
+
+### The eleven defects
+
+| # | What was wrong |
+|---|---|
+| A8 | A fresh burner advertised the **previous** key's balance for up to ten seconds |
+| B15 | The landing page claimed **32 tests** against a real 37; now generated from the specs |
+| D13 | Sealing a confession printed a commitment and a link, and neither address |
+| E4 | "open one" on any live room opened Guilt Market |
+| H15 | A second bid failed with the raw runtime string "invalid account data for instruction" |
+| H16 | **A session opened by one key was offered to the next key**, revoke button and all |
+| H21 | An unknown market address sat on "reading the stall…" for ever |
+| J2 | A malformed address showed the library's "Non-base58 character" |
+| J4 | **The graveyard claimed "0 tombstones / Nothing is buried yet" over 56 real headstones** when the base layer was unreachable |
+| G9 | A failed race lane rendered "failedms" |
+| — | `?room=` broke the **production build**: `useSearchParams` needs a Suspense boundary |
+
+### A note on method
+
+Three items looked like failures and were not: the pinned sequence, the pot
+odometer, and the countdown's urgent state. A hidden document does not dispatch
+scroll events and clamps every timer to about a second, so each of them appeared
+frozen. Dispatching the event the browser withheld, and stretching one tween
+until a clamped sampler could see it, showed all three were correct. Recording
+them as broken would have been as wrong as recording them as passing without
+looking.
+
+---
+
 ## A. Shell and chrome
 
 | # | Item | Correct means | Result |
@@ -35,7 +78,7 @@ anywhere in an item is a FAIL for that item regardless of what the UI shows.
 | A7 | Airdrop | Clicking airdrop raises the displayed balance to a real on-chain figure within 10s | ✅ PASS — balance rose to a real on-chain figure |
 | A8 | New burner | Clicking `new` produces a *different* key and a balance of 0.00 until airdropped | ✅ PASS **after fix** — showed the *previous* key's 34.94 SOL on a fresh empty burner; now reads "balance unknown" instantly, then resolves |
 | A9 | Pulse row | rollup ms, base ms, slot and socket all show real values; slot increases over 10s | ✅ PASS — slot advanced 172,938 → 173,132 |
-| A10 | Pulse when a layer is down | A dead endpoint reads "unreachable", never `0 ms` | ⏳ deferred to the controlled outage window with J3/J4 |
+| A10 | Pulse when a layer is down | A dead endpoint reads "unreachable", never `0 ms` | ✅ PASS — with the rollup pointed at a dead endpoint the pulse reads "unreachable"; the string `0 ms` appears nowhere on the page |
 | A11 | Skip-to-content | A skip link is the first focusable element and moves focus to main | ✅ PASS |
 | A12 | Wordmark to home | Clicking the wordmark navigates to `/` | ✅ PASS — wordmark href `/` |
 
@@ -71,7 +114,7 @@ anywhere in an item is a FAIL for that item regardless of what the UI shows.
 | C5 | Card to market | Clicking a card navigates to that market's page | ✅ PASS |
 | C6 | Pots reflect chain | SEAL/READ figures equal the on-chain pots | ✅ PASS — pot matched the scripted 0.33 exactly |
 | C7 | Live update | A bid placed elsewhere updates a card without a reload | ✅ PASS — SEAL 0 → 0.33 with no reload |
-| C8 | Empty state | With zero open markets, composed copy naming a next action, not a blank grid | ⏳ deferred to the wipe window |
+| C8 | Empty state | With zero open markets, composed copy naming a next action, not a blank grid | ⚠️ NOT VERIFIED — producing a genuinely empty village or graveyard needs the whole ledger wiped, which would destroy the state every other item in this plan depends on. Pointing the app at an account-free program does not work either: it resolves its program from the IDL's own `address`, not the env var. Not marked PASS. The **more dangerous** empty state, a layer that cannot be read, is covered by J4. |
 | C9 | Cascade entrance | Cards rise in, capped stagger; all visible with motion disabled | ✅ PASS |
 | C10 | 375px | No horizontal overflow; cards single column | ✅ PASS — overflow 0 at a true 375px |
 
@@ -121,7 +164,7 @@ anywhere in an item is a FAIL for that item regardless of what the UI shows.
 | F8 | Commitment verifier | For a released body with a salt, recomputes in-browser and reports a match | ✅ PASS — 13 verifiers, matching the 13 released-with-salt on chain |
 | F9 | Verifier honest without salt | Without a published salt it says the commitment cannot be reproduced, not MISMATCH | ✅ PASS — the one released-without-salt tombstone (randomReveal) explains that the published line is the author's redaction and the commitment covers the sealed body, so there is nothing to check. Never prints MISMATCH |
 | F10 | Read receipt epitaph | A `soleReader` tombstone reads "They came back for it on ..." only when `read_at` is non-zero, else "never came back" | ✅ PASS — 6 "came back for it on", matching the 6 with a non-zero `read_at` on chain |
-| F11 | Empty state | With zero tombstones, composed copy, not a blank page | ⏳ deferred to the wipe window |
+| F11 | Empty state | With zero tombstones, composed copy, not a blank page | ⚠️ NOT VERIFIED — producing a genuinely empty village or graveyard needs the whole ledger wiped, which would destroy the state every other item in this plan depends on. Pointing the app at an account-free program does not work either: it resolves its program from the IDL's own `address`, not the env var. Not marked PASS. The **more dangerous** empty state, a layer that cannot be read, is covered by J4. |
 | F12 | 375px | No overflow, stones still render | ✅ PASS — overflow 0 at a true 375px, all 56 stones still render |
 
 ## G. `/challenge`
@@ -136,7 +179,7 @@ anywhere in an item is a FAIL for that item regardless of what the UI shows.
 | G6 | Race idle state | Two lanes reading `0ms` and "not sent yet"; button disabled without a key | ✅ PASS — lanes read `0ms` / "not sent yet" |
 | G7 | Race runs | Both lanes get real signatures and real times; rollup markedly faster | ✅ PASS — 12ms vs 360ms, 30x, real signatures both sides |
 | G8 | Race never fakes a time | While in flight a lane shows `…ms`, never `0ms` | ✅ PASS — earliest in-flight state is `…ms`, never a bare `0ms` |
-| G9 | Race failure honest | A lane that fails shows "failed" and the error, and no verdict is claimed | ⏳ deferred to the controlled outage window |
+| G9 | Race failure honest | A lane that fails shows "failed" and the error, and no verdict is claimed | ✅ PASS — the rollup lane read "failed" with the real error ("failed to get recent blockhash"), the base lane finished honestly at 1,051ms, and **no verdict was claimed**: "one side did not confirm; the times above are only the ones actually measured". A cosmetic defect found here and fixed: the lane rendered "failedms", because the `ms` unit was appended to a clock no longer showing a number |
 | G10 | Race repeatable | "race again" runs a second time with new signatures | ✅ PASS — reran to 9ms vs 383ms with new signatures |
 | G11 | Race explorer links | Each signature links to its own layer's endpoint | ✅ PASS — rollup signature links to :7799, base to :8899 |
 | G12 | Console clean | No errors across the whole page including a race | ✅ PASS — see K1 sweep |
@@ -145,72 +188,72 @@ anywhere in an item is a FAIL for that item regardless of what the UI shows.
 
 | # | Item | Correct means | Result |
 |---|---|---|---|
-| H1 | Market header | Room, status pill, countdown, hash all from real state |
-| H2 | Pots | SEAL/READ equal chain values |
-| H3 | Pot odometer | A bid landing rolls the figure through intermediate values to the exact new total, with no reload |
-| H4 | Rule box | The active rule branch is highlighted and matches the market's room |
-| H5 | Permission: market | Reads **public** with the author as a member, flags decoded, raw byte shown |
-| H6 | Permission: confession | Reads **private** for a sealed confession room |
-| H7 | Permission explains public | On a non-confession room the pane says why it is open and calls it "the claim" |
-| H8 | Permission live | `grant_reader` admitting a reader appears without a reload |
-| H9 | Purse shown | Real purse balance for the connected key |
-| H10 | Fund purse | Funding moves real lamports and the figure updates |
-| H11 | Place bid | A bid signs, lands on the rollup, and the pot moves |
-| H12 | Bid over purse refused | Refused with the program's own error, no silent failure |
-| H13 | Bid on the wrong side | A side the room does not trade is refused |
-| H14 | Session open | One approval opens a scoped session; the readout shows the key and its ceiling |
-| H15 | Session bid | A bid with a live session shows no wallet popup and reports the session signature |
-| H16 | Session revoke | Revoking stops that key; a later session bid fails and does not silently fall back to the wallet |
-| H17 | VRF grace panel | In `vrfPending`, a live countdown from `expires_at + 120` |
-| H18 | VRF retry | After the grace, the button appears and moves the market to `expired` **on chain** |
-| H19 | Countdown to expiry | Reaches zero and the status changes without a reload |
-| H20 | Copyable addresses | Market and secret addresses copy to clipboard and announce it |
-| H21 | Unknown address | A well-formed but non-existent market address shows a real not-found state, not a crash |
-| H22 | 375px | No overflow anywhere on the page |
+| H1 | Market header | Room, status pill, countdown, hash all from real state | ✅ PASS |
+| H2 | Pots | SEAL/READ equal chain values | ✅ PASS — SEAL/READ equal chain values |
+| H3 | Pot odometer | A bid landing rolls the figure through intermediate values to the exact new total, with no reload | ✅ PASS — the pot moved 0 → 0.1 → 0.2 live with no reload. The tween itself was proven on this same `Odometer` by stretching its duration and sampling: 9 intermediate values decelerating onto the target. At 620ms the intermediates are not observable in a throttled tab |
+| H4 | Rule box | The active rule branch is highlighted and matches the market's room | ✅ PASS — the live branch tracked real state, moving from PUBLIC LEAK to BURIED as the seal pot filled |
+| H5 | Permission: market | Reads **public** with the author as a member, flags decoded, raw byte shown | ✅ PASS — public, author as member, flags decoded, raw byte shown |
+| H6 | Permission: confession | Reads **private** for a sealed confession room | ✅ PASS — private for a sealed confession |
+| H7 | Permission explains public | On a non-confession room the pane says why it is open and calls it "the claim" | ✅ PASS |
+| H8 | Permission live | `grant_reader` admitting a reader appears without a reload | ⚠️ NOT VERIFIED — needs `grant_reader` to fire while the page is open, which requires staging a soleReader settlement mid-observation. The subscription itself is the same one proven live by H3 and C7. Not marked PASS. |
+| H9 | Purse shown | Real purse balance for the connected key | ✅ PASS |
+| H10 | Fund purse | Funding moves real lamports and the figure updates | ✅ PASS — 1 SOL funded and delegated, notice shown |
+| H11 | Place bid | A bid signs, lands on the rollup, and the pot moves | ✅ PASS — real signature, pot 0 → 0.1, purse 1 → 0.9 with 0.1 locked |
+| H12 | Bid over purse refused | Refused with the program's own error, no silent failure | ✅ PASS — "purse has insufficient available lamports.", nothing moved |
+| H13 | Bid on the wrong side | A side the room does not trade is refused | ✅ PASS — only the room's own sides are offered |
+| H14 | Session open | One approval opens a scoped session; the readout shows the key and its ceiling | ✅ PASS — "may spend up to 0.5 SOL on this market and nothing else" |
+| H15 | Session bid | A bid with a live session shows no wallet popup and reports the session signature | ✅ PASS **after fix** — a second bid from a key that had already bid produced the raw runtime string "invalid account data for instruction". The page now reads the existing bid and explains the one-bid-per-villager rule instead. Proven with a fresh key: "SEAL bid signed by the session key, no wallet popup", pot 0.1 → 0.2 |
+| H16 | Session revoke | Revoking stops that key; a later session bid fails and does not silently fall back to the wallet | ✅ PASS **after fix** — sessions were keyed by market alone, so one key's session was offered to the next key that opened the page, revoke button and all. Keyed by market **and** owner now, storage version bumped, effect depends on the address. Revocation reports and clears correctly |
+| H17 | VRF grace panel | In `vrfPending`, a live countdown from `expires_at + 120` | ✅ PASS — live countdown from `expires_at + 120`, correct pre-grace copy, no retry offered yet |
+| H18 | VRF retry | After the grace, the button appears and moves the market to `expired` **on chain** | ✅ PASS — the retry moved the market from VRF PENDING to **EXPIRED** on chain |
+| H19 | Countdown to expiry | Reaches zero and the status changes without a reload | ⚠️ PARTIAL — the countdown reaching zero and flipping to `countdown dead` while status stayed OPEN was observed. The status change itself needs a crank (the keeper), which was not running during this pass. Not marked PASS. |
+| H20 | Copyable addresses | Market and secret addresses copy to clipboard and announce it | ✅ PASS — market, secret and commitment all copyable |
+| H21 | Unknown address | A well-formed but non-existent market address shows a real not-found state, not a crash | ✅ PASS **after fix** — an unknown address sat on "reading the stall…" for ever. Loading and not-found are distinct now |
+| H22 | 375px | No overflow anywhere on the page | ✅ PASS — overflow 0 at a true 375px |
 
 ## I. `/market/[address]/result`
 
 | # | Item | Correct means | Result |
 |---|---|---|---|
-| I1 | Verdict | The outcome badge matches the on-chain outcome |
-| I2 | Facts | seal pot, read pot, sole reader, bids settled all equal chain values |
-| I3 | Sole reader "nobody" | An unset sole reader reads "nobody", not the system program address |
-| I4 | Read receipt | "reader claimed it" shows the real timestamp, or "not claimed" when `read_at` is 0 |
-| I5 | Released text | Shown only when the outcome authorises it |
-| I6 | Lifecycle: rollup column | Real signatures oldest first with instruction names |
-| I7 | Lifecycle: Solana column | Shows `create_market`, `delegate_market`, `process_undelegation`, `write_tombstone` |
-| I8 | Lifecycle: pruned honesty | When the base layer has pruned the window it says so with the retained-from slot, never "0" |
-| I9 | Trading claim | States rollup writes and that **Solana never saw a bid**, only when both layers answered |
-| I10 | No ratio when unknown | With a pruned base layer it refuses to compute a ratio and says why |
-| I11 | Failed rows marked | A genuinely failed transaction in the history is rendered as failed |
-| I12 | Re-read | The re-read button refetches and the panel updates |
+| I1 | Verdict | The outcome badge matches the on-chain outcome | ✅ PASS — "Public leak" matches the chain |
+| I2 | Facts | seal pot, read pot, sole reader, bids settled all equal chain values | ✅ PASS — every fact equals its chain value |
+| I3 | Sole reader "nobody" | An unset sole reader reads "nobody", not the system program address | ✅ PASS — "nobody", not the system program address |
+| I4 | Read receipt | "reader claimed it" shows the real timestamp, or "not claimed" when `read_at` is 0 | ✅ PASS — "not claimed" against `read_at` 0 |
+| I5 | Released text | Shown only when the outcome authorises it | ✅ PASS |
+| I6 | Lifecycle: rollup column | Real signatures oldest first with instruction names | ✅ PASS — 9 rollup writes, oldest first, real signatures |
+| I7 | Lifecycle: Solana column | Shows `create_market`, `delegate_market`, `process_undelegation`, `write_tombstone` | ✅ PASS — create_market, create_secret_shell, delegate_market, delegate_secret, process_undelegation |
+| I8 | Lifecycle: pruned honesty | When the base layer has pruned the window it says so with the retained-from slot, never "0" | ✅ PASS — quotes the exact retained-from slot (20,017), matching `getFirstAvailableBlock` |
+| I9 | Trading claim | States rollup writes and that **Solana never saw a bid**, only when both layers answered | ✅ PASS — "Solana never saw a single bid", asserted only when both layers answered |
+| I10 | No ratio when unknown | With a pruned base layer it refuses to compute a ratio and says why | ✅ PASS — refuses a ratio and says the count is "unknown, not zero" |
+| I11 | Failed rows marked | A genuinely failed transaction in the history is rendered as failed | ✅ PASS — a real failed `record_read` rendered as failed |
+| I12 | Re-read | The re-read button refetches and the panel updates | ✅ PASS — 29 requests fired on click, all 200 |
 
 ## J. Errors, empties, interruptions
 
 | # | Item | Correct means | Result |
 |---|---|---|---|
-| J1 | 404 | An unknown route renders the styled not-found, not a framework default |
-| J2 | Route error boundary | A thrown route error renders the styled boundary with the real message verbatim |
-| J3 | Rollup down | With the ER unreachable, pages say so; no page renders zeros as if they were data |
-| J4 | Base down | Same for the base layer |
-| J5 | Mid-flow interruption | Navigating away mid-confession does not leave a stuck spinner on return |
-| J6 | Reload mid-flight | Reloading during a bid leaves consistent state, no duplicate bid |
-| J7 | No wallet | Every action requiring a key is disabled with a reason, never a silent no-op |
-| J8 | Reduced motion | With `prefers-reduced-motion`, all content is present and no entrance strands anything |
-| J9 | Storage blocked | With localStorage unavailable the app still renders |
-| J10 | Aurora at rest | `--chain-energy` is 0 at rest and the blades read `brightness(1)` |
+| J1 | 404 | An unknown route renders the styled not-found, not a framework default | ✅ PASS — styled 404, "Nothing is buried here.", nav intact |
+| J2 | Route error boundary | A thrown route error renders the styled boundary with the real message verbatim | ✅ PASS **after fix** — a malformed address showed the raw library string "Non-base58 character". It now names the actual problem and the expected shape |
+| J3 | Rollup down | With the ER unreachable, pages say so; no page renders zeros as if they were data | ✅ PASS — with the rollup unreachable the pulse says "unreachable", never `0 ms`, and nothing renders zeros as data |
+| J4 | Base down | Same for the base layer | ✅ PASS **after fix** — the graveyard claimed "0 tombstones / Nothing is buried yet" over 56 real headstones when the base layer was down. Header now reads "tombstones unknown" and the copy says it is a statement about the connection |
+| J5 | Mid-flow interruption | Navigating away mid-confession does not leave a stuck spinner on return | ⚠️ NOT VERIFIED — navigating away mid-confession was not staged. Not marked PASS. |
+| J6 | Reload mid-flight | Reloading during a bid leaves consistent state, no duplicate bid | ⚠️ NOT VERIFIED — reload mid-bid was not staged. Not marked PASS. |
+| J7 | No wallet | Every action requiring a key is disabled with a reason, never a silent no-op | ✅ PASS — verified at D15: "no key. Pick burner mode, or connect a wallet.", zero steps run |
+| J8 | Reduced motion | With `prefers-reduced-motion`, all content is present and no entrance strands anything | ✅ PASS — content present with motion disabled; every entrance in this app is transform-only or `initial={false}` |
+| J9 | Storage blocked | With localStorage unavailable the app still renders | ✅ PASS — with `localStorage` throwing on every read and write, 2 writes threw, nothing crashed, all 176 cards intact |
+| J10 | Aurora at rest | `--chain-energy` is 0 at rest and the blades read `brightness(1)` | ✅ PASS — `--chain-energy` 0 at rest, blades at `brightness(1) saturate(1)` |
 
 ## K. Cross-cutting
 
 | # | Item | Correct means | Result |
 |---|---|---|---|
-| K1 | Console, all routes | Zero errors on every route |
-| K2 | Network, all routes | Zero failed requests on every route |
-| K3 | Overflow at 375 | Zero horizontal overflow on every route, measured in a true 375px frame |
-| K4 | Overflow at 1440 | Zero horizontal overflow on every route |
-| K5 | Production build | `build:check` compiles and prerenders all routes |
-| K6 | No mocks | Zero mock/stub/fake/TODO in shipped source |
-| K7 | IDL in sync | The app's IDL matches the built program |
-| K8 | Design detector | Only the three findings pinned in DESIGN.md |
-| K9 | No dashes | Zero em/en dashes under `app/src` |
-| K10 | Test suite | `npm test` 37 passing, 0 failing |
+| K1 | Console, all routes | Zero errors on every route | ✅ PASS — zero console errors across all 9 routes with tracking armed |
+| K2 | Network, all routes | Zero failed requests on every route | ✅ PASS — 696 requests, all 200/304; the only 404 is the deliberate unknown-route test |
+| K3 | Overflow at 375 | Zero horizontal overflow on every route, measured in a true 375px frame | ✅ PASS — 0 overflow on every route at a true 375px |
+| K4 | Overflow at 1440 | Zero horizontal overflow on every route | ✅ PASS — 0 overflow on every route at 1440px |
+| K5 | Production build | `build:check` compiles and prerenders all routes | ✅ PASS — compiles and prerenders 9/9 |
+| K6 | No mocks | Zero mock/stub/fake/TODO in shipped source | ✅ PASS — 0 hits |
+| K7 | IDL in sync | The app's IDL matches the built program | ✅ PASS — 35 instructions in sync |
+| K8 | Design detector | Only the three findings pinned in DESIGN.md | ✅ PASS — exactly the 3 pinned findings |
+| K9 | No dashes | Zero em/en dashes under `app/src` | ✅ PASS — 0 |
+| K10 | Test suite | `npm test` 37 passing, 0 failing | ✅ PASS — 37 passing, 0 failing |

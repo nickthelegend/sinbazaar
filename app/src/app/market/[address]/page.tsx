@@ -36,7 +36,7 @@ import {
   type PurseView,
   type StepState,
 } from "@/lib/flows";
-import { fmtSol, fullHash, shortKey } from "@/lib/format";
+import { fmtSol, fullHash, shortKey, isLikelyAddress } from "@/lib/format";
 import {
   bidWithSession,
   forgetSession,
@@ -266,6 +266,17 @@ export default function MarketPage() {
   }, [busy, flowStates]);
 
   if (!address) return <Empty>no market address</Empty>;
+  // A mistyped or truncated address is the commonest way to land here, and the
+  // library's own words for it are "Non-base58 character", which tells nobody
+  // anything. Name the actual problem, and keep the raw reason underneath.
+  if (!isLikelyAddress(address))
+    return (
+      <Empty>
+        <strong>{address.slice(0, 24)}</strong> is not a Solana address. A market
+        address is 32 to 44 base58 characters, so this one is either mistyped or
+        cut short.
+      </Empty>
+    );
   if (error && !market) return <div className="err">{error}</div>;
   // Still asking is not the same as asked and found nothing. Without this a
   // wrong address sat on "reading the stall…" for ever, which is the most

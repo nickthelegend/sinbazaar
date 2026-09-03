@@ -124,3 +124,14 @@ export function fmtMoment(unix: BN | number | undefined | null): string | null {
 export function byteLen(s: string): number {
   return new TextEncoder().encode(s).length;
 }
+
+/**
+ * Does this look like a Solana address at all?
+ *
+ * Cheap shape check, not a checksum: 32 to 44 base58 characters. Enough to tell
+ * a mistyped or truncated address from a real one before `new PublicKey` throws
+ * "Non-base58 character" at somebody who pasted badly.
+ */
+export function isLikelyAddress(value: string): boolean {
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value);
+}
