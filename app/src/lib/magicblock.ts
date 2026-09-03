@@ -99,6 +99,42 @@ export interface PermissionView {
   /** The flag that decides whether an unauthorised RPC read is answered at all. */
   isPrivate: boolean;
   memberKeys: string[];
+  /** Per-member privileges, in the same order as `memberKeys`. */
+  members: PermissionMember[];
+}
+
+/** One member of an ephemeral permission, with its flags byte decoded. */
+export interface PermissionMember {
+  pubkey: string;
+  /** Raw flags byte, kept so the UI can show the number it decoded. */
+  flags: number;
+  /** Can change the permission itself. */
+  authority: boolean;
+  /** Can see this account's transaction logs. */
+  txLogs: boolean;
+  /** Can see balance changes. */
+  txBalances: boolean;
+  /** Can see the transaction message. */
+  txMessage: boolean;
+}
+
+// Straight from the SDK's member.rs. Kept as literals rather than imported
+// because this file parses the account by hand and must not drift silently if
+// the crate is not present in the browser bundle.
+const AUTHORITY_FLAG = 1 << 0;
+const TX_LOGS_FLAG = 1 << 1;
+const TX_BALANCES_FLAG = 1 << 2;
+const TX_MESSAGE_FLAG = 1 << 3;
+
+function decodeMember(flags: number, pubkey: string): PermissionMember {
+  return {
+    pubkey,
+    flags,
+    authority: (flags & AUTHORITY_FLAG) !== 0,
+    txLogs: (flags & TX_LOGS_FLAG) !== 0,
+    txBalances: (flags & TX_BALANCES_FLAG) !== 0,
+    txMessage: (flags & TX_MESSAGE_FLAG) !== 0,
+  };
 }
 
 /**
@@ -118,13 +154,18 @@ export async function readPermission(
   programId: PublicKey
 ): Promise<PermissionView> {
   const info = await connection.getAccountInfo(permissionPdaFromAccount(account));
-  if (!info) return { exists: false, isPrivate: false, memberKeys: [] };
+  if (!info) return { exists: false, isPrivate: false, memberKeys: [], members: [] };
   const d = info.data;
   const memberKeys: string[] = [];
+  const members: PermissionMember[] = [];
   for (let off = 35; off + 33 <= d.length; off += 33) {
     const pubkey = new PublicKey(d.subarray(off + 1, off + 33)).toBase58();
     if (pubkey === programId.toBase58()) continue; // added by the permission program
     memberKeys.push(pubkey);
+    // Byte 0 of each 33-byte record is the flags this member was granted. It
+    // was being skipped, which is why the interface could say who was admitted
+    // but never what they were admitted to do.
+    members.push(decodeMember(d[off], pubkey));
   }
-  return { exists: true, isPrivate: d[34] === 1, memberKeys };
+  return { exists: true, isPrivate: d[34] === 1, memberKeys, members };
 }

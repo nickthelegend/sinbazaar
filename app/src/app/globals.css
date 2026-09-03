@@ -2734,3 +2734,78 @@ code {
   .life-steps li { grid-template-columns: minmax(0, 1fr) auto; }
   .life-slot { display: none; }
 }
+
+/* ------------------------------------------------- permission inspector
+   The member list is the privacy mechanism, so it is typeset as evidence:
+   mono keys, decoded privileges, and the raw flags byte beside them so the
+   decoding can be checked rather than trusted. */
+.perm { display: grid; gap: 9px; }
+.perm-head { display: flex; align-items: center; gap: 10px; }
+.perm-label {
+  font-size: 11.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.pill.perm-private { background: var(--crimson-wash); color: var(--crimson); }
+.pill.perm-public { background: var(--amber-wash); color: var(--amber); }
+.perm-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+.perm-members { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.perm-members li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 7px 0;
+  border-top: 1px solid var(--hair);
+}
+.perm-members li:first-child { border-top: 0; }
+.perm-members code {
+  font-size: 12.5px;
+  color: #fff;
+}
+.perm-you {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: var(--amber-wash);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.perm-flags { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.perm-flag {
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--coral);
+  border: 1px solid rgba(255, 107, 74, 0.32);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.perm-flag.none { color: var(--dim); border-color: var(--hair); }
+.perm-raw { font-size: 11px; color: var(--dim); }
+
+@media (max-width: 560px) {
+  .perm-flags { margin-left: 0; width: 100%; }
+}
+
+/* Two member lists side by side: the public market and the private confession,
+   so the difference between them is a comparison rather than a claim. */
+.perm-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hair);
+}
+@media (max-width: 720px) { .perm-pair { grid-template-columns: 1fr; } }

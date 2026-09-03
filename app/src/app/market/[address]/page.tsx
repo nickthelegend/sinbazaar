@@ -15,6 +15,7 @@ import { BN } from "@coral-xyz/anchor";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { BookBar, Countdown, Empty, OutcomeBadge, PotBar, StatusPill, StepList } from "@/components/Bits";
 import { useVillageWallet } from "@/components/Providers";
+import { PermissionInspector } from "@/components/Permission";
 import { RuleBox } from "@/components/RuleBox";
 import { useMarket } from "@/hooks/useMarkets";
 import { useNow } from "@/hooks/useNow";
@@ -402,6 +403,28 @@ export default function MarketPage() {
                 transaction. Lamports move purse PDA → market PDA inside the rollup; the side and
                 the amount sit behind a private permission listing only you.
               </p>
+
+                {/* The claim above is enforced by these two member lists. They
+                    are read from the rollup and re-read as membership changes,
+                    so the reader being admitted is visible when it happens. */}
+                <div className="perm-pair">
+                  <PermissionInspector
+                    account={market.address}
+                    label="the market"
+                    you={wallet.address}
+                    explainPublic="The market is meant to be public. The hash, the pots and the timer are how the village plays."
+                  />
+                  <PermissionInspector
+                    account={secretPda(new PublicKey(market.address)).toBase58()}
+                    label={room.confessionMarket ? "the confession" : "the claim"}
+                    you={wallet.address}
+                    explainPublic={
+                      room.confessionMarket
+                        ? "This confession is not sealed yet. Until seal_secret runs there is nothing to hide."
+                        : `${room.name} trades a rumour the village can already read, so nothing here is hidden. Privacy is a property of the confession rooms, not of every room.`
+                    }
+                  />
+                </div>
             </div>
           </div>
 
