@@ -218,8 +218,13 @@ export async function fetchTombstones(): Promise<TombstoneView[]> {
         } satisfies TombstoneView;
       })
       .sort((a: TombstoneView, b: TombstoneView) => b.buriedAt - a.buriedAt);
-  } catch {
-    return [];
+  } catch (err) {
+    // Rethrow. Returning [] here told the graveyard there were no tombstones
+    // when the truth was that the base layer could not be reached, and the page
+    // then said "Nothing is buried yet" about 56 real headstones. An unreadable
+    // layer is not an empty one, and the feed already has an `error` channel
+    // built to carry exactly this.
+    throw err instanceof Error ? err : new Error(String(err));
   }
 }
 

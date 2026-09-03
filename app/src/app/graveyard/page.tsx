@@ -116,7 +116,12 @@ export default function GraveyardPage() {
 
       <div className="actions" style={{ marginBottom: 18 }}>
         <span className="muted small">
-          {tombs.length} {tombs.length === 1 ? "tombstone" : "tombstones"}
+          {/* A count is only a count when the layer answered. With the base
+              layer unreachable this used to read "0 tombstones" over 56 real
+              headstones. */}
+          {error && tombs.length === 0
+            ? "tombstones unknown"
+            : `${tombs.length} ${tombs.length === 1 ? "tombstone" : "tombstones"}`}
         </span>
         <span style={{ flex: 1 }} />
         <button type="button" className="chip" onClick={() => void reload()}>
@@ -129,6 +134,12 @@ export default function GraveyardPage() {
       {tombs.length === 0 ? (
         loading ? (
           <CardSkeleton count={3} />
+        ) : error ? (
+          <Empty>
+            The base layer did not answer, so the graveyard cannot be read. This
+            says nothing about how many confessions are buried in it; the error
+            above is the reason, not the verdict.
+          </Empty>
         ) : (
           <Empty>
             Nothing is buried yet. Take a market to zero and it will end up here.{" "}

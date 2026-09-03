@@ -69,6 +69,9 @@ export function LayerRace() {
     });
   }, [wallet.signer, state, stopClock]);
 
+  /** True only when the clock is showing a number that `ms` belongs to. */
+  const hasUnit = (lap: Lap | null) => !(lap?.done && lap.ms === null);
+
   const clock = (lap: Lap | null) => {
     if (lap?.done && lap.ms !== null) return lap.ms.toLocaleString();
     if (lap?.done) return "failed";
@@ -112,7 +115,9 @@ export function LayerRace() {
               </span>
               <span className="race-clock">
                 {clock(lap)}
-                <i>ms</i>
+                {/* The unit belongs to a number. A failed lap reads "failed",
+                    and appending ms to it produced "failedms". */}
+                {hasUnit(lap) ? <i>ms</i> : null}
               </span>
               {lap?.error ? (
                 <span className="race-err">{lap.error.slice(0, 90)}</span>
