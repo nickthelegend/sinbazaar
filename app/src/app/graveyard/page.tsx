@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { CardSkeleton, Empty, OutcomeBadge, Redaction } from "@/components/Bits";
 import { useTombstones } from "@/hooks/useMarkets";
 import { explorerUrl } from "@/lib/config";
-import { fmtSol, fullHash, OUTCOME_LABEL, revealsText, shortHash, shortKey } from "@/lib/format";
+import { fmtMoment, fmtSol, fullHash, OUTCOME_LABEL, revealsText, shortHash, shortKey } from "@/lib/format";
 import { roomOf } from "@/lib/rooms";
 
 /**
@@ -172,7 +172,14 @@ export default function GraveyardPage() {
                     {tomb.outcome === "buried"
                       ? "Someone paid for the silence. The body never left the rollup."
                       : tomb.outcome === "soleReader"
-                        ? `One key was admitted: ${shortKey(tomb.soleReader, 5)}. The village got the hash.`
+                        ? `One key was admitted: ${shortKey(tomb.soleReader, 5)}. The village got the hash.${
+                            // Only ever appended when the reader actually signed
+                            // for it. A silent headstone means they never came
+                            // back, which is its own ending and not a gap.
+                            tomb.readAt
+                              ? ` They came back for it on ${fmtMoment(tomb.readAt)}.`
+                              : " They never came back for it."
+                          }`
                         : `${OUTCOME_LABEL[tomb.outcome] ?? tomb.outcome}, no text was authorised.`}
                     </p>
                   </>

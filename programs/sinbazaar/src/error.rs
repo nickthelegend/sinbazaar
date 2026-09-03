@@ -74,4 +74,8 @@ pub enum SinError {
     NothingToClaim,
     #[msg("market still holds escrowed lamports")]
     EscrowNotEmpty,
+    // Appended rather than inserted: Anchor numbers these by position, so a new
+    // variant in the middle would silently renumber every code after it.
+    #[msg("caller is not the reader this market selected")]
+    NotReader,
 }

@@ -59,8 +59,8 @@ proves the MagicBlock primitives**. So winning is narrower than done:
 
 | | |
 |---|---|
-| Program | Anchor, **34 instructions**, 6 accounts, 34 error codes |
-| Tests | **32 passing, 0 failing** against a live local cluster |
+| Program | Anchor, **35 instructions**, 6 accounts, 35 error codes |
+| Tests | **37 passing, 0 failing** against a live local cluster |
 | Privacy proof | **11/11 PASS** locally, both refusals and the control |
 | Web app | 8 routes, production build clean, 0 console errors |
 | Browser test plan | **135/135 PASS**, 18 defects found and fixed |
@@ -103,7 +103,7 @@ both directions.
 | 1.2 | ASSUMPTIONS §5 residual. | **DONE** — rewritten. The gate is real, so the reader-identity exposure is closed. What survives is milder and now stated: `Inherited` draws against `bid_count`, which counts unfunded bids, so a draw can land on one, be refused for being unfunded, and select **nobody**. Safe failure, but not what the room advertises. |
 | 1.3 | Re-read ASSUMPTIONS against the program. | **DONE** — §5 rewritten, and the "what we would do next" list corrected: it still carried the shipped `bid.funded` fix as item 1. Every remaining item re-verified in the source: `retry_vrf` is still an unbounded retry with no attempt ceiling, `caller_seed` is still `[client_seed; 32]` taken from the caller. |
 | 1.4 | Defect ordering. | **DONE** — 17 and 18 swapped into order. |
-| 1.5 | Audit every number in prose. | **DONE** — ground truth at audit time was 32 instructions, 34 errors, 25 rooms with 3 live, and 19 + 13 + 1 tests across the three files. Fixed: README instruction count, and `docs/TEST-PLAN.md` which said edges.ts had 12 tests (it has 13 since `commit_market` was covered) and claimed 9/9 on the devnet TEE where it is now 11 checks pending the upgrade. README's "22 rooms disabled" and ASSUMPTIONS' "Phase-7 rooms" were checked and are correct. The count moved to **34** later in this same run when task 4.2 added `open_tombstone` and `seal_tombstone`; every prose claim was updated with it, and the landing page needed no change because it reads the number out of the IDL. |
+| 1.5 | Audit every number in prose. | **DONE** — ground truth at audit time was 32 instructions, 34 errors, 25 rooms with 3 live, and 19 + 13 + 1 tests across the three files. Fixed: README instruction count, and `docs/TEST-PLAN.md` which said edges.ts had 12 tests (it has 13 since `commit_market` was covered) and claimed 9/9 on the devnet TEE where it is now 11 checks pending the upgrade. README's "22 rooms disabled" and ASSUMPTIONS' "Phase-7 rooms" were checked and are correct. The counts moved twice later in this same run: to 34 instructions when 4.2 added `open_tombstone` and `seal_tombstone`, then to **35 instructions, 35 errors and 37 tests** when 4.4 added `record_read`, `NotReader` and `tests/read-receipt.ts`. Every prose claim was updated with each move, and the landing page needed no edit either time because it reads both counts out of the IDL. |
 
 ---
 
@@ -151,7 +151,7 @@ demo. Take these only in order, and only if there is genuinely time.
 | 4.1 | **Idea 6, rollup activity strip.** A live ticker of ER transactions as they land, with signatures. | **BUILT, VERIFIED, UNCOMMITTED.** `logsSubscribe` was probed against the ephemeral validator before any UI was written: it accepts a `mentions` filter and delivers real signatures with Anchor's `Instruction:` lines. New: `subscribeLogs` in `lib/live.ts`, `hooks/useActivity.ts`, `components/Activity.tsx`, `explorerTxUrl` in `lib/config.ts`, `.act*` styles, mounted under the pulse row. Verified live against demo traffic: real signatures, snake_case names, the multi-instruction case rendering as `place_bid + fund_bid`, ages ticking, explorer links pointed at the rollup endpoint. Zero console errors, zero overflow at 1440 and at a true 375. **One defect found and fixed during verification** (see G12). Not yet committed: the boot volume filled and `git` cannot run. |
 | 4.2 | **Idea 5, Magic Actions for the tombstone.** | **DONE, PROVEN.** `finalize_market` now attaches a `CallHandler` to the intent bundle as a **post-undelegate** action, so Solana learns the verdict because the rollup scheduled it and not because a client stayed awake. Post-undelegate rather than post-commit because the action writes `market.tombstoned`, and until undelegation lands the market is still owned by the delegation program. Two new instructions: `seal_tombstone` (`#[action]`, no signer but the injected escrow) and `open_tombstone`, which allocates the headstone in advance because an action arrives with an escrow, and an escrow pays fees, not rent. `open_tombstone` proves the market by PDA derivation instead of deserializing it, since the account is owned by the delegation program while delegated. `write_tombstone` and `seal_tombstone` share one `carve_tombstone` so the two headstones cannot drift. Proof: `npm run prove:action`. |
 | 4.3 | **Idea 12, per-transaction receipt drawer.** | **DONE, VERIFIED.** Each strip row opens a receipt fetched from the rollup with `getTransaction`: layer, slot, compute units consumed, fee, the full signature and the Anchor instruction lines. Two deliberate departures from the idea as written. **No latency**, because these transactions were observed rather than sent, so there is no local start time and any number here would be measuring this browser's websocket rather than the chain; the pulse row already shows a real round trip. And a missing figure reads **"not reported"**, never 0, since 0 compute units is itself a real value. Opening a receipt **freezes the ticker** ("paused while you read") so the row cannot slide out from under the reader, and closing it resumes. Verified at 375px and 1440px in iframes with real layout: overflow 0 both, drawer opens on mobile, zero console errors, real figures (47,137 CU, fee 0). |
-| 4.4 | **Idea 16, read receipt.** Record when the sole reader first opened the secret. Cheap, and adds real drama to the result page. | **NOT STARTED** |
+| 4.4 | **Idea 16, read receipt.** | **DONE, TESTED.** `record_read` lets the selected reader put the moment on the record; `Market` and `Tombstone` both gained `read_at`, so it rides the commit onto the permanent L1 headstone. **It is not detection and nothing here says it is:** a chain cannot observe an RPC read, so this is the reader signing a claim. The result page renders "reader claimed it", the graveyard epitaph reads "They came back for it on ..." or "They never came back for it", and 0 renders as "not claimed" rather than as 1 January 1970. Only the reader can record it (`NotReader`, appended to the enum so existing error numbers did not shift), and it never moves once set. `tests/read-receipt.ts`, 5 tests, all passing. |
 | 4.5 | **Idea 14, Mirror Confession as a fourth live room.** The only enumerated room whose rule is genuinely novel. Costs a program change and a redeploy, so it is blocked behind Phase 0 and probably not worth it. | **NOT STARTED** |
 | 4.6 | **Idea 15, eSPL escrow.** Explicitly declined in IDEAS: it swaps a working money path for a riskier one immediately before a demo. Do not take this. | **DECLINED** |
 
@@ -164,7 +164,7 @@ after any change, and how to check.
 
 | # | Task | Status |
 |---|---|---|
-| 5.1 | `npm test` — 32 passing against a live local cluster. | DONE |
+| 5.1 | `npm test` — **37 passing, 0 failing** against a live local cluster, re-run after every program change in this run. | DONE |
 | 5.2 | `scripts/prove-privacy.ts` locally — 11/11 including both refusals and the control. | DONE |
 | 5.3 | `docs/BROWSER-TEST-PLAN.md` — 135/135 in a real browser, production build. | DONE |
 | 5.4 | Zero mocks, stubs, fakes, placeholders or TODOs in shipped code. Re-verify with the grep in G7. | DONE |
@@ -239,6 +239,31 @@ It was stale once already (passing a `session` account to `place_bid` and a
 repaired, but has not been executed since the last program change. It is the
 one script in the repo with a known history of drifting out of sync.
 
+### G14 — The action was scheduled even when it could not run · closed
+
+Found in the validator logs while chasing an unrelated failure, not by a test.
+
+4.2's first version attached the `seal_tombstone` action to **every**
+`finalize_market`. Almost no caller has a funded escrow or a pre-opened
+headstone, so almost every action was unexecutable. The rollup did not surface
+this as a failure: it **patched the intent**, silently dropped the action, and
+committed the rest. The suite stayed green and the demo kept working, while the
+validator log filled with `custom program error: 0xbc4`, `AccountNotInitialized`,
+on markets that had finalized perfectly.
+
+That is worse than a visible break. The graceful degradation was the validator's,
+not ours, and it hid the fact that we were putting work into every intent bundle
+that was guaranteed to fail.
+
+**Closed by** making the action opt-in: `FinalizeMarket` takes an
+`Option<UncheckedAccount>` for the tombstone, and the action is attached only
+when a headstone is actually passed. Callers who want the rollup to carve it
+pass one; everyone else finalizes exactly as before and carves with
+`write_tombstone`. Verified on a freshly wiped stack: the demo runs green end to
+end and the stack log contains **zero** patched intents and zero `0xbc4`, while
+`npm run prove:action` still proves the action carves the headstone with a
+transaction we did not sign.
+
 ### G13 — `npm test` ran a spec that says not to run it · closed
 
 `tests/vrf-stall.ts` opens with "this spec is NOT part of the normal suite" and
@@ -256,7 +281,7 @@ npm test              # 32 passing, 0 failing
 npm run test:vrf-stall  # the one spec that needs a silent oracle, ~2 min
 ```
 
-Re-run after the change and after 4.2's program change: **32 passing, 0 failing**.
+Re-run after the change and after 4.2's program change: 32 passing, 0 failing. After 4.4 added `tests/read-receipt.ts`: **37 passing, 0 failing**.
 
 ### G12 — Motion owned removal, and the list grew without bound · closed
 

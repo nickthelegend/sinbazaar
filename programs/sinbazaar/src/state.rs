@@ -175,6 +175,13 @@ pub struct Market {
     /// Whisper IPO attested result: 0 unresolved, 1 YES, 2 NO.
     pub rumor_result: u8,
     pub tombstoned: bool,
+    /// When the sole reader said they opened the confession. 0 until they do.
+    ///
+    /// Self-attested, and it has to be: a chain cannot observe an RPC read. The
+    /// reader signs `record_read` to put the moment on the record, so this is
+    /// evidence that they claimed the secret, not proof that bytes were fetched.
+    /// Every surface that shows it must say so.
+    pub read_at: i64,
     /// Reveal buffer. Stays all-zero unless `outcome.reveals_text()`. Filled on the
     /// ER at finalize time by copying out of the private `Secret`, immediately
     /// before the market is committed to L1 — so plaintext reaches the base layer
@@ -207,6 +214,7 @@ impl Market {
         + 8      // author_payout
         + 1      // rumor_result
         + 1      // tombstoned
+        + 8      // read_at
         + 2 + MAX_TOMB_BODY // revealed_len, revealed
         + 32     // revealed_salt
         + 1; // bump
@@ -327,6 +335,9 @@ pub struct Tombstone {
     pub sole_reader: Pubkey,
     pub randomness: u64,
     pub buried_at: i64,
+    /// Copied from the market. 0 means the reader never claimed it, which for a
+    /// buried confession is the normal and expected case.
+    pub read_at: i64,
     pub revealed_len: u16,
     pub revealed: [u8; MAX_TOMB_BODY],
     /// Present only for outcomes that publish text, so anyone can verify
@@ -337,5 +348,5 @@ pub struct Tombstone {
 
 impl Tombstone {
     pub const LEN: usize =
-        32 + 8 + 32 + 1 + 32 + 1 + 8 + 8 + 32 + 8 + 8 + 2 + MAX_TOMB_BODY + 32 + 1;
+        32 + 8 + 32 + 1 + 32 + 1 + 8 + 8 + 32 + 8 + 8 + 8 + 2 + MAX_TOMB_BODY + 32 + 1;
 }

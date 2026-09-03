@@ -25,7 +25,7 @@ not the same claim as "the suite is green".
 | Browser items (A to J) | **96 PASS, 0 FAIL** |
 | On-chain instructions (L) | **32 PASS, 0 FAIL** |
 | Off-browser items (K) | **7 PASS, 0 FAIL** |
-| `npm test`, live cluster | **32 passing, 0 failing** |
+| `npm test`, live cluster | **37 passing, 0 failing** |
 | `scripts/prove-privacy.ts` | **11 PASS**, both refusals and the control |
 | Console errors, all six routes | **0** |
 | Failed network requests, cluster up | **0** |
@@ -145,7 +145,7 @@ Legend — **L1** base Solana · **ER** ephemeral rollup · **PER** private roll
 | B11 | Verdict table | Three rules matching the program's own outcome table | ✅ PASS |
 | B12 | Graveyard proof | One released and one withheld tombstone, both real L1 accounts | ✅ PASS |
 | B13 | Inline probe | Runs a real handshake; prints a refusal and an unfiltered control | ✅ PASS |
-| B14 | Counters | 34 instructions, 32 tests, 3 of 25 rooms, 34 error codes; instructions and errors derived from the IDL, not hardcoded. Was 32 instructions when this passed; `open_tombstone` and `seal_tombstone` were added for Magic Actions and the page reads the count from the IDL, so it followed on its own | ✅ PASS |
+| B14 | Counters | 3 of 25 rooms, and instruction and error counts read from the IDL rather than hardcoded, which is the property under test. Read 32/32/34 when this passed; now **35 instructions, 37 tests, 35 error codes** after 4.2 and 4.4, and the page followed on its own without an edit | ✅ PASS |
 | B15 | Counters without motion | Real figures still shown when the ticker never runs | ✅ PASS |
 | B16 | Close CTAs | Both navigate | ✅ PASS |
 
@@ -272,7 +272,7 @@ Legend — **L1** base Solana · **ER** ephemeral rollup · **PER** private roll
 ## L. On-chain coverage: every instruction in the deployed program
 
 The goal asks for every on-chain interaction, so this is explicit rather than
-folded into "the suite is green". All 34 instructions in the IDL, and where each
+folded into "the suite is green". All 35 instructions in the IDL, and where each
 one is actually executed against a live cluster.
 
 | # | Instruction | Exercised by | Status |

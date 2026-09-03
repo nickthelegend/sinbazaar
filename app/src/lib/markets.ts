@@ -41,6 +41,8 @@ export interface MarketView {
   escrowLamports: number;
   authorPayout: number;
   tombstoned: boolean;
+  /** When the selected reader said they opened it. 0 means they never did. */
+  readAt: number;
   revealed: string;
   /** Where this copy was read from. */
   layer: Layer;
@@ -59,6 +61,8 @@ export interface TombstoneView {
   soleReader: string;
   randomness: string;
   buriedAt: number;
+  /** Carried over from the market. 0 means the reader never claimed it. */
+  readAt: number;
   revealed: string;
   /** Published only with an authorised reveal; all-zero otherwise. */
   salt: number[];
@@ -93,6 +97,7 @@ function toMarketView(address: string, acct: any, layer: Layer): MarketView {
     escrowLamports: toNumber(acct.escrowLamports),
     authorPayout: toNumber(acct.authorPayout),
     tombstoned: !!acct.tombstoned,
+    readAt: toNumber(acct.readAt),
     revealed: decodeRevealed(acct.revealed as number[], toNumber(acct.revealedLen)),
     layer,
   };
@@ -207,6 +212,7 @@ export async function fetchTombstones(): Promise<TombstoneView[]> {
           soleReader: acct.soleReader.toBase58(),
           randomness: acct.randomness.toString(),
           buriedAt: toNumber(acct.buriedAt),
+          readAt: toNumber(acct.readAt),
           revealed: decodeRevealed(acct.revealed as number[], toNumber(acct.revealedLen)),
           salt: Array.from(acct.revealedSalt as number[]),
         } satisfies TombstoneView;

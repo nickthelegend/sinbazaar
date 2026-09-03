@@ -97,3 +97,18 @@ export function toNumber(value: BN | number | undefined | null): number {
   if (value === undefined || value === null) return 0;
   return BN.isBN(value) ? Number(value.toString()) : Number(value);
 }
+
+/**
+ * An on-chain unix timestamp as a readable local moment.
+ *
+ * Returns null for 0. A zero timestamp means the event never happened, and
+ * rendering it as 1 January 1970 would turn "never" into a date.
+ */
+export function fmtMoment(unix: BN | number | undefined | null): string | null {
+  const n = typeof unix === "number" ? unix : Number(unix ?? 0);
+  if (!n) return null;
+  return new Date(n * 1000).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "medium",
+  });
+}

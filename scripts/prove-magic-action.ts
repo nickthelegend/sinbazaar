@@ -100,7 +100,14 @@ const say = (s: string) => console.log(`    ${s}`);
   await z.erCall(
     z.authorProgramEr.methods
       .finalizeMarket(m.marketId)
-      .accountsPartial({ payer, market: m.market, secret: m.secret }),
+      // Passing the headstone is what opts this finalize into the action.
+      // Omit it and the market finalizes exactly as it always did.
+      .accountsPartial({
+        payer,
+        market: m.market,
+        secret: m.secret,
+        tombstone: tomb,
+      }),
     z.authority
   );
   ok("commit + undelegate + post-undelegate action scheduled");

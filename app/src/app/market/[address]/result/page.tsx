@@ -17,7 +17,7 @@ import { useVillageWallet } from "@/components/Providers";
 import { useMarket } from "@/hooks/useMarkets";
 import { explorerUrl, TEE_RPC } from "@/lib/config";
 import { errorText, readSecret, type SecretRead } from "@/lib/flows";
-import { fmtSol, fullHash, revealsText, shortKey } from "@/lib/format";
+import { fmtMoment, fmtSol, fullHash, revealsText, shortKey } from "@/lib/format";
 import { roomOf } from "@/lib/rooms";
 import { tombPda } from "@/lib/pdas";
 
@@ -192,6 +192,18 @@ export default function ResultPage() {
                 {market.soleReader === "11111111111111111111111111111111"
                   ? "nobody"
                   : shortKey(market.soleReader, 6)}
+              </div>
+            </div>
+            <div className="fact">
+              <div className="lbl">reader claimed it</div>
+              <div className="val">
+                {/* Stated as a claim, because that is what it is. The chain
+                    cannot watch an RPC read; the reader signs `record_read` to
+                    put the moment on the record. Anything stronger here would
+                    be describing evidence the program does not have. */}
+                {fmtMoment(market.readAt) ?? (
+                  <span className="muted">not claimed</span>
+                )}
               </div>
             </div>
             <div className="fact">
