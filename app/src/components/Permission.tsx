@@ -9,8 +9,8 @@
  * the private flag, every member, and the flags byte each member was granted,
  * decoded into the four privileges it actually encodes.
  *
- * It re-reads on the rollup subscription, so a membership change — the VRF
- * picking a reader, and `grant_reader` admitting them — is visible as it lands
+ * It re-reads on the rollup subscription, so a membership change (the VRF
+ * picking a reader, and `grant_reader` admitting them) is visible as it lands
  * rather than on the next refresh.
  *
  * The empty and missing cases are kept apart, because they mean opposite things.

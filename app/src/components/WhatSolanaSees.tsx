@@ -4,7 +4,7 @@
  * The two halves of the claim, side by side, while you are still typing.
  *
  * Left: the sentence, which never leaves the rollup. Right: everything Solana
- * will ever learn about it — thirty-two bytes of `sha256(body ‖ salt)` and a
+ * will ever learn about it: thirty-two bytes of `sha256(body ‖ salt)` and a
  * length. The lesson lands in the five seconds somebody is already spending on
  * the textarea, which is cheaper than any amount of explanation elsewhere.
  *
@@ -33,7 +33,7 @@ export function WhatSolanaSees({ body, salt }: { body: string; salt: Uint8Array 
     }
     // Caught and shown, never swallowed. The first version used a bare `void`
     // on this promise, so when it rejected the panel simply went on saying
-    // "a hash appears here as you write" forever — a component failing silently
+    // "a hash appears here as you write" forever, a component failing silently
     // while looking like it was merely waiting.
     commitmentHash(new TextEncoder().encode(text), salt)
       .then((h) => {

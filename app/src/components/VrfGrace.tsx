@@ -6,7 +6,7 @@
  * `VrfPending` is the one state in this program where nothing can proceed and
  * nobody is at fault. `settle_bid` requires `Resolved`, so until the oracle
  * answers the escrow is locked, and the interface used to render this as a
- * status pill and nothing else — indistinguishable, to a judge, from a hung app.
+ * status pill and nothing else, indistinguishable to a judge from a hung app.
  *
  * The program has always had the release valve. After `VRF_GRACE_SECS` past
  * expiry anyone may call `retry_vrf` and push the market back to `Expired` so
@@ -16,7 +16,7 @@
  *
  * The countdown refuses to guess. `useNow` starts at 0 so that the server and
  * the first client render agree, and 0 means "not measured yet" rather than
- * "the deadline has passed" — otherwise the retry would appear enabled for one
+ * "the deadline has passed". Otherwise the retry would appear enabled for one
  * frame on every single load, which is exactly the sort of momentary lie that
  * teaches people not to trust an interface.
  */
@@ -56,7 +56,7 @@ export function VrfGrace({
     setNote(null);
     try {
       const sig = await retryVrf(wallet.signer, new PublicKey(market), new BN(marketId));
-      setNote(`reopened, ${sig.slice(0, 10)}… — randomness can be requested again`);
+      setNote(`reopened, ${sig.slice(0, 10)}..., randomness can be requested again`);
       onRetried?.();
     } catch (err) {
       setNote(err instanceof Error ? err.message : String(err));

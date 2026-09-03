@@ -18,7 +18,7 @@
  *
  * Decay runs on a timeout rather than an animation frame. rAF stops dead in a
  * background tab, which would strand the aurora at full flare until the tab was
- * looked at again — bright, wrong, and pointing at a rollup event that finished
+ * looked at again: bright, wrong, and pointing at a rollup event that finished
  * minutes ago.
  */
 import { useEffect } from "react";

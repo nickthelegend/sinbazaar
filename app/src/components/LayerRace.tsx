@@ -11,7 +11,7 @@
  *     quietly flatter the slower layer and undermine the whole point.
  *   - rAF stops entirely in a background tab. Measured: a race run in an
  *     unfocused tab observed **zero** frames, so `elapsed` stayed at 0 and a
- *     lap still in flight rendered `0ms` — a running clock presenting itself
+ *     lap still in flight rendered `0ms`, a running clock presenting itself
  *     as a finished result of zero milliseconds. Intervals are throttled in a
  *     background tab rather than stopped, so the clock goes coarse instead of
  *     going false.
@@ -71,7 +71,7 @@ export function LayerRace() {
 
   const clock = (lap: Lap | null) => {
     if (lap?.done && lap.ms !== null) return lap.ms.toLocaleString();
-    if (lap?.done) return "—";
+    if (lap?.done) return "failed";
     if (state === "idle") return "0";
     // In flight. A reading we do not have yet is an ellipsis, never a zero:
     // "0 ms" beside a running lane reads as a result, and it would be a lie.
