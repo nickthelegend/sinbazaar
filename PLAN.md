@@ -103,7 +103,7 @@ both directions.
 | 1.2 | ASSUMPTIONS §5 residual. | **DONE** — rewritten. The gate is real, so the reader-identity exposure is closed. What survives is milder and now stated: `Inherited` draws against `bid_count`, which counts unfunded bids, so a draw can land on one, be refused for being unfunded, and select **nobody**. Safe failure, but not what the room advertises. |
 | 1.3 | Re-read ASSUMPTIONS against the program. | **DONE** — §5 rewritten, and the "what we would do next" list corrected: it still carried the shipped `bid.funded` fix as item 1. Every remaining item re-verified in the source: `retry_vrf` is still an unbounded retry with no attempt ceiling, `caller_seed` is still `[client_seed; 32]` taken from the caller. |
 | 1.4 | Defect ordering. | **DONE** — 17 and 18 swapped into order. |
-| 1.5 | Audit every number in prose. | **DONE** — ground truth at audit time was 32 instructions, 34 errors, 25 rooms with 3 live, and 19 + 13 + 1 tests across the three files. Fixed: README instruction count, and `docs/TEST-PLAN.md` which said edges.ts had 12 tests (it has 13 since `commit_market` was covered) and claimed 9/9 on the devnet TEE where it is now 11 checks pending the upgrade. README's "22 rooms disabled" and ASSUMPTIONS' "Phase-7 rooms" were checked and are correct. The counts moved twice later in this same run: to 34 instructions when 4.2 added `open_tombstone` and `seal_tombstone`, then to **35 instructions, 35 errors and 37 tests** when 4.4 added `record_read`, `NotReader` and `tests/read-receipt.ts`. Every prose claim was updated with each move, and the landing page needed no edit either time because it reads both counts out of the IDL. |
+| 1.5 | Audit every number in prose. | **DONE** — ground truth at audit time was 32 instructions, 34 errors, 25 rooms with 3 live, and 19 + 13 + 1 tests across the three files. Fixed: README instruction count, and `docs/TEST-PLAN.md` which said edges.ts had 12 tests (it has 13 since `commit_market` was covered) and claimed 9/9 on the devnet TEE where it is now 11 checks pending the upgrade. README's "22 rooms disabled" and ASSUMPTIONS' "Phase-7 rooms" were checked and are correct. The counts moved twice later in this same run: to 34 instructions when 4.2 added `open_tombstone` and `seal_tombstone`, then to **35 instructions, 35 errors and 37 tests** when 4.4 added `record_read`, `NotReader` and `tests/read-receipt.ts`. Every prose claim was updated with each move. The landing page derives both counts from the IDL rather than repeating them, but it reads a **copy** of the IDL that nothing was keeping in sync, so it would have gone on showing 34 until that copy was refreshed. See G15. |
 
 ---
 
@@ -171,7 +171,8 @@ after any change, and how to check.
 | 5.5 | Zero console errors and zero failed network requests on all six routes. | DONE |
 | 5.6 | WCAG AA on every text and ground pair, measured with alpha compositing. | DONE |
 | 5.7 | No horizontal overflow at a **true** 375px viewport. Measure in a 375px same-origin iframe; window presets lie. | DONE |
-| 5.8 | Design detector reports only the three findings pinned by the brief (Inter, Geist Mono, one-word gradient), all recorded in `DESIGN.md` §7. | DONE |
+| 5.8 | Design detector reports only the three findings pinned by the brief (Inter, Geist Mono, one-word gradient), all recorded in `DESIGN.md` §7. | DONE — re-run, exactly 3 findings, all pinned. |
+| 5.9 | `npm run verify:idl` — the app's copy of the IDL matches the built one. Added after G15, where a stale copy made the graveyard state the opposite of the truth. | DONE |
 
 ---
 
@@ -238,6 +239,43 @@ It was stale once already (passing a `session` account to `place_bid` and a
 `bid_permission` to `settle_bid`, neither of which exist any more) and was
 repaired, but has not been executed since the last program change. It is the
 one script in the repo with a known history of drifting out of sync.
+
+### G15 — The app read a stale copy of the IDL, and rendered a falsehood from it · closed
+
+Found while verifying 4.4's UI, by checking the chain against the page instead
+of only reading the page.
+
+The web app cannot import from `target/`, so it keeps its own copy of the IDL at
+`app/src/idl/sinbazaar.json`. Nothing kept that copy in sync and nothing checked
+it, so it sat at **34 instructions while the program had 35**.
+
+Anchor does not complain about a field its layout does not describe. It returns
+`undefined`. `toNumber(undefined)` returns 0. `read_at` of 0 means "the reader
+never came back". So the graveyard printed **"They never came back for it"** on
+three headstones whose readers demonstrably had, with the timestamps sitting on
+chain the whole time.
+
+This is the same failure this project has now hit repeatedly in different
+clothing: **an absence rendered as a value**. Not "unknown", not "cannot say" —
+a confident, specific, wrong sentence. It was invisible from inside the browser,
+because the page was perfectly self-consistent. Only comparing it against the
+chain exposed it.
+
+It also makes a claim written earlier in this very run wrong. 1.5 said the
+landing page "needed no edit because it reads the number out of the IDL". It
+reads a copy, and the copy was stale, so the counter would have kept saying 34.
+That sentence has been corrected rather than quietly left standing.
+
+**Closed by** syncing the copy and making drift loud instead of silent:
+
+```bash
+npm run build       # anchor build now syncs the copy as its last step
+npm run verify:idl  # fails, with both counts, if they differ
+```
+
+Re-verified after the fix: the graveyard prints "They came back for it on ..."
+for exactly the three tombstones that carry a non-zero `read_at` on chain, and
+"never came back" for the one that does not. The counter reads 35.
 
 ### G14 — The action was scheduled even when it could not run · closed
 

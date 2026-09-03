@@ -1409,6 +1409,38 @@
           }
         },
         {
+          "name": "tombstone",
+          "docs": [
+            "The headstone to carve, when the caller wants the rollup to do it.",
+            "",
+            "Optional on purpose. A scheduled action costs a funded escrow and an",
+            "already-allocated tombstone, and a caller who has neither still has every",
+            "right to finalize: they simply carve it themselves with `write_tombstone`",
+            "afterwards. Passing an account the action cannot use would schedule work",
+            "that is guaranteed to fail.",
+            "",
+            "action itself is executed against the fully-validated `SealTombstone`."
+          ],
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  109,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
           "name": "magic_program",
           "address": "Magic11111111111111111111111111111111111111"
         },
@@ -2780,6 +2812,71 @@
       ]
     },
     {
+      "name": "record_read",
+      "docs": [
+        "The reader puts on the record that they opened it.",
+        "",
+        "A chain cannot see an RPC read, so this is not detection: it is the sole",
+        "reader signing a statement that they claimed the secret. That distinction",
+        "is the whole honesty of the feature, and every surface that renders",
+        "`read_at` is required to phrase it as a claim rather than an observation.",
+        "",
+        "Recorded once. A reader who calls twice does not move the timestamp,",
+        "because the interesting moment is the first one and a mutable one would",
+        "be worth nothing as evidence."
+      ],
+      "discriminator": [
+        152,
+        129,
+        142,
+        16,
+        172,
+        137,
+        11,
+        202
+      ],
+      "accounts": [
+        {
+          "name": "reader",
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.village",
+                "account": "Market"
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "request_resolution_vrf",
       "docs": [
         "Ask MagicBlock VRF for the randomness that decides this market.",
@@ -3841,6 +3938,11 @@
       "code": 6033,
       "name": "EscrowNotEmpty",
       "msg": "market still holds escrowed lamports"
+    },
+    {
+      "code": 6034,
+      "name": "NotReader",
+      "msg": "caller is not the reader this market selected"
     }
   ],
   "types": [
@@ -4077,6 +4179,18 @@
           {
             "name": "tombstoned",
             "type": "bool"
+          },
+          {
+            "name": "read_at",
+            "docs": [
+              "When the sole reader said they opened the confession. 0 until they do.",
+              "",
+              "Self-attested, and it has to be: a chain cannot observe an RPC read. The",
+              "reader signs `record_read` to put the moment on the record, so this is",
+              "evidence that they claimed the secret, not proof that bytes were fetched.",
+              "Every surface that shows it must say so."
+            ],
+            "type": "i64"
           },
           {
             "name": "revealed_len",
@@ -4445,6 +4559,14 @@
           },
           {
             "name": "buried_at",
+            "type": "i64"
+          },
+          {
+            "name": "read_at",
+            "docs": [
+              "Copied from the market. 0 means the reader never claimed it, which for a",
+              "buried confession is the normal and expected case."
+            ],
             "type": "i64"
           },
           {

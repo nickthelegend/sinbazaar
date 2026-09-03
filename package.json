@@ -4,7 +4,9 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build": "anchor keys sync && anchor build",
+    "build": "anchor keys sync && anchor build && bash scripts/sync-idl.sh",
+    "sync:idl": "bash scripts/sync-idl.sh",
+    "verify:idl": "bash scripts/sync-idl.sh --check",
     "stack": "bash scripts/local-stack.sh",
     "test": ". ./scripts/local-env.sh && ts-mocha -p ./tsconfig.json -t 1000000 --ignore tests/vrf-stall.ts tests/**/*.ts",
     "test:vrf-stall": "bash scripts/test-vrf-stall.sh",
