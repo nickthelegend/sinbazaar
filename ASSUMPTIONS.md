@@ -84,19 +84,27 @@ where `!bid.funded`.
 consumes one of the eight `MAX_BIDDERS` slots — `bid_count` is incremented in `record_bid`, which the
 bid instructions call and `fund_bid` does not.
 
-It used to cost more than a slot. `read_rank` was stamped in `place_bid` from a `read_bid_count` that
-only advanced in `fund_bid`, so an unfunded READ bid took the rank the next funded READ bid would also
-take, and `is_chosen_bid` — which is not gated on `funded` — could name either of them the sole reader
-depending on settlement order. `read_rank` is now assigned in `fund_bid`, in the same breath as the
-counter it is read from. An unfunded READ bid keeps its initial `u8::MAX`, which
-`randomness % read_bid_count` can never equal, so it can no longer be drawn.
+It used to cost more than a slot, in two separate ways, and both are now closed.
 
-**What survives.** `is_chosen_bid` is still not gated on `bid.funded`, and the `Inherited` branch draws
-`bid.index` against `market.bid_count` — both of which count unfunded bids. So in a Blackmail Escrow
-that resolves `Inherited`, the body can be inherited by someone who opened a bid and never paid for it.
-The *money* is unaffected either way (an unfunded bid gets `0` and forfeits nothing, since
-`staked == 0`); the exposure is the identity of the reader. Requiring `bid.funded` in `is_chosen_bid`
-would close it, and that is not in this build.
+`read_rank` was stamped in `place_bid` from a `read_bid_count` that only advanced in `fund_bid`, so an
+unfunded READ bid took the rank the next funded READ bid would also take, and either could be named the
+sole reader depending on settlement order. `read_rank` is now assigned in `fund_bid`, in the same breath
+as the counter it is read from. An unfunded READ bid keeps its initial `u8::MAX`, which
+`randomness % read_bid_count` can never equal.
+
+`is_chosen_bid` is now gated on `bid.funded` and returns `false` before it looks at the outcome at all
+(`lib.rs`, first lines of the function). A bid that never paid cannot be drawn as the sole reader and
+cannot inherit a confession. That closes the reader-identity exposure this section used to describe.
+
+**What survives.** One quirk, and it is a liveness quirk rather than a privacy one. The `Inherited`
+branch draws `pick = randomness % market.bid_count`, and `bid_count` counts unfunded bids. If the draw
+lands on the index of a bid that never paid, `is_chosen_bid` refuses it for being unfunded and refuses
+every other bid for having the wrong index, so **nobody inherits**. The secret stays sealed and every
+bid is refunded, which is a safe failure rather than a wrong one, but it is not the outcome the room
+advertises. Drawing against a funded-bid counter instead of `bid_count` would close it. That is a
+program change and a redeploy, and it is not in this build.
+
+An unfunded bid also still consumes one of the eight `MAX_BIDDERS` slots, as described above.
 
 ### 6. `settle_bid` and `close_bid` are the same split, for the same reason
 
@@ -497,14 +505,19 @@ visible. Pinned as a known-good snapshot for the hackathon, not as a recommendat
 
 ## What we would do next, in order
 
-Four things came off this list while the program was being finished: `read_rank` moved to `fund_bid`
-(§5), `close_book` now enforces `escrow_lamports == author_payout` (§4), the `resolve_rumor` check
-throws `NotAuthor` (§20), and `retry_vrf` unsticks a market whose randomness never arrived (§17). What
-is left, in order:
+Five things came off this list while the program was being finished: `read_rank` moved to `fund_bid`
+(§5), `is_chosen_bid` is now gated on `bid.funded` so an unpaid bid cannot inherit a confession (§5),
+`close_book` now enforces `escrow_lamports == author_payout` (§4), the `resolve_rumor` check throws
+`NotAuthor` (§20), and `retry_vrf` unsticks a market whose randomness never arrived (§17).
 
-1. Require `bid.funded` in `is_chosen_bid`, so a bid nobody paid for cannot inherit a confession (§5).
-2. Make `retry_vrf` a real timed-out state rather than an unbounded retry loop (§17).
-3. Derive the VRF `caller_seed` from program state instead of taking it from the caller (§16).
+What is left, in order. Each was re-checked against the program on the date of this edit:
+
+1. Draw `Inherited` against a funded-bid counter rather than `bid_count`, so a draw cannot land on an
+   unfunded bid and select nobody (§5).
+2. Make `retry_vrf` a real timed-out state rather than an unbounded retry loop. It currently sets the
+   status back to `Expired` with no attempt ceiling (`lib.rs`, `retry_vrf`) (§17).
+3. Derive the VRF `caller_seed` from program state instead of taking it from the caller. It is still
+   `caller_seed: [client_seed; 32]` (§16).
 4. Guard `seal_secret` against re-sealing once a bid has landed (§12).
 5. Reject `ransom_floor == 0 && ransom_slope == 0` in `create_market` for Blackmail Escrow (§19).
 6. Verify a real TEE attestation quote against an expected measurement, instead of trusting a substring

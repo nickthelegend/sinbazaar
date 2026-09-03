@@ -20,6 +20,9 @@ vrf-oracle*.log
 # secrets — never commit a funded key
 keys/
 .seed-village.json
+# seed.ts writes the village authority keypair here on every run. It is output,
+# never input, and it is a private key: it must never be committed.
+.seed-village-authority.json
 .env.devnet
 app/.env.local
 

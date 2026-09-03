@@ -14,10 +14,10 @@ Legend — **L1** base Solana · **ER** ephemeral rollup · **PER** private (TEE
 | | |
 |---|---|
 | `npm test` — `tests/sinbazaar.ts` | **19 passing, 0 failing** |
-| `tests/edges.ts` — the refusals | **12 passing, 0 failing** |
+| `tests/edges.ts` — the refusals | **13 passing, 0 failing** |
 | `bash scripts/test-vrf-stall.sh` | **1 passing, 0 failing** |
 | Browser pass — every page, console + network checked on each | **24 items, 0 errors** |
-| `scripts/prove-privacy.ts` on the **devnet TEE** | **9/9, both refusals proven** |
+| `scripts/prove-privacy.ts` | **11/11 locally**, both refusals and the control. The devnet run is pending a program upgrade (PLAN.md G1) |
 | Impeccable design detector over `app/src` | **0 findings** |
 | WCAG AA contrast, measured in the live page | **0 failures** |
 | mock / stub / fake / placeholder / TODO in shipped code | **0** |
