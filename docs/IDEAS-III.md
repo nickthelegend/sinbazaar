@@ -38,6 +38,8 @@ not available.
 | # | What was built | Evidence |
 |---|---|---|
 | 1 | **Offline verifier** — `npm run verify:market <address>` or `--all` | **453 assertions, all passing, across 65 markets**, from public base-layer data alone: no rollup, no TEE, no key. It found a real defect on its first run (below) |
+| 3 | **Program attestation** — `npm run verify:program` | Compares the sha256 of the on-chain programdata against the built artifact. On localnet: **IDENTICAL**, 798,168 bytes, matching digests, exit 0. **Proven able to fail** by running it against devnet, where the deployed program is genuinely stale: 759,024 bytes, different digest, exit 1 |
+| 31 | **`npm run verify:all`** | One exit code over eight standing checks: IDL sync, test count, no mocks, no dashes, typecheck, production build, program attestation, and every buried market. All passing |
 
 **It earned its place immediately.** The first run reported 2 failures on one
 market: an outcome of `pending` where the room's rule said `publicLeak`, and a
@@ -62,7 +64,7 @@ an uncarved headstone was it inventing a claim the chain never made.
 |---|---|---|
 | 1 ✅ | **Offline verifier** — `npm run verify:market <address>` reconstructs a market's whole claim from **public data alone**: checks the commitment against the published body and salt, checks the outcome against the published randomness, checks the money conserves, and prints PASS or FAIL per assertion | Every proof here currently runs inside the app. This one runs outside it, reads only what anyone can read, and is able to fail. That asymmetry is the difference between a demo and evidence |
 | 2 | **VRF determinism proof** — re-derive the outcome from the randomness the program published, and show the room's rule mapping it, step by step | The VRF is the one part a judge cannot watch happen. Showing the outcome is a pure function of published randomness turns "trust the oracle" into arithmetic anyone can repeat |
-| 3 | **Program-hash attestation** — print the sha256 of the deployed programdata beside the sha256 of the built artifact | The code shown is the code running, or it is not, and the page says which. Forecloses the obvious "how do I know this is what is deployed" |
+| 3 ✅ | **Program-hash attestation** — print the sha256 of the deployed programdata beside the sha256 of the built artifact | The code shown is the code running, or it is not, and the page says which. Forecloses the obvious "how do I know this is what is deployed" |
 | 4 | **Money conservation ledger** — for a settled market, every lamport in and every lamport out, summed, from real account data | "The money is correct" sits in this project's own definition of done and has never had a surface. This makes it a number that must balance |
 | 5 | **Base-vs-rollup field diff** — the same market read from both layers, field by field, disagreements highlighted | Non-equivocation shown rather than asserted, and the clearest possible picture of what a commit actually does |
 | 6 | **Digest fingerprint** — the commitment rendered as a deterministic identicon beside its hex, everywhere a hash appears | 64 hex characters are unreadable; a shape is recognisable across pages. The same confession becomes identifiable without ever being revealed |
@@ -100,7 +102,7 @@ an uncarved headstone was it inventing a claim the chain never made.
 | 28 | Market cards tilting toward the pointer |
 | 29 | The verdict arriving as a stamp pressed onto the page |
 | 30 | The rollup's slot height as a quiet heartbeat in the chrome |
-| 31 | A single `npm run verify:all` gate running every standing check |
+| 31 ✅ | A single `npm run verify:all` gate running every standing check |
 | 32 | Structured JSON client logging behind a flag |
 | 33 | A `/health` route reporting every endpoint |
 | 34 | Request coalescing across hooks asking the same question |

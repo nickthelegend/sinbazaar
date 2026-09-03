@@ -16,7 +16,9 @@
     "prove:action": ". ./scripts/local-env.sh && ts-node scripts/prove-magic-action.ts",
     "gen:counts": "node scripts/gen-counts.mjs",
     "verify:counts": "node scripts/gen-counts.mjs --check",
-    "verify:market": ". ./scripts/local-env.sh && ts-node scripts/verify-market.ts"
+    "verify:market": ". ./scripts/local-env.sh && ts-node scripts/verify-market.ts",
+    "verify:program": ". ./scripts/local-env.sh && ts-node scripts/verify-program.ts",
+    "verify:all": "bash scripts/verify-all.sh"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",
