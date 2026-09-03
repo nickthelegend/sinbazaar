@@ -17,6 +17,7 @@ import { useVillageWallet } from "@/components/Providers";
 import { useMarket } from "@/hooks/useMarkets";
 import { explorerUrl, TEE_RPC } from "@/lib/config";
 import { errorText, readSecret, type SecretRead } from "@/lib/flows";
+import { LifecycleStrip } from "@/components/Lifecycle";
 import { fmtMoment, fmtSol, fullHash, revealsText, shortKey } from "@/lib/format";
 import { roomOf } from "@/lib/rooms";
 import { tombPda } from "@/lib/pdas";
@@ -213,6 +214,12 @@ export default function ResultPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Delegation was the one primitive with no surface at all. This is
+            the account's own history, on both chains, as signatures. */}
+        <div className="panel">
+          <LifecycleStrip market={market.address} />
         </div>
 
         <div className="panel">

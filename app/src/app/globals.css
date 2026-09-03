@@ -2662,3 +2662,75 @@ code {
   .race-clock { font-size: 27px; }
   .race-lane { padding: 12px 13px; gap: 2px 12px; }
 }
+
+/* ------------------------------------------------- lifecycle strip
+   Two columns of real signatures, oldest first. The rollup column is normally
+   far longer than the Solana one, and that asymmetry is the argument, so the
+   columns are allowed to differ in height rather than being forced level. */
+.life { display: grid; gap: 14px; }
+.life-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.life-head h3 { margin: 0; font-size: 17px; }
+.life-ratio {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 68ch;
+  text-wrap: pretty;
+}
+.life-ratio strong { color: var(--amber); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.life-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.life-layer {
+  padding: 13px 14px;
+  background: var(--sunk);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+}
+.life-layer h4 {
+  margin: 0 0 10px;
+  font-size: 11.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.life-count {
+  font-family: var(--mono);
+  color: var(--coral);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.life-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.life-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; counter-reset: life; }
+.life-steps li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-top: 1px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.life-steps li:first-child { border-top: 0; }
+.life-steps li.failed .life-ix { color: var(--crimson); }
+.life-ix { color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.life-sig { color: var(--coral); text-decoration: none; }
+.life-sig:hover { border-bottom: 1px solid var(--coral); }
+.life-slot { color: var(--dim); white-space: nowrap; }
+
+@media (max-width: 780px) {
+  .life-cols { grid-template-columns: 1fr; }
+  .life-steps li { grid-template-columns: minmax(0, 1fr) auto; }
+  .life-slot { display: none; }
+}

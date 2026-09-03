@@ -1301,7 +1301,28 @@ pub mod sinbazaar {
         )
         .commit_and_undelegate(&[ctx.accounts.market.to_account_info()]);
 
-        if let Some(tombstone) = &ctx.accounts.tombstone {
+        // Opt-in has to be judged from the account's actual state, not from
+        // whether the caller "passed" it.
+        //
+        // The first attempt made `tombstone` an optional account and assumed an
+        // absent one meant "do not schedule". Anchor's client resolves seeded
+        // PDAs on its own, so every caller kept sending it without asking, the
+        // program kept seeing `Some`, and every finalize kept scheduling an
+        // action that failed with AccountNotInitialized. Reading the validator
+        // log for `0xbc4` had said this was fixed; reading the finalize
+        // transaction itself showed it was not.
+        //
+        // An initialised headstone is the real precondition, so test for that.
+        // It cannot be faked by account resolution and needs no cooperation
+        // from the client.
+        let headstone_ready = ctx
+            .accounts
+            .tombstone
+            .as_ref()
+            .map(|t| t.owner == &crate::ID && !t.data_is_empty())
+            .unwrap_or(false);
+
+        if let (true, Some(tombstone)) = (headstone_ready, &ctx.accounts.tombstone) {
             let seal = CallHandler {
                 destination_program: crate::ID,
                 // Same order as the `SealTombstone` accounts struct.

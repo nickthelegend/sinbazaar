@@ -285,7 +285,7 @@ Re-verified after the fix: the graveyard prints "They came back for it on ..."
 for exactly the three tombstones that carry a non-zero `read_at` on chain, and
 "never came back" for the one that does not. The counter reads 35.
 
-### G14 — The action was scheduled even when it could not run · closed
+### G14 — The action was scheduled even when it could not run · closed on the second attempt
 
 Found in the validator logs while chasing an unrelated failure, not by a test.
 
@@ -301,14 +301,31 @@ That is worse than a visible break. The graceful degradation was the validator's
 not ours, and it hid the fact that we were putting work into every intent bundle
 that was guaranteed to fail.
 
-**Closed by** making the action opt-in: `FinalizeMarket` takes an
-`Option<UncheckedAccount>` for the tombstone, and the action is attached only
-when a headstone is actually passed. Callers who want the rollup to carve it
-pass one; everyone else finalizes exactly as before and carves with
-`write_tombstone`. Verified on a freshly wiped stack: the demo runs green end to
-end and the stack log contains **zero** patched intents and zero `0xbc4`, while
-`npm run prove:action` still proves the action carves the headstone with a
-transaction we did not sign.
+**First fix, which did not work.** `FinalizeMarket` was given an
+`Option<UncheckedAccount>` for the tombstone, on the assumption that a caller
+who did not want the action would simply not pass one. Anchor's client resolves
+seeded PDAs by itself, so every caller kept sending the account without ever
+asking for it, the program kept seeing `Some`, and every finalize kept
+scheduling an action that failed.
+
+**And the verification was too weak to catch that.** It grepped the validator
+log for `0xbc4` and found none, which proved only that the grep and the log
+disagreed. The defect was found later, from a different direction entirely: the
+lifecycle strip built for IDEAS-II #2 rendered a real base-layer row reading
+`process_undelegation + seal_tombstone` on a market the demo had never opted in
+for. Reading that transaction showed `AnchorError ... AccountNotInitialized`,
+error 3012, exactly as before.
+
+**Closed by** testing the precondition instead of the caller's intent. The
+action is scheduled only when the headstone account is genuinely initialised —
+owned by this program with non-empty data — which cannot be manufactured by
+client-side account resolution and needs no cooperation from any caller.
+
+Verified by reading transactions rather than logs, which is the lesson:
+`npm run demo` now schedules **no** `seal_tombstone` and produces **no**
+`AccountNotInitialized` anywhere in the market's base-layer history, while
+`npm run prove:action` still finds `SealTombstone` on L1 signed by the validator
+and not by us.
 
 ### G13 — `npm test` ran a spec that says not to run it · closed
 

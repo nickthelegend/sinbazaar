@@ -35,13 +35,25 @@ did not become an afternoon spent reimplementing a working feature.
 
 ---
 
+## Built and verified so far
+
+| # | What was built | Evidence |
+|---|---|---|
+| 1 | The layer race | One transaction, both chains, at once. Measured live: 9ms against 540ms, 11 vs 555, 5 vs 139, 7 vs 313. Real signatures both sides |
+| 2 | Delegation lifecycle strip | Real signature history on both layers, oldest first, on the result page. Shows `create_market`, `delegate_market`, `process_undelegation`, `write_tombstone` on Solana against 18 rollup writes |
+| 3 | Commit compression counter | Folded into the strip. Counts trades per layer and states the claim that actually holds: **Solana never saw a single bid**, verified against the chain at 0 base trades vs 2 on the rollup |
+
+Building these found a real defect: **G14 was not fixed**, and the lifecycle strip is what exposed it. See PLAN.md.
+
+---
+
 ## Tier S — build these first
 
 | # | Idea | Why it wins |
 |---|---|---|
-| 1 | **The layer race** — one button fires an identical transaction at base and rollup at the same instant, two stopwatches run live, both stop on their own confirmation | The latency row states two numbers. This makes a judge *watch* the gap open in real time. Same transaction, same moment, one finishes while the other is still going |
-| 2 | **Delegation lifecycle strip** — for one market: created on L1, delegated, N writes on the rollup, committed, undelegated, each step a real signature and slot | Delegation is the primitive everything else rests on and it is currently invisible. This turns it into a thing with a shape |
-| 3 | **Commit compression counter** — "N rollup writes → 1 Solana commit", counted from real transactions for the market on screen | The economic argument for a rollup, as a number derived from this demo rather than a claim from a docs page |
+| 1 ✅ | **The layer race** — one button fires an identical transaction at base and rollup at the same instant, two stopwatches run live, both stop on their own confirmation | The latency row states two numbers. This makes a judge *watch* the gap open in real time. Same transaction, same moment, one finishes while the other is still going |
+| 2 ✅ | **Delegation lifecycle strip** — for one market: created on L1, delegated, N writes on the rollup, committed, undelegated, each step a real signature and slot | Delegation is the primitive everything else rests on and it is currently invisible. This turns it into a thing with a shape |
+| 3 ✅ | **Commit compression counter** — "N rollup writes → 1 Solana commit", counted from real transactions for the market on screen | The economic argument for a rollup, as a number derived from this demo rather than a claim from a docs page |
 | 4 | **Live permission inspector** — for any account, render the ephemeral permission's member list and decode its flags, updating as membership changes | The privacy claim is enforced by this list. Showing it live turns "trust us" into "look" |
 | 5 | **VRF grace countdown in the UI** — when a market sits in `VrfPending`, show the real grace window and the retry that becomes available at zero | The program has `retry_vrf` and a 120s grace, tested in `vrf-stall.ts`, and the UI never mentions it. A stalled oracle currently looks like a hung app |
 | 6 | **Headstone texture from the commitment hash** — each tombstone's grain, cracks and lettering derived deterministically from its own 32 bytes | Every tombstone becomes visually unique and the uniqueness *is* the data. Pure design, zero protocol risk, and it is the image a judge remembers |
