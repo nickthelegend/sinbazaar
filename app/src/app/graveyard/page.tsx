@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { CardSkeleton, Empty, OutcomeBadge, Redaction } from "@/components/Bits";
 import { useTombstones } from "@/hooks/useMarkets";
 import { explorerUrl } from "@/lib/config";
+import { Headstone } from "@/components/Headstone";
 import { fmtMoment, fmtSol, fullHash, OUTCOME_LABEL, revealsText, shortHash, shortKey } from "@/lib/format";
 import { roomOf } from "@/lib/rooms";
 
@@ -147,6 +148,15 @@ export default function GraveyardPage() {
                   <span className="room-tag">{room.label}</span>
                   <OutcomeBadge outcome={tomb.outcome} />
                 </div>
+
+                {/* Cut from this confession's own commitment hash. Two stones
+                    differ because the sentences under them differed, and the
+                    same hash always cuts the same stone. */}
+                <Headstone
+                  className="tomb-stone"
+                  commitment={tomb.commitment}
+                  label={shortHash(tomb.commitment, 4)}
+                />
 
                 <div className="hash-line">
                   <span className="hash-prefix">sha256</span>

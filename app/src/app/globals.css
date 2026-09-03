@@ -2853,3 +2853,16 @@ code {
   color: var(--coral);
   overflow-wrap: anywhere;
 }
+
+/* The stone itself. Sized so a row of them reads as a graveyard rather than as
+   a row of icons, and pushed to the bottom of its box so the slabs stand on a
+   common ground line however tall each one is cut. */
+.tomb-stone {
+  display: block;
+  width: 100%;
+  max-width: 150px;
+  height: 118px;
+  margin: 4px auto 12px;
+  filter: drop-shadow(0 6px 14px rgba(2, 4, 9, 0.55));
+}
+@media (prefers-reduced-motion: reduce) { .tomb-stone { transition: none; } }
