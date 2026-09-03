@@ -63,15 +63,18 @@ proves the MagicBlock primitives**. So winning is narrower than done:
 | Tests | **37 passing, 0 failing** against a live local cluster |
 | Privacy proof | **11/11 PASS** locally, both refusals and the control |
 | Web app | 8 routes, production build clean, 0 console errors |
-| Browser test plan | **135/135 PASS**, 18 defects found and fixed |
-| Mocks / stubs / TODOs in shipped code | **0** (verified by grep) |
+| Browser test plan | **135/135 PASS**, 18 defects found and fixed. Re-verified after Phase 4: 6 routes plus both dynamic routes at a true 375px, zero overflow, zero console errors, zero failed requests |
+| Mocks / stubs / TODOs in shipped code | **0** (re-verified; the only `placeholder` hits are the CSS pseudo-element and two real input placeholders) |
 | Devnet program | Deployed, but **STALE** — see G1 |
 | Repo | **Public**, <https://github.com/nickthelegend/sinbazaar> |
 | Demo video | **Not recorded** |
 
-The core is built and verified. What remains is almost entirely **shipping**:
-getting the fixed program onto devnet, getting the repo and video in front of a
-judge, and repairing places where the docs now describe an older codebase.
+The core is built and verified, and Phase 4 is now closed too: the rollup
+activity strip, Magic Actions carving the tombstone, the receipt drawer and the
+read receipt all shipped and proven against a live cluster.
+
+What remains is **not code**. It is devnet SOL, a video a person has to record,
+and a host that depends on the first of those.
 
 ---
 
@@ -139,12 +142,17 @@ a judge, and are ordered by how likely each failure is.
 
 ---
 
-## Phase 4 — Backlog, only if Phases 0 to 3 are closed
+## Phase 4 — Backlog · CLOSED (4.1 to 4.4 shipped)
 
-`docs/IDEAS.md` holds 100 ranked ideas: **9 built, 34 explicitly declined with a
-reason, the rest unbuilt**. The ranking principle there still stands, and it
-argues against most of this list: a hundred features would hurt a sixty-second
-demo. Take these only in order, and only if there is genuinely time.
+`docs/IDEAS.md` holds 100 ranked ideas. The ranking principle there still stands
+and still argues against most of the list: a hundred features would hurt a
+sixty-second demo.
+
+Four were taken, in order, and each was verified against a live cluster rather
+than declared done. Between them they surfaced **four defects** (G12, G14, G15,
+and the vrf-stall suite noise in G13), three of which were invisible from inside
+the thing being tested and only appeared when the page or the log was checked
+against the chain. 4.5 stays blocked behind Phase 0 and 4.6 stays declined.
 
 | # | Task | Status |
 |---|---|---|
