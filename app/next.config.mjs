@@ -4,6 +4,12 @@ import { fileURLToPath } from "node:url";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // A production build writes to the same .next the dev server is serving from,
+  // which silently breaks it: the app keeps rendering but stops hydrating, so
+  // every page looks fine and nothing responds. Twice this session that cost a
+  // real debugging detour. `npm run build:check` sets NEXT_DIST_DIR so a
+  // verification build lands somewhere harmless instead.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // The repo root carries its own lockfile for the program and the SDK; pin the
   // trace root here so Next stops guessing between the two.
   outputFileTracingRoot: dirname(fileURLToPath(import.meta.url)),
