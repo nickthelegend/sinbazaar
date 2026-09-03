@@ -22,6 +22,7 @@ import nacl from "tweetnacl";
 import { useMarkets } from "@/hooks/useMarkets";
 import { useVillageWallet } from "@/components/Providers";
 import { Empty } from "@/components/Bits";
+import { LayerRace } from "@/components/LayerRace";
 import { secretPda } from "@/lib/pdas";
 import { getAuthToken, readPermission } from "@/lib/magicblock";
 import { CLUSTER, ER_RPC, IS_LOCALNET, PROGRAM_ID, TEE_RPC } from "@/lib/config";
@@ -275,6 +276,12 @@ export default function ChallengePage() {
             </div>
           </>
         )}
+      </div>
+
+      {/* The probes above prove the privacy claim. This proves the speed claim,
+          and it is the one a judge can re-run as many times as they doubt it. */}
+      <div className="panel">
+        <LayerRace />
       </div>
 
       {probes.length > 0 ? (

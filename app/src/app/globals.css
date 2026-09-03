@@ -2601,3 +2601,64 @@ code {
 @media (max-width: 620px) {
   .act-rowline { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
 }
+
+/* ------------------------------------------------- the layer race
+   Two clocks, one transaction. The lanes are a grid rather than flex so both
+   stopwatches sit on the same baseline and the eye can compare them without
+   moving; a race where the numbers are not aligned is a chart of nothing. */
+.race { display: grid; gap: 16px; }
+.race-head h3 { margin: 0 0 6px; font-size: 17px; }
+.race-track { display: grid; gap: 10px; }
+.race-lane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "layer clock" "sig clock";
+  align-items: center;
+  gap: 2px 18px;
+  padding: 14px 16px;
+  background: var(--sunk);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  transition: border-color 0.2s;
+}
+.race-lane.running { border-color: rgba(255, 179, 71, 0.4); }
+.race-lane.landed { border-color: rgba(255, 107, 74, 0.42); }
+.race-lane.failed { border-color: rgba(255, 47, 58, 0.45); }
+.race-layer {
+  grid-area: layer;
+  font-size: 12px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.race-clock {
+  grid-area: clock;
+  font-family: var(--mono);
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  line-height: 1;
+  white-space: nowrap;
+}
+.race-clock i { font-style: normal; font-size: 14px; color: var(--dim); margin-left: 4px; }
+.race-lane.landed .race-clock { color: var(--amber); }
+.race-lane.failed .race-clock { color: var(--crimson); }
+.race-sig {
+  grid-area: sig;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--coral);
+  text-decoration: none;
+  justify-self: start;
+}
+.race-sig:hover { border-bottom: 1px solid var(--coral); }
+.race-sig.placeholder { color: var(--dim); }
+.race-err { grid-area: sig; font-size: 11.5px; color: var(--crimson); }
+.race-foot { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.race-verdict { font-size: 13.5px; color: var(--muted); }
+.race-verdict strong { color: var(--amber); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 560px) {
+  .race-clock { font-size: 27px; }
+  .race-lane { padding: 12px 13px; gap: 2px 12px; }
+}
