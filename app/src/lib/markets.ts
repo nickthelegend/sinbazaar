@@ -217,6 +217,16 @@ export async function fetchTombstones(): Promise<TombstoneView[]> {
           salt: Array.from(acct.revealedSalt as number[]),
         } satisfies TombstoneView;
       })
+      // An allocated but uncarved headstone is not a verdict.
+      //
+      // `open_tombstone` creates the account in advance so a Magic Action has
+      // somewhere to write, and until `seal_tombstone` or `write_tombstone`
+      // runs it holds nothing but its own address: outcome `pending`,
+      // `buried_at` 0. The graveyard was counting those and rendering them
+      // beside real verdicts, which is an empty account presented as an
+      // ending. `buried_at` is the field the program uses to mean "genuinely
+      // buried", so it is the field to filter on.
+      .filter((t: TombstoneView) => t.buriedAt > 0)
       .sort((a: TombstoneView, b: TombstoneView) => b.buriedAt - a.buriedAt);
   } catch (err) {
     // Rethrow. Returning [] here told the graveyard there were no tombstones

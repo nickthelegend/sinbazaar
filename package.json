@@ -15,7 +15,8 @@
     "keeper": ". ./scripts/local-env.sh && ts-node scripts/keeper.ts",
     "prove:action": ". ./scripts/local-env.sh && ts-node scripts/prove-magic-action.ts",
     "gen:counts": "node scripts/gen-counts.mjs",
-    "verify:counts": "node scripts/gen-counts.mjs --check"
+    "verify:counts": "node scripts/gen-counts.mjs --check",
+    "verify:market": ". ./scripts/local-env.sh && ts-node scripts/verify-market.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.32.1",
