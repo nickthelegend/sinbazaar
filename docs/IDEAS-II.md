@@ -49,7 +49,9 @@ did not become an afternoon spent reimplementing a working feature.
 
 | 6 | Headstone cut from the commitment hash | 28 tombstones produced **28 distinct silhouettes and 28 distinct grain seeds**, and every one came back byte-identical across a reload. Nothing random anywhere in it |
 
-Building these found a real defect: **G14 was not fixed**, and the lifecycle strip is what exposed it. See PLAN.md.
+| 7 | Aurora responds to the chain | A rollup transaction pushes a flare through the light blades. Verified with a MutationObserver over real traffic: **7 flares and 7 decays**, alternating, ending at rest with the blade filter back to `brightness(1)` — the resting aurora is byte-for-byte the one that shipped |
+
+Building these found two real defects: **G14 was not fixed**, and the lifecycle strip is what exposed it. See PLAN.md.
 
 ---
 
@@ -63,7 +65,7 @@ Building these found a real defect: **G14 was not fixed**, and the lifecycle str
 | 4 ✅ | **Live permission inspector** — for any account, render the ephemeral permission's member list and decode its flags, updating as membership changes | The privacy claim is enforced by this list. Showing it live turns "trust us" into "look" |
 | 5 ✅ | **VRF grace countdown in the UI** — when a market sits in `VrfPending`, show the real grace window and the retry that becomes available at zero | The program has `retry_vrf` and a 120s grace, tested in `vrf-stall.ts`, and the UI never mentions it. A stalled oracle currently looks like a hung app |
 | 6 ✅ | **Headstone texture from the commitment hash** — each tombstone's grain, cracks and lettering derived deterministically from its own 32 bytes | Every tombstone becomes visually unique and the uniqueness *is* the data. Pure design, zero protocol risk, and it is the image a judge remembers |
-| 7 | **Aurora responds to the chain** — a bid landing pushes real energy through the light blades, driven by the existing subscription | The signature visual becomes an instrument reading the rollup instead of decoration that happens to be nearby |
+| 7 ✅ | **Aurora responds to the chain** — a bid landing pushes real energy through the light blades, driven by the existing subscription | The signature visual becomes an instrument reading the rollup instead of decoration that happens to be nearby |
 
 ## Tier A — strong, on-pitch
 

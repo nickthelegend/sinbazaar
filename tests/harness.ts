@@ -112,7 +112,23 @@ export class Bazaar {
       if (i && i.owner.equals(owner)) return;
       await sleep(1000);
     }
-    throw new Error(`account ${key.toBase58()} never came back to L1`);
+    // "Never came back" is true but useless on its own, and it sent a whole
+    // debugging session after the program. The commonest cause by far is that
+    // the ER validator has run out of base-layer lamports and can no longer pay
+    // for the commit: the committor logs InstructionError(2, Custom(1)) and the
+    // client sees only silence. So say what the balance actually is.
+    let hint = "";
+    try {
+      const lamports = await this.baseConn.getBalance(VALIDATOR);
+      const sol = lamports / 1e9;
+      hint =
+        sol < 1
+          ? `\n  The ER validator holds ${sol.toFixed(4)} SOL on the base layer, which is almost certainly why: it pays for every commit and undelegation.\n  Fix: solana airdrop 500 ${VALIDATOR.toBase58()} --url ${ENDPOINTS.base}`
+          : `\n  The ER validator holds ${sol.toFixed(2)} SOL, so funding is not the problem. Check the committor errors in .logs/mb-stack.log.`;
+    } catch {
+      hint = "\n  Could not read the validator balance to say whether it can still pay for commits.";
+    }
+    throw new Error(`account ${key.toBase58()} never came back to L1${hint}`);
   }
 
   /**

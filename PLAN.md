@@ -248,6 +248,33 @@ It was stale once already (passing a `session` account to `place_bid` and a
 repaired, but has not been executed since the last program change. It is the
 one script in the repo with a known history of drifting out of sync.
 
+### G16 — The rollup stops committing when its validator runs out of money · closed
+
+Found by three scripts failing at once, not by a test.
+
+`smoke`, `demo` and `prove:action` all began failing at undelegation with
+`account ... never came back to L1`, on code that had passed minutes earlier and
+had not changed. The committor logged `InstructionError(2, Custom(1))` and
+nothing else.
+
+The cause is not in this program at all. **The ER validator pays for every commit
+and undelegation out of its own base-layer balance**, including rent for the
+buffer accounts a large commit needs. It starts with a small float and a long
+session drains it. Measured at the moment of failure: **0.2277 SOL**. Funded, all
+three scripts passed again, unchanged.
+
+Two things made this expensive to find, and both are now fixed:
+
+- **The stack never topped it up.** `scripts/local-stack.sh` now airdrops 500
+  localnet SOL to the validator once the stack is healthy, and prints the
+  balance, which removes the entire class of problem for anyone running this.
+- **The error pointed nowhere.** "account never came back to L1" is true and
+  useless; it reads as a bug in the program. `waitOnBase` now reads the
+  validator's balance on failure and either names it as the near-certain cause
+  with the exact airdrop command, or rules it out and points at the committor
+  log. An error message that cannot distinguish "your program is broken" from
+  "the validator is broke" costs whoever meets it the same hour it cost here.
+
 ### G15 — The app read a stale copy of the IDL, and rendered a falsehood from it · closed
 
 Found while verifying 4.4's UI, by checking the chain against the page instead

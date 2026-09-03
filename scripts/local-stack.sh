@@ -74,6 +74,24 @@ done
 [ "$READY" = "1" ] || { echo "stack not ready in time:"; tail -40 "$LOGDIR/mb-stack.log"; exit 1; }
 echo "  stack ready."
 
+# Fund the ER validator on the base layer.
+#
+# The validator pays for every commit and undelegation out of its own base-layer
+# balance, including rent for the buffer accounts a large commit needs. It starts
+# with a small float, and a long session drains it. When it runs dry the failure
+# is silent and deeply unhelpful: the committor logs
+# `InstructionError(2, Custom(1))`, and the client sees only
+# "account never came back to L1" — which reads as a bug in the program rather
+# than an empty wallet. Measured: at 0.227 SOL, `smoke`, `demo` and
+# `prove:action` all failed at undelegation; funded, all three passed unchanged.
+#
+# 500 SOL of localnet play money removes the whole class of problem.
+echo "Funding the ER validator for commits..."
+solana airdrop 500 mAGicPQYBMvcYveUZA5F5UNNwyHvfYh5xkLS2Fr1mev \
+  --url http://localhost:8899 >/dev/null 2>&1 || \
+  echo "  WARNING: could not fund the validator; commits will fail once its float runs out"
+echo "  validator balance: $(solana balance mAGicPQYBMvcYveUZA5F5UNNwyHvfYh5xkLS2Fr1mev --url http://localhost:8899 2>/dev/null || echo unknown)"
+
 # Two oracles: one watching the base layer, one watching the ER. SINBAZAAR requests
 # randomness while the market is delegated, so the ER oracle is the one that matters.
 echo "Starting VRF oracles..."

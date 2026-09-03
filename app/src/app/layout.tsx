@@ -3,6 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { EndpointFooter, FictionBanner, TopNav } from "@/components/Chrome";
 import { Aurora } from "@/components/Aurora";
+import { ChainEnergy } from "@/components/ChainEnergy";
 
 export const metadata: Metadata = {
   title: "SINBAZAAR",
@@ -15,6 +16,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Aurora />
+        {/* Writes --chain-energy when the rollup moves. Renders nothing. */}
+        <ChainEnergy />
         <Providers>
           <a className="skip-link" href="#content">
             Skip to content

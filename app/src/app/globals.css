@@ -126,12 +126,21 @@ body {
   pointer-events: none;
 }
 
+/* `--chain-energy` is written by ChainEnergy when a transaction lands on the
+   rollup, and falls back to 0 on its own. It defaults to 0 here, so a page with
+   no JavaScript, a refused websocket or a reduced-motion viewer renders exactly
+   the aurora that shipped before any of this: the flare is strictly additive. */
+:root { --chain-energy: 0; }
+
 .blade {
   position: absolute;
   border-radius: 50%;
   mix-blend-mode: screen;
-  filter: blur(90px);
-  will-change: transform, opacity;
+  filter: blur(90px) brightness(calc(1 + var(--chain-energy) * 0.45))
+    saturate(calc(1 + var(--chain-energy) * 0.25));
+  will-change: transform, opacity, filter;
+  /* Fast in, slow out: a transaction arrives at once and the light settles. */
+  transition: filter 1.1s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .blade-1 {
@@ -2866,3 +2875,10 @@ code {
   filter: drop-shadow(0 6px 14px rgba(2, 4, 9, 0.55));
 }
 @media (prefers-reduced-motion: reduce) { .tomb-stone { transition: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Belt and braces: ChainEnergy already refuses to mount its listener under
+     this setting, but a stale inline value must not survive a preference
+     change either. */
+  .blade { transition: none; filter: blur(90px); }
+}
