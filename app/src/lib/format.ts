@@ -112,3 +112,15 @@ export function fmtMoment(unix: BN | number | undefined | null): string | null {
     timeStyle: "medium",
   });
 }
+
+/**
+ * Length in UTF-8 bytes, which is what the program's limits are measured in.
+ *
+ * Not `String.length`. "aé漢" is 3 characters and 6 bytes, and counting the
+ * former against a byte limit is how a counter ends up telling somebody they
+ * have room they do not have. Lived here as a local in the confession page
+ * until a second caller needed exactly the same rule.
+ */
+export function byteLen(s: string): number {
+  return new TextEncoder().encode(s).length;
+}

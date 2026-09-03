@@ -135,6 +135,16 @@ export interface CreateConfessionInput {
   durationSecs: number;
   ransomFloorLamports?: BN;
   ransomSlopeLamports?: BN;
+  /**
+   * The salt to commit with, when the caller has already fixed one.
+   *
+   * The confession page shows a live `sha256(body ‖ salt)` while you type, and
+   * that preview is only worth anything if it is the very hash that lands on
+   * chain. Passing the salt in is what makes the preview the commitment rather
+   * than an illustration of one. Omitted, a fresh random salt is generated here
+   * exactly as before.
+   */
+  salt?: Uint8Array;
 }
 
 export interface CreateConfessionResult {
@@ -238,7 +248,7 @@ export async function createConfession(
 
   const bodyBytes = new TextEncoder().encode(input.body);
   const redactedBytes = new TextEncoder().encode(input.redacted);
-  const salt = randomSalt();
+  const salt = input.salt ?? randomSalt();
 
   await step(report, "seal_secret", async () => {
     const ix = await methodsOf(pEr)

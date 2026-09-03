@@ -33,3 +33,4 @@ vendor/
 
 # fetched by the app build, not authored here
 !app/public/fonts/
+.next-check/

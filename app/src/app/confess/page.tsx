@@ -8,6 +8,9 @@
  * only ever appears as an argument to the last one.
  */
 import Link from "next/link";
+import { byteLen } from "@/lib/format";
+import { randomSalt } from "@/lib/anchor";
+import { WhatSolanaSees } from "@/components/WhatSolanaSees";
 import { useCallback, useMemo, useState } from "react";
 import { BN } from "@coral-xyz/anchor";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -34,7 +37,6 @@ const MAX_REDACTED = 96;
  * confession in any non-ASCII language read as comfortably under the limit and
  * then be rejected on chain, after five transactions had already been signed.
  */
-const byteLen = (s: string) => new TextEncoder().encode(s).length;
 
 /** Fiction mode. Startup village sins only. */
 const SEEDS: { body: string; redacted: string }[] = [
@@ -71,6 +73,14 @@ export default function ConfessPage() {
   const wallet = useVillageWallet();
   const [room, setRoom] = useState(LIVE_ROOMS[0].variant);
   const [body, setBody] = useState(SEEDS[0].body);
+  /**
+   * Fixed once, before anything is typed, and handed to `createConfession`.
+   *
+   * This is what makes the live hash in the panel below the actual commitment
+   * rather than a demonstration of one: the same salt is used to preview and to
+   * seal, so the digest on screen is the digest that reaches Solana.
+   */
+  const [salt] = useState(() => randomSalt());
   const [redacted, setRedacted] = useState(SEEDS[0].redacted);
   const [duration, setDuration] = useState(120);
   const [ransomSol, setRansomSol] = useState(0.05);
@@ -117,6 +127,7 @@ export default function ConfessPage() {
           signer: wallet.signer,
           roomVariant: room,
           body: body.trim(),
+          salt,
           redacted: redacted.trim(),
           durationSecs: duration,
           ransomFloorLamports:
@@ -183,6 +194,11 @@ export default function ConfessPage() {
               never appears in a base-layer instruction.
             </span>
           </label>
+
+          {/* The whole privacy model, taught in the seconds already being spent
+              on the textarea above. The digest on the right is the commitment,
+              not a demonstration: the salt beside it is the one that seals. */}
+          <WhatSolanaSees body={body} salt={salt} />
 
           <label className="field">
             <span className="lbl">

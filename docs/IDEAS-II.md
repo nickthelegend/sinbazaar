@@ -73,7 +73,7 @@ Building these found two real defects: **G14 was not fixed**, and the lifecycle 
 |---|---|---|
 | 9 | Pot odometer — digits roll from old value to new when the subscription fires | The visual payoff of live subscriptions, on the number that matters |
 | 10 | Shared-element transition from market card into the market page | Framer `layoutId` on a card that already exists; makes navigation feel like one continuous surface |
-| 11 | "What Solana sees" split pane while confessing — your sentence on the left, the hash updating live on the right, and nothing else | Teaches the entire privacy model in the five seconds someone is already typing |
+| 11 ✅ | "What Solana sees" split pane while confessing — your sentence on the left, the hash updating live on the right, and nothing else | Teaches the entire privacy model in the five seconds someone is already typing |
 | 12 | Per-route error boundaries with real recovery, not just the root one | A thrown error on `/graveyard` currently takes the whole app to a generic page |
 | 13 | Wrong-network and locked-wallet states | The two most common ways a judge's first click fails |
 | 14 | Insufficient-funds precheck before a signature is requested | Asking someone to sign a transaction you already know will fail is a small betrayal |
