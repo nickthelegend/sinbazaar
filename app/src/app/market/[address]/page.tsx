@@ -16,6 +16,7 @@ import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { BookBar, Countdown, Empty, OutcomeBadge, PotBar, StatusPill, StepList } from "@/components/Bits";
 import { useVillageWallet } from "@/components/Providers";
 import { PermissionInspector } from "@/components/Permission";
+import { VrfGrace } from "@/components/VrfGrace";
 import { RuleBox } from "@/components/RuleBox";
 import { useMarket } from "@/hooks/useMarkets";
 import { useNow } from "@/hooks/useNow";
@@ -64,7 +65,7 @@ const PURSE_STEPS = [
 export default function MarketPage() {
   const params = useParams<{ address: string }>();
   const address = typeof params.address === "string" ? params.address : null;
-  const { data: market, error } = useMarket(address);
+  const { data: market, error, reload: reloadMarket } = useMarket(address);
   const wallet = useVillageWallet();
   const now = useNow();
 
@@ -403,6 +404,17 @@ export default function MarketPage() {
                 transaction. Lamports move purse PDA → market PDA inside the rollup; the side and
                 the amount sit behind a private permission listing only you.
               </p>
+
+                {/* The one state where nothing can move and nobody is at
+                    fault. Without this it reads as a hung app. */}
+                {market.status === "vrfPending" ? (
+                  <VrfGrace
+                    market={market.address}
+                    marketId={market.marketId}
+                    expiresAt={market.expiresAt}
+                    onRetried={() => void reloadMarket()}
+                  />
+                ) : null}
 
                 {/* The claim above is enforced by these two member lists. They
                     are read from the rollup and re-read as membership changes,

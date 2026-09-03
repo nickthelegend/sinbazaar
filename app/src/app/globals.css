@@ -2809,3 +2809,47 @@ code {
   border-top: 1px solid var(--hair);
 }
 @media (max-width: 720px) { .perm-pair { grid-template-columns: 1fr; } }
+
+/* ------------------------------------------------- vrf grace window
+   Amber while the oracle still has time, crimson once the grace has run out
+   and the market can be reopened. The only two states this panel has, and they
+   are the two the villager actually needs to tell apart. */
+.vrf {
+  display: grid;
+  gap: 10px;
+  padding: 15px 17px;
+  background: var(--sunk);
+  border: 1px solid rgba(255, 179, 71, 0.3);
+  border-radius: 12px;
+}
+.vrf.elapsed { border-color: rgba(255, 47, 58, 0.4); }
+.vrf-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+.vrf-title {
+  font-size: 11.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.vrf-clock {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
+}
+.vrf.elapsed .vrf-clock { color: var(--crimson); font-size: 13px; letter-spacing: 0.04em; }
+.vrf-copy {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 66ch;
+  text-wrap: pretty;
+}
+.vrf-act { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.vrf-note {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--coral);
+  overflow-wrap: anywhere;
+}

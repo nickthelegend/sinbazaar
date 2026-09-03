@@ -91,3 +91,11 @@ export function explorerTxUrl(signature: string, layer: "base" | "er" = "er"): s
     endpoint
   )}`;
 }
+
+/**
+ * `VRF_GRACE_SECS` in programs/sinbazaar/src/lib.rs.
+ *
+ * Duplicated here because the browser cannot read a Rust constant, and pinned
+ * with its source so the next person to change one knows to change both.
+ */
+export const VRF_GRACE_SECS = 120;

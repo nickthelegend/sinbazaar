@@ -643,3 +643,29 @@ export async function readSecret(
     return { authorised: false, body: "", redacted: "" };
   }
 }
+
+/**
+ * Reopen a market whose oracle never answered.
+ *
+ * `retry_vrf` is the release valve the program has always had and the interface
+ * never offered. A market that asked for randomness and did not get it sits in
+ * `VrfPending` with its escrow locked, because `settle_bid` requires `Resolved`
+ * and nothing else can move it. After the grace window it can be pushed back to
+ * `Expired` and asked again.
+ *
+ * Permissionless on purpose: whoever notices the market is stuck may unstick it,
+ * which is the same principle as every other crank here.
+ */
+export async function retryVrf(
+  signer: VillageSigner,
+  market: PublicKey,
+  marketId: BN
+): Promise<string> {
+  const er = erConnection();
+  const pEr = programFor(er, signer.publicKey);
+  const ix = await methodsOf(pEr)
+    .retryVrf(marketId)
+    .accountsPartial({ cranker: signer.publicKey, market })
+    .instruction();
+  return sendIxs(er, [ix], signer);
+}
