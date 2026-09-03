@@ -1,6 +1,7 @@
 "use client";
 
 /** Small shared pieces of the stall. */
+import { Odometer } from "@/components/Odometer";
 import { useNow } from "@/hooks/useNow";
 import { fmtCountdown, fmtSol, OUTCOME_LABEL, STATUS_LABEL } from "@/lib/format";
 import type { FlowStep, StepState } from "@/lib/flows";
@@ -41,10 +42,10 @@ export function PotBar({ seal, read }: { seal: number; read: number }) {
       </div>
       <div className="pot-figures">
         <span className="pot seal">
-          <em>SEAL</em> {fmtSol(seal)}
+          <em>SEAL</em> <Odometer value={seal} format={fmtSol} />
         </span>
         <span className="pot read">
-          <em>READ</em> {fmtSol(read)}
+          <em>READ</em> <Odometer value={read} format={fmtSol} />
         </span>
       </div>
     </div>
