@@ -28,6 +28,8 @@ import {
   errorText,
   fundPurse,
   placeBid,
+  readMyBid,
+  type MyBidView,
   readPurse,
   RESOLVE_STEPS,
   resolveMarket,
@@ -65,7 +67,7 @@ const PURSE_STEPS = [
 export default function MarketPage() {
   const params = useParams<{ address: string }>();
   const address = typeof params.address === "string" ? params.address : null;
-  const { data: market, error, reload: reloadMarket } = useMarket(address);
+  const { data: market, error, loading, reload: reloadMarket } = useMarket(address);
   const wallet = useVillageWallet();
   const now = useNow();
 
@@ -143,11 +145,32 @@ export default function MarketPage() {
     });
   }, [wallet.signer, topUpSol, startFlow, report]);
 
+  /** This key's existing bid on this market, if it has one. */
+  const [myBid, setMyBid] = useState<MyBidView>({
+    exists: false,
+    unknown: false,
+    side: "",
+    amount: 0,
+    funded: false,
+  });
+  const refreshMyBid = useCallback(async () => {
+    if (!wallet.signer || !market) return;
+    setMyBid(await readMyBid(new PublicKey(market.address), wallet.signer.publicKey));
+  }, [wallet.signer, market]);
+  useEffect(() => {
+    void refreshMyBid();
+  }, [refreshMyBid]);
+
   // A session, if this browser already holds one for this market.
   const [session, setSession] = useState<SessionView | null>(null);
   useEffect(() => {
-    setSession(market ? loadSession(market.address) : null);
-  }, [market?.address]);
+    // Depends on the address as well as the market: swapping keys has to
+    // re-evaluate, or the previous owner's session stays in state and gets
+    // offered to somebody it does not belong to.
+    setSession(
+      market && wallet.address ? loadSession(market.address, wallet.address) : null
+    );
+  }, [market?.address, wallet.address]);
 
   const onOpenSession = useCallback(() => {
     if (!wallet.signer || !market) return;
@@ -200,7 +223,7 @@ export default function MarketPage() {
             // A revoked or expired session must not silently fall back to the
             // wallet: the villager asked for a scoped key and is entitled to
             // know it stopped working.
-            forgetSession(market.address);
+            forgetSession(market.address, wallet.signer!.publicKey.toBase58());
             setSession(null);
             throw err;
           }
@@ -244,11 +267,35 @@ export default function MarketPage() {
 
   if (!address) return <Empty>no market address</Empty>;
   if (error && !market) return <div className="err">{error}</div>;
-  if (!market || !room) return <Empty>reading the stall…</Empty>;
+  // Still asking is not the same as asked and found nothing. Without this a
+  // wrong address sat on "reading the stall…" for ever, which is the most
+  // unhelpful possible answer to "does this market exist".
+  if (!market && loading) return <Empty>reading the stall…</Empty>;
+  if (!market)
+    return (
+      <Empty>
+        No market lives at this address. Either the address is wrong, or this
+        market was never opened in this village. The graveyard keeps the ones
+        that ended.
+      </Empty>
+    );
+  if (!room) return <Empty>this market names a room this build does not know</Empty>;
 
   const purseReady = !!purse?.onRollup;
+  /**
+   * One bid account exists per bidder per market, so a second bid from the same
+   * key cannot succeed. Without this the page offered the button anyway and the
+   * runtime answered "invalid account data for instruction", which explains
+   * nothing to anybody.
+   */
+  const alreadyBid = myBid.exists;
   const canBid =
-    !!wallet.signer && market.status === "open" && !dead && purseReady && busy === null;
+    !!wallet.signer &&
+    market.status === "open" &&
+    !dead &&
+    purseReady &&
+    !alreadyBid &&
+    busy === null;
 
   return (
     <>
@@ -398,6 +445,20 @@ export default function MarketPage() {
                 </button>
                 {busy === "bid" ? <span className="spinner">signing…</span> : null}
               </div>
+
+              {alreadyBid ? (
+                <p className="muted small" style={{ marginTop: 8 }}>
+                  You already hold a {SIDE_LABEL[myBid.side as SideName] ?? myBid.side} bid of{" "}
+                  {(myBid.amount / LAMPORTS_PER_SOL).toFixed(3)} SOL on this market. The
+                  program keeps one bid per villager per market, so there is nothing
+                  further to place here.
+                </p>
+              ) : myBid.unknown ? (
+                <p className="muted small" style={{ marginTop: 8 }}>
+                  The rollup did not answer when asked whether you already hold a bid
+                  here, so this may be refused.
+                </p>
+              ) : null}
 
               <p className="hint" style={{ marginTop: 10 }}>
                 <code>place_bid</code> and <code>fund_bid</code> go out as two instructions in one

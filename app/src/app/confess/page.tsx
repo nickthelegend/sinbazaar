@@ -14,7 +14,7 @@ import { randomSalt } from "@/lib/anchor";
 import { explorerUrl, explorerUrlFor } from "@/lib/config";
 import { WhatSolanaSees } from "@/components/WhatSolanaSees";
 import { Copyable } from "@/components/Copyable";
-import { useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import { BN } from "@coral-xyz/anchor";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { StepList } from "@/components/Bits";
@@ -72,7 +72,21 @@ const DURATIONS = [
   { secs: 900, label: "15 minutes" },
 ];
 
+/**
+ * Wrapped in Suspense because `useSearchParams` opts a route out of static
+ * prerendering unless there is a boundary around it. Without this the whole
+ * build fails on /confess, which is exactly what happened when `?room=` was
+ * added: the page worked in dev and the production build stopped dead.
+ */
 export default function ConfessPage() {
+  return (
+    <Suspense fallback={null}>
+      <Confess />
+    </Suspense>
+  );
+}
+
+function Confess() {
   const wallet = useVillageWallet();
   /**
    * Preselected from `?room=` when arriving from the rooms page.

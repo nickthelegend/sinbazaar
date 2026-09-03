@@ -33,7 +33,14 @@ import { rememberBidder } from "./registry";
 import type { SideName } from "./rooms";
 import { sideArg } from "./rooms";
 
-const KEY = "sinbazaar.sessions.v1";
+// v2: the map used to be keyed by market alone, so a session opened by one key
+// was offered to the next key that looked at the same market. The owner is part
+// of the key now. The version bump discards the old, wrongly-keyed entries
+// rather than trying to guess who they belonged to.
+const KEY = "sinbazaar.sessions.v2";
+
+/** A session belongs to one market **and** one owner. Both, or it is not yours. */
+const slot = (market: string, owner: string) => `${market}:${owner}`;
 
 /** Enough to pay ER fees for a long demo, and trivial to abandon. */
 export const SESSION_FUEL = 0.02 * LAMPORTS_PER_SOL;
@@ -70,8 +77,8 @@ export interface SessionView {
   expiresAt: number;
 }
 
-export function loadSession(market: string): SessionView | null {
-  const row = all()[market];
+export function loadSession(market: string, owner: string): SessionView | null {
+  const row = all()[slot(market, owner)];
   if (!row) return null;
   if (row.expiresAt * 1000 < Date.now()) return null;
   try {
@@ -88,9 +95,9 @@ export function loadSession(market: string): SessionView | null {
   }
 }
 
-export function forgetSession(market: string) {
+export function forgetSession(market: string, owner: string) {
   const map = all();
-  delete map[market];
+  delete map[slot(market, owner)];
   persist(map);
 }
 
@@ -142,7 +149,7 @@ export async function openSession(
     expiresAt: Math.floor(Date.now() / 1000) + ttlSecs,
   };
   const map = all();
-  map[view.market] = {
+  map[slot(view.market, signer.publicKey.toBase58())] = {
     secretKey: bs58.encode(keypair.secretKey),
     market: view.market,
     maxSpend: view.maxSpend,
@@ -229,5 +236,5 @@ export async function revokeSession(
     })
     .instruction();
   await sendIxs(er, [ix], signer);
-  forgetSession(market.toBase58());
+  forgetSession(market.toBase58(), signer.publicKey.toBase58());
 }

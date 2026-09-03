@@ -679,3 +679,44 @@ export async function retryVrf(
     .instruction();
   return sendIxs(er, [ix], signer);
 }
+
+export interface MyBidView {
+  /** True only when a bid account was actually read. */
+  exists: boolean;
+  /** True when the rollup could not be asked. Never the same as "no bid". */
+  unknown: boolean;
+  side: string;
+  amount: number;
+  funded: boolean;
+}
+
+/**
+ * Has this key already bid on this market?
+ *
+ * One bid account exists per bidder per market, and `place_bid` creates it, so a
+ * second bid from the same key cannot succeed: the runtime refuses with
+ * "invalid account data for instruction", which tells a villager nothing at all.
+ * Reading this lets the page say so before the button is pressed rather than
+ * after, which is the difference between a rule and a trap.
+ */
+export async function readMyBid(market: PublicKey, bidder: PublicKey): Promise<MyBidView> {
+  const none: MyBidView = { exists: false, unknown: false, side: "", amount: 0, funded: false };
+  try {
+    const er = erConnection();
+    const p = programFor(er, bidder);
+    const acct = await accountsOf(p).bid.fetchNullable(bidPda(market, bidder));
+    if (!acct) return none;
+    return {
+      exists: true,
+      unknown: false,
+      side: variantOf(acct.side),
+      amount: toNumber(acct.amount),
+      funded: Boolean(acct.funded),
+    };
+  } catch {
+    // A rollup that did not answer is not a villager who has not bid. Saying
+    // `exists: false` here would let the page cheerfully offer a button that
+    // is about to fail, which is the whole defect this function exists to fix.
+    return { ...none, unknown: true };
+  }
+}
