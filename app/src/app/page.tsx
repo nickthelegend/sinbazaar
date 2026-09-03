@@ -25,6 +25,7 @@ import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Connection, Keypair } from "@solana/web3.js";
 import nacl from "tweetnacl";
+import { ActivityStrip } from "@/components/Activity";
 import { MarketCard } from "@/components/MarketCard";
 import { OutcomeBadge, Redaction } from "@/components/Bits";
 import { CountUp, Drift, HeroIntro, PinnedSequence, StaggerIn } from "@/components/motion/Scroll";
@@ -270,6 +271,12 @@ export default function Landing() {
                 <span className="val">{pulse.live ? "live" : "polling"}</span>
               </div>
             </div>
+          </Drift>
+
+          {/* The latencies above are numbers; these are signatures. A viewer
+              who does not believe the milliseconds can open one and check. */}
+          <Drift distance={-30}>
+            <ActivityStrip live={pulse.live} />
           </Drift>
         </section>
       </HeroIntro>

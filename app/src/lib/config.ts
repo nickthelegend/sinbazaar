@@ -76,3 +76,18 @@ export function explorerUrl(address: string): string {
   }
   return `https://explorer.solana.com/address/${address}?cluster=${CLUSTER}`;
 }
+
+/**
+ * Explorer link for one transaction on a given layer.
+ *
+ * Same reasoning as `explorerUrlFor`: a rollup signature does not exist on the
+ * base chain at all, so the endpoint has to travel with the link. The explorer
+ * will happily point at a local validator over `customUrl`, which is why this
+ * works on localnet as well as devnet.
+ */
+export function explorerTxUrl(signature: string, layer: "base" | "er" = "er"): string {
+  const endpoint = layer === "er" ? ER_RPC : BASE_RPC;
+  return `https://explorer.solana.com/tx/${signature}?cluster=custom&customUrl=${encodeURIComponent(
+    endpoint
+  )}`;
+}

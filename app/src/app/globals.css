@@ -2397,3 +2397,127 @@ code {
     padding-right: 12px;
   }
 }
+
+/* ------------------------------------------------- rollup activity strip
+   Real signatures landing on the ephemeral rollup. Built as a grid rather than
+   a flex row so the four columns line up down the list: an instruction name
+   that jitters left and right as rows arrive reads as noise, not as a feed. */
+.act {
+  margin-top: 30px;
+  padding: 16px 18px 14px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  box-shadow: var(--lift), var(--cast-sm);
+  text-align: left;
+}
+.act-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.act-title {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.act-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.act-state.on { color: var(--amber); }
+.act-state.off { color: var(--muted); }
+.act-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 0 3px var(--amber-wash);
+  animation: act-breathe 2.4s ease-in-out infinite;
+}
+@keyframes act-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.72); }
+}
+.act-total {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+.act-empty {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+.act-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+}
+.act-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 7px 0;
+  border-top: 1px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.act-list li:first-child { border-top: 0; }
+.act-ix {
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.act-ix.failed { color: var(--crimson); }
+.act-ix.failed::after {
+  content: " rejected";
+  color: var(--dim);
+}
+.act-sig {
+  color: var(--coral);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  justify-self: start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.act-sig:hover { border-bottom-color: var(--coral); }
+.act-slot,
+.act-age {
+  color: var(--dim);
+  white-space: nowrap;
+}
+.act-age { text-align: right; min-width: 6ch; }
+
+/* Below the fold of a phone the slot number is the first thing worth losing:
+   the signature is the part a viewer can verify. */
+@media (max-width: 620px) {
+  .act-list li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+  .act-slot { display: none; }
+  .act-total { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .act-dot { animation: none; }
+}

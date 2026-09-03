@@ -116,3 +116,61 @@ export async function identities(): Promise<{ base: string | null; er: string | 
   const [base, er] = await Promise.all([read(baseConnection()), read(erConnection())]);
   return { base, er };
 }
+
+export interface RollupEvent {
+  /** Real base58 transaction signature, straight off the validator. */
+  signature: string;
+  /** Slot the rollup put it in. */
+  slot: number;
+  /** Anchor's own `Instruction:` log lines, in program order. */
+  instructions: string[];
+  /** True when the transaction landed but the program rejected it. */
+  failed: boolean;
+  /** Wall-clock arrival, for the relative age shown in the strip. */
+  at: number;
+}
+
+/**
+ * Every transaction touching this program on the rollup, as it lands.
+ *
+ * `logsSubscribe` was verified against the ephemeral validator before this was
+ * written: it accepts a `mentions` filter and delivers real signatures with
+ * Anchor's `Program log: Instruction: <Name>` lines intact. That log line is
+ * the only place the instruction name survives to the client, because the
+ * instruction data itself is an opaque 8-byte discriminator.
+ *
+ * One transaction routinely carries several instructions (`place_bid` and
+ * `fund_bid` ship together), so this returns the whole list rather than
+ * guessing which one mattered.
+ */
+export function subscribeLogs(onEvent: (event: RollupEvent) => void): () => void {
+  const er = erConnection();
+  let id: number | null = null;
+  try {
+    id = er.onLogs(
+      PROGRAM_ID,
+      (logs, ctx) => {
+        // A rejected transaction still emits logs. Anchor prints the
+        // instruction name before it fails, so the name survives either way.
+        const instructions = logs.logs
+          .map((line) => /Program log: Instruction: (\w+)/.exec(line)?.[1])
+          .filter((name): name is string => Boolean(name));
+        onEvent({
+          signature: logs.signature,
+          slot: ctx.slot,
+          instructions,
+          failed: logs.err !== null,
+          at: Date.now(),
+        });
+      },
+      "confirmed",
+    );
+  } catch {
+    // An RPC that refuses subscriptions leaves the strip saying so, rather
+    // than showing an empty list that reads as "nothing is happening".
+    return () => {};
+  }
+  return () => {
+    if (id !== null) void er.removeOnLogsListener(id).catch(() => {});
+  };
+}

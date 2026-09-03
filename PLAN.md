@@ -148,7 +148,7 @@ demo. Take these only in order, and only if there is genuinely time.
 
 | # | Task | Status |
 |---|---|---|
-| 4.1 | **Idea 6, rollup activity strip.** A live ticker of ER transactions as they land, with signatures. Makes the rollup feel busy during the video. Highest remaining value per unit of risk. | **NOT STARTED** |
+| 4.1 | **Idea 6, rollup activity strip.** A live ticker of ER transactions as they land, with signatures. | **BUILT, VERIFIED, UNCOMMITTED.** `logsSubscribe` was probed against the ephemeral validator before any UI was written: it accepts a `mentions` filter and delivers real signatures with Anchor's `Instruction:` lines. New: `subscribeLogs` in `lib/live.ts`, `hooks/useActivity.ts`, `components/Activity.tsx`, `explorerTxUrl` in `lib/config.ts`, `.act*` styles, mounted under the pulse row. Verified live against demo traffic: real signatures, snake_case names, the multi-instruction case rendering as `place_bid + fund_bid`, ages ticking, explorer links pointed at the rollup endpoint. Zero console errors, zero overflow at 1440 and at a true 375. **One defect found and fixed during verification** (see G12). Not yet committed: the boot volume filled and `git` cannot run. |
 | 4.2 | **Idea 5, Magic Actions for the tombstone.** Schedule the L1 write from inside the ER commit instead of as a separate client transaction. This is a named MagicBlock primitive the project claims in spirit and does not use. | **NOT STARTED** |
 | 4.3 | **Idea 12, per-transaction receipt drawer.** Signature, layer, slot, compute units, latency. Technical depth on demand without cluttering the page. | **NOT STARTED** |
 | 4.4 | **Idea 16, read receipt.** Record when the sole reader first opened the secret. Cheap, and adds real drama to the result page. | **NOT STARTED** |
@@ -238,6 +238,33 @@ It was stale once already (passing a `session` account to `place_bid` and a
 `bid_permission` to `settle_bid`, neither of which exist any more) and was
 repaired, but has not been executed since the last program change. It is the
 one script in the repo with a known history of drifting out of sync.
+
+### G12 — Motion owned removal, and the list grew without bound · closed
+
+Found while verifying 4.1, not by review.
+
+The activity strip's rows were wrapped in `AnimatePresence` with an exit
+transition. An exiting element stays mounted until its animation finishes, and
+animations run on the frame loop, which browsers throttle hard in a background
+tab. In a tab sitting behind another one, exits never completed, so rows
+accumulated one per transaction and none were ever released: **measured at 19
+rows in the DOM with the visible cap set to 6**, still climbing.
+
+This is the third instance of one defect in this project wearing a different
+hat. The first two were entrances that decided whether content *existed*
+(`gsap.from` stranding the hero at opacity 0, and Framer's `initial={{opacity:0}}`
+stranding the market cards). This one is the same mistake applied to removal:
+motion deciding when a row *leaves*.
+
+The rule that came out of the first two was written as "an entrance may move a
+thing, never decide whether it exists". That was too narrow, and the narrowness
+is exactly why this got through. The rule is now: **motion may move a thing; it
+may never decide whether the thing exists, or when it stops existing.**
+
+**Closed by** deleting the exit transition and `AnimatePresence` entirely, so
+React unmounts dropped rows synchronously. The entrance is kept and still
+disabled under `prefers-reduced-motion` via `initial={false}`. Re-verified after
+the fix: 6 rows in the DOM after 26 transactions had passed through.
 
 ### G11 — A private key was tracked, and G7 missed it · closed
 
