@@ -8,9 +8,12 @@
  * only ever appears as an argument to the last one.
  */
 import Link from "next/link";
-import { byteLen } from "@/lib/format";
+import { useSearchParams } from "next/navigation";
+import { byteLen, shortKey } from "@/lib/format";
 import { randomSalt } from "@/lib/anchor";
+import { explorerUrl, explorerUrlFor } from "@/lib/config";
 import { WhatSolanaSees } from "@/components/WhatSolanaSees";
+import { Copyable } from "@/components/Copyable";
 import { useCallback, useMemo, useState } from "react";
 import { BN } from "@coral-xyz/anchor";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -71,7 +74,18 @@ const DURATIONS = [
 
 export default function ConfessPage() {
   const wallet = useVillageWallet();
-  const [room, setRoom] = useState(LIVE_ROOMS[0].variant);
+  /**
+   * Preselected from `?room=` when arriving from the rooms page.
+   *
+   * Validated against the live rooms rather than trusted: an unknown or
+   * disabled variant in the URL falls back to the first live room instead of
+   * putting the form into a state the program would refuse.
+   */
+  const search = useSearchParams();
+  const requested = search.get("room");
+  const [room, setRoom] = useState(
+    LIVE_ROOMS.some((r) => r.variant === requested) ? (requested as string) : LIVE_ROOMS[0].variant
+  );
   const [body, setBody] = useState(SEEDS[0].body);
   /**
    * Fixed once, before anything is typed, and handed to `createConfession`.
@@ -268,6 +282,45 @@ export default function ConfessPage() {
             <div style={{ marginTop: 16 }}>
               <div className="lbl">commitment</div>
               <div className="mono-block">{result.commitment}</div>
+
+              {/* The two addresses this confession now lives at.
+                  Copyable and linked, because the first thing anyone wanting to
+                  check this claim does is paste them into an explorer: the
+                  market to see the public half, the secret to see an account
+                  that exists on the base layer with an empty body. Printing the
+                  commitment alone made the author leave with less than the
+                  market page would have given them. */}
+              <div className="seal-addrs">
+                <div>
+                  <span className="lbl">market</span>
+                  <Copyable value={result.market} label="market address">
+                    <code>{shortKey(result.market, 6)}</code>
+                  </Copyable>
+                  <a
+                    className="seal-explore"
+                    href={explorerUrlFor(result.market, "er")}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    on the rollup
+                  </a>
+                </div>
+                <div>
+                  <span className="lbl">secret</span>
+                  <Copyable value={result.secret} label="secret address">
+                    <code>{shortKey(result.secret, 6)}</code>
+                  </Copyable>
+                  <a
+                    className="seal-explore"
+                    href={explorerUrl(result.secret)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    on Solana
+                  </a>
+                </div>
+              </div>
+
               <div className="actions" style={{ marginTop: 12 }}>
                 <Link href={`/market/${result.market}`} className="act">
                   open the market

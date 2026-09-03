@@ -147,6 +147,28 @@ function SignerProvider({ children }: { children: React.ReactNode }) {
     airdropped.current = false;
   }, []);
 
+  /**
+   * Forget the balance the instant the key changes.
+   *
+   * Without this the readout kept showing the previous key's balance until the
+   * next poll, up to ten seconds later: press `new` on a burner holding 34.94
+   * SOL and the fresh, empty key advertises 34.94 SOL. It is the same mistake
+   * this project keeps meeting, an unknown rendered as a value, and here it is
+   * a number about somebody else's account. `null` renders as "balance
+   * unknown", which is exactly what it is until the chain answers.
+   *
+   * Keyed on the address rather than the signer object so a re-render that
+   * merely rebuilds the signer does not blank a balance that is still correct.
+   */
+  const addressRef = useRef<string | null>(null);
+  const currentAddress = signer?.publicKey.toBase58() ?? null;
+  useEffect(() => {
+    if (addressRef.current !== currentAddress) {
+      addressRef.current = currentAddress;
+      setBalance(null);
+    }
+  }, [currentAddress]);
+
   // Backs off while the base layer is unreachable. This provider is mounted on
   // every route, so a fixed retry here is the loudest poller in the app.
   useBackoffPoll(refresh, 10_000);

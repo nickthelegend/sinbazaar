@@ -35,6 +35,7 @@ import { getAuthToken } from "@/lib/magicblock";
 import { secretPda } from "@/lib/pdas";
 import { CLUSTER, ER_RPC, PROGRAM_ID, TEE_RPC } from "@/lib/config";
 import { IDL } from "@/lib/anchor";
+import { TEST_COUNT } from "@/lib/counts";
 import { shortHash, shortKey } from "@/lib/format";
 import { LIVE_ROOMS, ROOMS } from "@/lib/rooms";
 
@@ -53,7 +54,7 @@ import { LIVE_ROOMS, ROOMS } from "@/lib/rooms";
  */
 const INSTRUCTION_COUNT = (IDL as { instructions?: unknown[] }).instructions?.length ?? 0;
 const ERROR_COUNT = (IDL as { errors?: unknown[] }).errors?.length ?? 0;
-const TEST_COUNT = 32;
+
 
 /** The three layers a confession actually crosses, with the real instructions. */
 const LAYERS = [

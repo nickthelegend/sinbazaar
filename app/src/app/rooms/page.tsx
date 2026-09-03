@@ -32,7 +32,10 @@ export default function RoomsPage() {
             <p className="rule">{room.rule[1]}</p>
             <div className="room-foot">
               <span className="tag-live">live</span>
-              <Link href="/confess" className="explorer">
+              {/* Carries the room, so "open one" opens *this* one. It used
+                  to land on the first live room whatever you clicked, which
+                  quietly contradicted the label. */}
+              <Link href={`/confess?room=${room.variant}`} className="explorer">
                 open one →
               </Link>
             </div>
