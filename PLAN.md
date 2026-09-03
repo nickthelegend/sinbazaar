@@ -66,7 +66,7 @@ proves the MagicBlock primitives**. So winning is narrower than done:
 | Browser test plan | **135/135 PASS**, 18 defects found and fixed |
 | Mocks / stubs / TODOs in shipped code | **0** (verified by grep) |
 | Devnet program | Deployed, but **STALE** — see G1 |
-| Repo | **Not pushed**, no git remote |
+| Repo | **Public**, <https://github.com/nickthelegend/sinbazaar> |
 | Demo video | **Not recorded** |
 
 The core is built and verified. What remains is almost entirely **shipping**:
@@ -82,7 +82,7 @@ is currently older than the code that passes the tests.
 
 | # | Task | Status |
 |---|---|---|
-| 0.1 | Fund the devnet deployer `Ev2zTBpXSPLdn3F8Y39bSXexYggGPkQ4xUi65bf695ja` with **≥ 5.5 SOL**. Needed for the upgrade buffer (~5.3 SOL, refunded on completion) plus fees. Current balance **0.1334 SOL**. Use the devnet faucet across several days, or a funded wallet. | **BLOCKED** (needs SOL) |
+| 0.1 | Fund the devnet deployer `Ev2zTBpXSPLdn3F8Y39bSXexYggGPkQ4xUi65bf695ja` with **≥ 5.5 SOL**. Needed for the upgrade buffer (~5.3 SOL, refunded on completion) plus fees. Current balance **0.1334 SOL**. | **BLOCKED — attempted and refused.** `api.devnet.solana.com` returns **429**, "you have either reached your airdrop limit today or the faucet has run dry", at 2, 1 and 0.5 SOL. Helius devnet needs an API key that is not in this repo. Ankr devnet does not implement `requestAirdrop`. This needs devnet SOL from a funded wallet or a faucet reset; it cannot be closed by writing code. |
 | 0.2 | `anchor build`, then `bash scripts/deploy-devnet.sh` to upgrade the program in place at `2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN`. Do **not** deploy to a new address; the README, SUBMISSION and explorer links all point at this one. | **BLOCKED** by 0.1 |
 | 0.3 | Verify the upgrade landed: fetch the programdata account, compare `sha256` of its bytes against `target/deploy/sinbazaar.so`. They must be **identical**. The comparison script is in G1 below. | **BLOCKED** by 0.2 |
 | 0.4 | Re-run `. ./.env.devnet && npx ts-node scripts/prove-privacy.ts` against the upgraded program. All 11 checks must pass, including the two refusals, now under real TEE attestation. | **BLOCKED** by 0.2 |
@@ -99,11 +99,11 @@ both directions.
 
 | # | Task | Status |
 |---|---|---|
-| 1.1 | `README.md` says **"31 instructions"** in two places (lines 7 and 510). The IDL has **32**. Update both, and prefer deriving the number in future. | **NOT STARTED** |
-| 1.2 | `ASSUMPTIONS.md` §5 states *"`is_chosen_bid` is still not gated on `bid.funded`"* and describes an `Inherited` reader-identity exposure as surviving. **The code has the gate** (`programs/sinbazaar/src/lib.rs:1398`). Rewrite the section to describe what actually survives, if anything. | **NOT STARTED** |
-| 1.3 | Re-read the whole of `ASSUMPTIONS.md` against the current program for other stale residuals. Sections 4, 5, 6, 7 and 8 were written across several sessions of fixes and at least one is now wrong. | **NOT STARTED** |
-| 1.4 | `docs/BROWSER-TEST-PLAN.md` lists defect **18 before 17** in "The eighteen defects". Reorder. | **NOT STARTED** |
-| 1.5 | Audit every number that appears in prose across `README.md`, `docs/SUBMISSION.md`, `docs/ARCHITECTURE.md` and `docs/DEMO.md` against the IDL and the test suite: instruction count, error count, test count, room count. The landing page now derives these; the docs still hardcode them. | **NOT STARTED** |
+| 1.1 | README instruction count. | **DONE** — both occurrences now read 32, matching the IDL. |
+| 1.2 | ASSUMPTIONS §5 residual. | **DONE** — rewritten. The gate is real, so the reader-identity exposure is closed. What survives is milder and now stated: `Inherited` draws against `bid_count`, which counts unfunded bids, so a draw can land on one, be refused for being unfunded, and select **nobody**. Safe failure, but not what the room advertises. |
+| 1.3 | Re-read ASSUMPTIONS against the program. | **DONE** — §5 rewritten, and the "what we would do next" list corrected: it still carried the shipped `bid.funded` fix as item 1. Every remaining item re-verified in the source: `retry_vrf` is still an unbounded retry with no attempt ceiling, `caller_seed` is still `[client_seed; 32]` taken from the caller. |
+| 1.4 | Defect ordering. | **DONE** — 17 and 18 swapped into order. |
+| 1.5 | Audit every number in prose. | **DONE** — ground truth is 32 instructions, 34 errors, 25 rooms with 3 live, and 19 + 13 + 1 tests across the three files. Fixed: README instruction count, and `docs/TEST-PLAN.md` which said edges.ts had 12 tests (it has 13 since `commit_market` was covered) and claimed 9/9 on the devnet TEE where it is now 11 checks pending the upgrade. README's "22 rooms disabled" and ASSUMPTIONS' "Phase-7 rooms" were checked and are correct. |
 
 ---
 
@@ -114,12 +114,12 @@ submission to count.
 
 | # | Task | Status |
 |---|---|---|
-| 2.1 | Create a public GitHub repository and push. There is currently **no git remote**. Verify `keys/`, `.env.devnet`, `target/`, `test-ledger/` and `magicblock-test-storage/` stay ignored (they are, confirmed by `git check-ignore`). | **NOT STARTED** |
-| 2.2 | Put the repo URL in the `Repo` row of `docs/SUBMISSION.md`, which currently reads *"(set when the repo is pushed public)"*. | **NOT STARTED**, blocked by 2.1 |
-| 2.3 | Record the demo video following `docs/DEMO.md`. It is beat-by-beat and already corrected for what the app actually does (the app uses a browser burner key, not session keys, on the confess path). Keep it under the Blitz length limit. | **NOT STARTED** |
-| 2.4 | Add the video URL to the `Demo video` row of `docs/SUBMISSION.md`. | **NOT STARTED**, blocked by 2.3 |
-| 2.5 | Decide on a hosted app. The `Live app` row says *"(optional; runs locally)"*. A judge who cannot run a local validator sees nothing. Either deploy the frontend pointed at devnet, or make the row honestly say the app requires a local cluster and why. | **NOT STARTED** |
-| 2.6 | If 2.5 is a deploy: set `NEXT_PUBLIC_CLUSTER=devnet` and the three devnet RPC vars, and confirm the app's unreachable-cluster state renders correctly when the TEE endpoint rate-limits. | **NOT STARTED**, blocked by 2.5 |
+| 2.1 | Create a public GitHub repository and push. | **DONE** — <https://github.com/nickthelegend/sinbazaar>, public, 33 commits. The pre-push scan found a tracked private key first; see G11. History was rewritten to purge it before the first push, and the remote returns 404 for that path. |
+| 2.2 | Repo URL in `docs/SUBMISSION.md`. | **DONE** |
+| 2.3 | Record the demo video following `docs/DEMO.md`. | **NOT STARTED — cannot be done by an agent.** Recording screen and voice is outside what I can do. `docs/DEMO.md` is beat-by-beat and `npm run demo` narrates the same sequence against a live cluster, so the script is ready for a human to record against. |
+| 2.4 | Video URL in `docs/SUBMISSION.md`. | **NOT STARTED**, blocked by 2.3 |
+| 2.5 | Decide on a hosted app. | **BLOCKED by 0.2, and the dependency is the point.** A hosted frontend has to point at devnet, and the devnet program is stale: it has no `revealed_salt`, so the graveyard's commitment check would fail against it. Hosting now would ship a site that contradicts the README. Do this after the upgrade, not before. |
+| 2.6 | Devnet env vars for the hosted app. | **NOT STARTED**, blocked by 2.5 |
 
 ---
 
@@ -133,9 +133,9 @@ a judge, and are ordered by how likely each failure is.
 | 3.1 | Keeper daemon that takes any dead market to a tombstone unattended. `scripts/keeper.ts`, `npm run keeper`. | DONE |
 | 3.2 | Seed script producing a village in known states. `scripts/seed.ts`. | DONE |
 | 3.3 | Narrated end-to-end script. `scripts/demo.ts`. | DONE |
-| 3.4 | Run `scripts/smoke.ts` against a **fresh** ledger and confirm it still passes. It was stale earlier in the project (it passed removed accounts to `place_bid` and `settle_bid`) and was repaired, but has not been re-run since the program changed. | **NOT STARTED** |
-| 3.5 | Rehearse the full demo path once, end to end, on the machine that will present it, with the keeper running. Note the wall-clock time of the VRF round trip so the narration does not outrun the chain. | **NOT STARTED** |
-| 3.6 | Decide the demo cluster. Local is fast and reliable but is not a TEE; devnet is the real claim but is slower and rate-limits. The honest answer is probably: demo on local, prove privacy on devnet, and say so on camera. | **NOT STARTED** |
+| 3.4 | `scripts/smoke.ts` on a fresh ledger. | **DONE** — wiped `test-ledger/` and `magicblock-test-storage/`, restarted the stack, ran it: full loop create, seal, bid, VRF, settle, tombstone. Landed a `soleReader` tombstone with `revealed_len: 0`. |
+| 3.5 | Rehearse the full demo path end to end. | **DONE** — `npm run demo` against a fresh local cluster: **exit 0 in 57 seconds wall clock**. Every beat landed: pots public, each bid private with the author excluded from its member list, a real VRF draw resolving BURIED, a tombstone with `revealed_len: 0`, the confession still `is_private` with one member, a PUBLIC_LEAK carved to L1, and a Whisper IPO paying 2 SOL on a 1 SOL stake. 57s is comfortably inside a demo window, so the narration does not have to stall for the chain. |
+| 3.6 | Decide the demo cluster. | **DECIDED: demo on local, prove privacy on devnet, say so on camera.** Local runs the whole narrated loop in 57s and never rate-limits, which is what a 60-second video needs. The privacy refusals are the one claim local cannot fully carry, because the query-filtering service enforces the member list but is not attested hardware. That half belongs on devnet and is **currently blocked by 0.2**: the deployed program has no `revealed_salt`, so a devnet reveal cannot be checked against its own commitment. Until 0.2 lands, the honest on-camera line is that enforcement is demonstrated locally and attestation is what devnet adds. |
 
 ---
 
@@ -239,6 +239,33 @@ It was stale once already (passing a `session` account to `place_bid` and a
 repaired, but has not been executed since the last program change. It is the
 one script in the repo with a known history of drifting out of sync.
 
+### G11 — A private key was tracked, and G7 missed it · closed
+
+Found by the pre-push scan for task 2.1, not by the planning pass.
+`.seed-village-authority.json` was **committed**: a 64-byte Solana keypair, at the
+repository root. `.gitignore` covered `.seed-village.json`, the manifest sitting
+right beside it, and missed the key.
+
+G7 below declared the secret scan clean, and it was wrong. Its grep was
+`git ls-files | grep -iE "keys/|\.env"`, which only looks under `keys/` and for
+env files. A key at the root with a different name walked straight through. The
+grep in G7 has been widened.
+
+**Exposure, stated exactly.** The key holds **0 SOL on devnet and 0 on mainnet**.
+`seed.ts` only ever *writes* that path (line 815), never reads it, so it is a
+throwaway village authority regenerated on every seed run. The practical risk was
+low. It was still wrong to commit, it would have tripped GitHub secret scanning
+the moment the repo went public, and a committed private key in a project whose
+entire claim is privacy is the kind of detail that costs a judge's trust.
+
+**Closed by:** untracking the file, adding it to `.gitignore`, and rewriting all
+33 commits with `git filter-branch --index-filter` to purge it, then expiring
+`refs/original` and the reflog and running `git gc --prune=now`. Verified after:
+`git log --all -- .seed-village-authority.json` returns **0 commits**, and a grep
+for any 64-element byte array across the full history returns **0**. The rewrite
+was safe because the repository had never been pushed. The remote returns **404**
+for that path.
+
 ### G7 — Clean, and worth keeping clean
 
 These were checked and found clean. Re-run after any change:
@@ -246,11 +273,17 @@ These were checked and found clean. Re-run after any change:
 ```bash
 grep -rniE "\bTODO\b|\bFIXME\b|\bmock\b|\bstub\b|\bdummy\b|\bfake\b|placeholder" \
   programs/sinbazaar/src sdk/src app/src scripts tests
-git check-ignore keys .env.devnet target test-ledger magicblock-test-storage
-git ls-files | grep -iE "keys/|\.env"
+
+# Widened after G11. The old version only looked under keys/ and for env files,
+# which is how a keypair at the repository root went unnoticed.
+git ls-files | grep -iE "key|secret|\.env|credential|token|wallet"
+git grep -lE "\[[0-9]{1,3},[0-9]{1,3},[0-9 ,]{190,}\]" -- .   # any keypair array
+git log --all -p | grep -cE "BEGIN (RSA|OPENSSH|EC|PRIVATE)|ghp_[A-Za-z0-9]{30,}"
+git check-ignore keys .env.devnet .seed-village-authority.json target test-ledger
 ```
 
-Zero hits, all ignored, no secrets tracked.
+The TODO/mock grep returns zero. The secret greps now return zero **after** G11
+was closed; before it, the second one would have found the key.
 
 ### G8 — Known program residuals, documented and accepted
 

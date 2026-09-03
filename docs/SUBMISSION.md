@@ -32,7 +32,7 @@ that by paying nothing at all.
 
 | | |
 |---|---|
-| Repo | *(set when the repo is pushed public)* |
+| Repo | <https://github.com/nickthelegend/sinbazaar> |
 | Program (devnet) | [`2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN`](https://explorer.solana.com/address/2WF8eFT97sGVYwGe5DNtLkGFW3kMJ6WXozGvT3eSzvEN?cluster=devnet) |
 | Privacy proof (devnet, real TEE) | `. ./.env.devnet && npx ts-node scripts/prove-privacy.ts` |
 | Public market from that run | [`9tE7qFDnVug5iEeSdgtb6xg6MiAJyeXtLxDGqbfUtYh1`](https://explorer.solana.com/address/9tE7qFDnVug5iEeSdgtb6xg6MiAJyeXtLxDGqbfUtYh1?cluster=devnet) |
